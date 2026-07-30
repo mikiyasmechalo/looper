@@ -25,6 +25,7 @@ enum NavItem {
 
 class NavigationState {
   final NavItem activeItem;
+  final NavItem? highlightItem;
   final String? collectionTitle;
   final String? collectionSubtitle;
   final String? collectionArt;
@@ -36,6 +37,7 @@ class NavigationState {
 
   NavigationState({
     required this.activeItem,
+    this.highlightItem,
     this.collectionTitle,
     this.collectionSubtitle,
     this.collectionArt,
@@ -48,6 +50,7 @@ class NavigationState {
 
   NavigationState copyWith({
     NavItem? activeItem,
+    NavItem? Function()? highlightItem,
     String? collectionTitle,
     String? collectionSubtitle,
     String? collectionArt,
@@ -59,6 +62,9 @@ class NavigationState {
   }) {
     return NavigationState(
       activeItem: activeItem ?? this.activeItem,
+      highlightItem: highlightItem != null
+          ? highlightItem()
+          : this.highlightItem,
       collectionTitle: collectionTitle ?? this.collectionTitle,
       collectionSubtitle: collectionSubtitle ?? this.collectionSubtitle,
       collectionArt: collectionArt ?? this.collectionArt,
@@ -108,6 +114,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
     String? imageUrl,
     required List<Song> songs,
     Playlist? playlist,
+    NavItem? highlightItem,
   }) {
     if (state.activeItem == NavItem.collectionDetail &&
         state.collectionTitle == title) {
@@ -120,6 +127,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
 
     state = NavigationState(
       activeItem: NavItem.collectionDetail,
+      highlightItem: highlightItem,
       collectionTitle: title,
       collectionSubtitle: subtitle,
       collectionArt: art,
@@ -146,6 +154,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
   NavigationState _captureCurrentState() {
     return NavigationState(
       activeItem: state.activeItem,
+      highlightItem: state.highlightItem,
       collectionTitle: state.collectionTitle,
       collectionSubtitle: state.collectionSubtitle,
       collectionArt: state.collectionArt,

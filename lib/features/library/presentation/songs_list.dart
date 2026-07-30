@@ -69,9 +69,7 @@ class SongsList extends ConsumerWidget {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: Text(l10n.resetLibrary),
-                            content: Text(
-                              l10n.resetLibraryConfirm,
-                            ),
+                            content: Text(l10n.resetLibraryConfirm),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
@@ -134,7 +132,8 @@ class SongsList extends ConsumerWidget {
               child: ListView.builder(
                 controller: controller,
                 shrinkWrap: false,
-                physics: physics ??
+                physics:
+                    physics ??
                     const AlwaysScrollableScrollPhysics(
                       parent: BouncingScrollPhysics(),
                     ),
@@ -157,8 +156,6 @@ class SongsList extends ConsumerWidget {
     );
   }
 }
-
-
 
 class SongTile extends ConsumerWidget {
   final Song song;
@@ -202,25 +199,23 @@ class SongTile extends ConsumerWidget {
     while ((indexOfMatch = lowerText.indexOf(lowerQuery, start)) != -1) {
       // Add text before match
       if (indexOfMatch > start) {
-        spans.add(TextSpan(
-          text: text.substring(start, indexOfMatch),
-          style: baseStyle,
-        ));
+        spans.add(
+          TextSpan(text: text.substring(start, indexOfMatch), style: baseStyle),
+        );
       }
       // Add matched text
-      spans.add(TextSpan(
-        text: text.substring(indexOfMatch, indexOfMatch + query.length),
-        style: highlightStyle,
-      ));
+      spans.add(
+        TextSpan(
+          text: text.substring(indexOfMatch, indexOfMatch + query.length),
+          style: highlightStyle,
+        ),
+      );
       start = indexOfMatch + query.length;
     }
 
     // Add remaining text
     if (start < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(start),
-        style: baseStyle,
-      ));
+      spans.add(TextSpan(text: text.substring(start), style: baseStyle));
     }
 
     return RichText(
@@ -232,9 +227,14 @@ class SongTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    
-    final isCurrent = ref.watch(playbackProvider.select((s) => s.currentSong?.path == song.path));
-    final isPlaying = ref.watch(playbackProvider.select((s) => s.currentSong?.path == song.path && s.isPlaying));
+    final isCurrent = ref.watch(
+      playbackProvider.select((s) => s.currentSong?.path == song.path),
+    );
+    final isPlaying = ref.watch(
+      playbackProvider.select(
+        (s) => s.currentSong?.path == song.path && s.isPlaying,
+      ),
+    );
 
     String? lyricSnippet;
     if (searchQuery != null && searchQuery!.isNotEmpty && song.lyrics != null) {
@@ -255,7 +255,12 @@ class SongTile extends ConsumerWidget {
           }
         },
         child: ListTile(
-          contentPadding: const EdgeInsets.only(left: 16, right: 4, top: 0, bottom: 0),
+          contentPadding: const EdgeInsets.only(
+            left: 16,
+            right: 4,
+            top: 0,
+            bottom: 0,
+          ),
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: isCurrent
@@ -308,46 +313,38 @@ class SongTile extends ConsumerWidget {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    InkWell(
-                      onTap: () async {
-                        if (song.artist != null) {
-                          final artistSongs = await DbService.isar.songs
-                              .filter()
-                              .artistEqualTo(song.artist!)
-                              .findAll();
-                          final artist = await DbService.isar.artists
-                              .filter()
-                              .nameEqualTo(song.artist!)
-                              .findFirst();
-                          ref
-                              .read(appNavigationProvider.notifier)
-                              .showCollection(
-                                title: song.artist!,
-                                subtitle: l10n.artists,
-                                art: artist?.artPath ?? song.artPath,
-                                imageUrl: artist?.artistImageUrl,
-                                songs: artistSongs,
-                              );
-                        }
-                      },
-                      child: Text(
-                        song.artist ?? l10n.unknownArtist,
-                        style: AppFonts.jostStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
-                          fontSize: 13,
+                    // Align keeps the InkWell bounded to the text width
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: InkWell(
+                        onTap: () async =>
+                            _navigateToArtist(context, ref, song, l10n),
+                        child: Text(
+                          song.artist ?? l10n.unknownArtist,
+                          style: AppFonts.jostStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.12),
                           width: 0.8,
                         ),
                       ),
@@ -382,36 +379,20 @@ class SongTile extends ConsumerWidget {
                     ),
                   ],
                 )
-              : InkWell(
-                  onTap: () async {
-                    if (song.artist != null) {
-                      final artistSongs = await DbService.isar.songs
-                          .filter()
-                          .artistEqualTo(song.artist!)
-                          .findAll();
-                      final artist = await DbService.isar.artists
-                          .filter()
-                          .nameEqualTo(song.artist!)
-                          .findFirst();
-                      ref
-                          .read(appNavigationProvider.notifier)
-                          .showCollection(
-                            title: song.artist!,
-                            subtitle: l10n.artists,
-                            art: artist?.artPath ?? song.artPath,
-                            imageUrl: artist?.artistImageUrl,
-                            songs: artistSongs,
-                          );
-                    }
-                  },
-                  child: Text(
-                    song.artist ?? l10n.unknownArtist,
-                    style: AppFonts.jostStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 13,
+              : Align(
+                  alignment: Alignment.centerLeft,
+                  child: InkWell(
+                    onTap: () async =>
+                        _navigateToArtist(context, ref, song, l10n),
+                    child: Text(
+                      song.artist ?? l10n.unknownArtist,
+                      style: AppFonts.jostStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
           trailing: IconButton(
@@ -461,8 +442,6 @@ class SongTile extends ConsumerWidget {
   }
 }
 
-
-
 void _showSortBottomSheet(
   BuildContext context,
   WidgetRef ref,
@@ -494,7 +473,7 @@ void _showSortBottomSheet(
                       child: Text(
                         l10n.sortOrder,
                         style: AppFonts.jostStyle(
-                          fontSize: 18, 
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -506,13 +485,20 @@ void _showSortBottomSheet(
                         ref.read(libraryProvider.notifier).toggleSortOrder();
                       },
                       icon: Icon(
-                        state.isAscending ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
+                        state.isAscending
+                            ? LucideIcons.arrowUpAZ
+                            : LucideIcons.arrowDownAZ,
                         size: 18,
                       ),
-                      label: Text(state.isAscending ? l10n.ascending : l10n.descending),
+                      label: Text(
+                        state.isAscending ? l10n.ascending : l10n.descending,
+                      ),
                       style: TextButton.styleFrom(
                         foregroundColor: accentColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -525,7 +511,10 @@ void _showSortBottomSheet(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 8.0,
+                      ),
                       child: PremiumSection(
                         borderRadius: BorderRadius.circular(20),
                         padding: EdgeInsets.zero,
@@ -536,21 +525,26 @@ void _showSortBottomSheet(
                             _SortOption(
                               label: l10n.dateAdded,
                               icon: LucideIcons.calendar,
-                              isSelected: state.sortStrategy == SongSortStrategy.dateAdded,
+                              isSelected:
+                                  state.sortStrategy ==
+                                  SongSortStrategy.dateAdded,
                               accentColor: accentColor,
                               isLast: false,
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 ref
                                     .read(libraryProvider.notifier)
-                                    .setSortStrategy(SongSortStrategy.dateAdded);
+                                    .setSortStrategy(
+                                      SongSortStrategy.dateAdded,
+                                    );
                                 Navigator.pop(context);
                               },
                             ),
                             _SortOption(
                               label: l10n.title,
                               icon: LucideIcons.type,
-                              isSelected: state.sortStrategy == SongSortStrategy.title,
+                              isSelected:
+                                  state.sortStrategy == SongSortStrategy.title,
                               accentColor: accentColor,
                               isLast: false,
                               onTap: () {
@@ -564,7 +558,8 @@ void _showSortBottomSheet(
                             _SortOption(
                               label: l10n.artist,
                               icon: LucideIcons.mic2,
-                              isSelected: state.sortStrategy == SongSortStrategy.artist,
+                              isSelected:
+                                  state.sortStrategy == SongSortStrategy.artist,
                               accentColor: accentColor,
                               isLast: false,
                               onTap: () {
@@ -578,7 +573,8 @@ void _showSortBottomSheet(
                             _SortOption(
                               label: l10n.album,
                               icon: LucideIcons.disc,
-                              isSelected: state.sortStrategy == SongSortStrategy.album,
+                              isSelected:
+                                  state.sortStrategy == SongSortStrategy.album,
                               accentColor: accentColor,
                               isLast: false,
                               onTap: () {
@@ -592,7 +588,9 @@ void _showSortBottomSheet(
                             _SortOption(
                               label: l10n.duration,
                               icon: LucideIcons.clock,
-                              isSelected: state.sortStrategy == SongSortStrategy.duration,
+                              isSelected:
+                                  state.sortStrategy ==
+                                  SongSortStrategy.duration,
                               accentColor: accentColor,
                               isLast: false,
                               onTap: () {
@@ -606,7 +604,8 @@ void _showSortBottomSheet(
                             _SortOption(
                               label: l10n.year,
                               icon: LucideIcons.calendarDays,
-                              isSelected: state.sortStrategy == SongSortStrategy.year,
+                              isSelected:
+                                  state.sortStrategy == SongSortStrategy.year,
                               accentColor: accentColor,
                               isLast: false,
                               onTap: () {
@@ -620,28 +619,36 @@ void _showSortBottomSheet(
                             _SortOption(
                               label: l10n.mostPlayed,
                               icon: LucideIcons.trendingUp,
-                              isSelected: state.sortStrategy == SongSortStrategy.playCount,
+                              isSelected:
+                                  state.sortStrategy ==
+                                  SongSortStrategy.playCount,
                               accentColor: accentColor,
                               isLast: false,
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 ref
                                     .read(libraryProvider.notifier)
-                                    .setSortStrategy(SongSortStrategy.playCount);
+                                    .setSortStrategy(
+                                      SongSortStrategy.playCount,
+                                    );
                                 Navigator.pop(context);
                               },
                             ),
                             _SortOption(
                               label: l10n.recentlyPlayed,
                               icon: LucideIcons.history,
-                              isSelected: state.sortStrategy == SongSortStrategy.lastPlayed,
+                              isSelected:
+                                  state.sortStrategy ==
+                                  SongSortStrategy.lastPlayed,
                               accentColor: accentColor,
                               isLast: true,
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 ref
                                     .read(libraryProvider.notifier)
-                                    .setSortStrategy(SongSortStrategy.lastPlayed);
+                                    .setSortStrategy(
+                                      SongSortStrategy.lastPlayed,
+                                    );
                                 Navigator.pop(context);
                               },
                             ),
@@ -692,14 +699,18 @@ class _SortOption extends StatelessWidget {
                 Icon(
                   icon,
                   size: 22,
-                  color: isSelected ? accentColor : Colors.white.withValues(alpha: 0.9),
+                  color: isSelected
+                      ? accentColor
+                      : Colors.white.withValues(alpha: 0.9),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     label,
                     style: AppFonts.jostStyle(
-                      color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.9),
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.9),
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
                     ),
@@ -739,16 +750,14 @@ class _SongTileBouncyTap extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
 
-  const _SongTileBouncyTap({
-    required this.child,
-    required this.onTap,
-  });
+  const _SongTileBouncyTap({required this.child, required this.onTap});
 
   @override
   State<_SongTileBouncyTap> createState() => _SongTileBouncyTapState();
 }
 
-class _SongTileBouncyTapState extends State<_SongTileBouncyTap> with SingleTickerProviderStateMixin {
+class _SongTileBouncyTapState extends State<_SongTileBouncyTap>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -759,9 +768,10 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap> with SingleTicke
       vsync: this,
       duration: const Duration(milliseconds: 90),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -780,10 +790,38 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap> with SingleTicke
       },
       onTapCancel: () => _controller.reverse(),
       behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
+}
+
+Future<void> _navigateToArtist(
+  BuildContext context,
+  WidgetRef ref,
+  Song
+  song, // Replace 'Song' with your actual song model class name if different
+  AppLocalizations
+  l10n, // Replace 'AppLocalizations' with your localizations class if different
+) async {
+  if (song.artist == null) return;
+
+  final artistSongs = await DbService.isar.songs
+      .filter()
+      .artistEqualTo(song.artist!)
+      .findAll();
+
+  final artist = await DbService.isar.artists
+      .filter()
+      .nameEqualTo(song.artist!)
+      .findFirst();
+
+  ref
+      .read(appNavigationProvider.notifier)
+      .showCollection(
+        title: song.artist!,
+        subtitle: l10n.artists,
+        art: artist?.artPath ?? song.artPath,
+        imageUrl: artist?.artistImageUrl,
+        songs: artistSongs,
+      );
 }

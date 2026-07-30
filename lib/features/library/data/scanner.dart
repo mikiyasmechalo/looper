@@ -7,6 +7,7 @@ import '../domain/models/models.dart';
 import 'package:isar/isar.dart';
 import '../../playback/data/metadata_service.dart';
 import 'artwork_downloader_service.dart';
+import "package:audiotags/audiotags.dart" as audiotags;
 
 class ScanResult {
   final int songsCount;
@@ -30,26 +31,48 @@ class LibraryScanner {
     '.wma',
   ];
 
-  Future<ScanResult> scanDirectory(String path, {bool addFolderToSettings = false}) async {
-
+  Future<ScanResult> scanDirectory(
+    String path, {
+    bool addFolderToSettings = false,
+    void Function(int count)? onProgress,
+  }) async {
     final dir = Directory(path);
     if (!await dir.exists()) {
-
       return ScanResult(songsCount: 0, musicFolders: {});
     }
 
     final List<File> filesToProcess = [];
     final Set<String> musicFolders = {};
-    
-    Future<void> traverse(Directory currentDir) async {
+    final Set<String> visitedPaths = {};
+
+    Future<void> traverse(Directory currentDir, [int depth = 0]) async {
+      if (depth > 12) return;
+
+      String canonicalPath;
+      try {
+        canonicalPath = currentDir.resolveSymbolicLinksSync();
+      } catch (_) {
+        canonicalPath = currentDir.path;
+      }
+      if (visitedPaths.contains(canonicalPath)) return;
+      visitedPaths.add(canonicalPath);
+
       final baseName = p.basename(currentDir.path);
-      // Skip hidden folders and Android system directories to avoid slow scans or access issues
+      // Skip hidden folders and Android/system directories to avoid slow scans or access issues
       if (baseName.startsWith('.') && baseName != '.') return;
-      if (baseName.toLowerCase() == 'android') return;
+      final lowerName = baseName.toLowerCase();
+      if (lowerName == 'android' ||
+          lowerName == 'node_modules' ||
+          lowerName == '\$recycle.bin' ||
+          lowerName == 'system volume information') {
+        return;
+      }
 
       List<FileSystemEntity> entities = [];
       try {
-        entities = await currentDir.list(recursive: false, followLinks: true).toList();
+        entities = await currentDir
+            .list(recursive: false, followLinks: false)
+            .toList();
       } catch (e) {
         // Silently catch and skip restricted directories without crashing the whole scan!
         return;
@@ -64,20 +87,17 @@ class LibraryScanner {
           if (supportedExtensions.contains(ext)) {
             filesToProcess.add(entity);
             musicFolders.add(p.dirname(entity.path));
+            onProgress?.call(filesToProcess.length);
           }
         } else if (entity is Directory) {
-          await traverse(entity);
+          await traverse(entity, depth + 1);
         }
       }
     }
 
     try {
       await traverse(dir);
-    } catch (e) {
-
-    }
-
-
+    } catch (e) {}
 
     if (filesToProcess.isEmpty) {
       // Clean up any songs in Isar that were in this folder
@@ -105,10 +125,14 @@ class LibraryScanner {
         .or()
         .pathEqualTo(path)
         .findAll();
-    final Map<String, Song> dbSongsMap = {for (var s in songsInPathDb) s.path: s};
+    final Map<String, Song> dbSongsMap = {
+      for (var s in songsInPathDb) s.path: s,
+    };
 
     // Find deleted files (present in DB but no longer on disk)
-    final Set<String> currentFilePaths = filesToProcess.map((f) => f.path).toSet();
+    final Set<String> currentFilePaths = filesToProcess
+        .map((f) => f.path)
+        .toSet();
     final List<int> idsToDelete = [];
     dbSongsMap.forEach((p, song) {
       if (!currentFilePaths.contains(p)) {
@@ -120,7 +144,6 @@ class LibraryScanner {
       await DbService.isar.writeTxn(() async {
         await DbService.isar.songs.deleteAll(idsToDelete);
       });
-
     }
 
     // Check and update dateAdded of existing songs to match file modification time
@@ -140,105 +163,198 @@ class LibraryScanner {
     }
 
     if (songsToUpdate.isNotEmpty) {
-
       await DbService.isar.writeTxn(() async {
         await DbService.isar.songs.putAll(songsToUpdate);
       });
     }
 
-    // Find new files to process (on disk but not in DB)
-    final List<File> newFilesToProcess = filesToProcess.where((f) => !dbSongsMap.containsKey(f.path)).toList();
+    // Re-check songs with missing metadata — they may have failed timeout previously
+    final songsToRetry = songsInPathDb
+        .where(
+          (s) =>
+              s.artist == 'Unknown Artist' ||
+              s.album == 'Unknown Album' ||
+              s.artist == null,
+        )
+        .toList();
 
-
-    // If requested, add discovered folders to settings
-    if (addFolderToSettings) {
-
+    if (songsToRetry.isNotEmpty) {
+      for (final song in songsToRetry) {
+        final file = File(song.path);
+        if (!await file.exists()) continue;
+        try {
+          final result = await _extractMetadata(file);
+          if (result != null) {
+            final newSong = result['song'] as Song;
+            bool updated = false;
+            if (newSong.artist != null &&
+                newSong.artist != 'Unknown Artist' &&
+                (song.artist == null || song.artist == 'Unknown Artist')) {
+              song.artist = newSong.artist;
+              updated = true;
+            }
+            if (newSong.album != null &&
+                newSong.album != 'Unknown Album' &&
+                (song.album == null || song.album == 'Unknown Album')) {
+              song.album = newSong.album;
+              updated = true;
+            }
+            if (newSong.albumArtist != null && song.albumArtist == null) {
+              song.albumArtist = newSong.albumArtist;
+              updated = true;
+            }
+            if (newSong.genre != null && song.genre == null) {
+              song.genre = newSong.genre;
+              updated = true;
+            }
+            if (newSong.duration != null && song.duration == null) {
+              song.duration = newSong.duration;
+              updated = true;
+            }
+            if (newSong.artPath != null && song.artPath == null) {
+              song.artPath = newSong.artPath;
+              updated = true;
+            }
+            if (updated) {
+              await DbService.isar.writeTxn(() async {
+                await DbService.isar.songs.put(song);
+              });
+            }
+          }
+        } catch (_) {}
+      }
     }
 
-    if (newFilesToProcess.isNotEmpty) {
+    // Find new files to process (on disk but not in DB)
+    final List<File> newFilesToProcess = filesToProcess
+        .where((f) => !dbSongsMap.containsKey(f.path))
+        .toList();
 
-      
-      final settings = await DbService.isar.appSettings.get(0);
-      final downloadIfMissing = (settings?.downloadArtwork ?? false) && (settings?.enableInternet ?? true);
-      
-      final List<Map<String, dynamic>> allResults = [];
-      const int batchSize = 16; // Process in larger batches of 16 for better parallelism
-      
+    // If requested, add discovered folders to settings
+    if (addFolderToSettings) {}
+
+    if (newFilesToProcess.isNotEmpty) {
+      const int batchSize =
+          16; // Process in batches of 16 to keep memory footprint minimal
+      final settings =
+          await DbService.isar.appSettings.where().findFirst() ?? AppSettings();
+      final useAlbumArtist = settings.useAlbumArtistForArtists;
+
       for (int i = 0; i < newFilesToProcess.length; i += batchSize) {
         final end = (i + batchSize < newFilesToProcess.length)
             ? i + batchSize
             : newFilesToProcess.length;
         final batch = newFilesToProcess.sublist(i, end);
 
-        final results = await Future.wait(batch.map((f) => _extractMetadata(f, downloadArtworkIfMissing: downloadIfMissing)));
-        for (final res in results) {
-          if (res != null) {
-            allResults.add(res);
-          }
+        final results = await Future.wait(
+          batch.map((f) => _extractMetadata(f)),
+        );
+        final batchResults = results.whereType<Map<String, dynamic>>().toList();
+
+        if (batchResults.isNotEmpty) {
+          await DbService.isar.writeTxn(() async {
+            for (final data in batchResults) {
+              final song = data['song'] as Song;
+              final albumName = data['album'] as String?;
+              final artistName = data['artist'] as String?;
+              final albumArtistName = data['albumArtist'] as String?;
+              final artPath = data['artPath'] as String?;
+
+              // Put song directly in DB
+              await DbService.isar.songs.put(song);
+
+              if (albumName != null) {
+                final existingAlbum = await DbService.isar.albums
+                    .filter()
+                    .nameEqualTo(albumName)
+                    .findFirst();
+                if (existingAlbum == null) {
+                  final album = Album()
+                    ..name = albumName
+                    ..artist = artistName
+                    ..artPath = artPath
+                    ..dateAdded = DateTime.now();
+                  await DbService.isar.albums.put(album);
+                } else if (existingAlbum.artPath == null && artPath != null) {
+                  existingAlbum.artPath = artPath;
+                  await DbService.isar.albums.put(existingAlbum);
+                }
+              }
+
+              final targetArtistName = useAlbumArtist
+                  ? (albumArtistName ?? artistName)
+                  : artistName;
+
+              if (targetArtistName != null) {
+                final existingArtist = await DbService.isar.artists
+                    .filter()
+                    .nameEqualTo(targetArtistName)
+                    .findFirst();
+                if (existingArtist == null) {
+                  final artist = Artist()..name = targetArtistName;
+                  await DbService.isar.artists.put(artist);
+                }
+              }
+            }
+          });
         }
-        
-        // Small pause to allow the UI to breathe and process input events
+
+        // Small pause to allow Dart GC and UI thread to breathe
         await Future.delayed(const Duration(milliseconds: 20));
       }
-
-      if (allResults.isNotEmpty) {
-
-        await DbService.isar.writeTxn(() async {
-          for (final data in allResults) {
-            final song = data['song'] as Song;
-            final metadata = data['metadata'] as Metadata;
-            final artPath = data['artPath'] as String?;
-
-            // Confirmed new, put it directly
-            await DbService.isar.songs.put(song);
-
-            if (metadata.album != null) {
-              final existingAlbum = await DbService.isar.albums
-                  .filter()
-                  .nameEqualTo(metadata.album!)
-                  .findFirst();
-              if (existingAlbum == null) {
-                final album = Album()
-                  ..name = metadata.album!
-                  ..artist = metadata.artist
-                  ..artPath = artPath
-                  ..dateAdded = DateTime.now();
-                await DbService.isar.albums.put(album);
-              } else if (existingAlbum.artPath == null && artPath != null) {
-                existingAlbum.artPath = artPath;
-                await DbService.isar.albums.put(existingAlbum);
-              }
-            }
-
-            if (metadata.artist != null) {
-              final existingArtist = await DbService.isar.artists
-                  .filter()
-                  .nameEqualTo(metadata.artist!)
-                  .findFirst();
-              if (existingArtist == null) {
-                final artist = Artist()..name = metadata.artist!;
-                await DbService.isar.artists.put(artist);
-              }
-            }
-          }
-        });
-      }
-    } else {
-
     }
 
-    return ScanResult(songsCount: filesToProcess.length, musicFolders: musicFolders);
+    return ScanResult(
+      songsCount: filesToProcess.length,
+      musicFolders: musicFolders,
+    );
   }
 
-  Future<Map<String, dynamic>?> _extractMetadata(File file, {bool downloadArtworkIfMissing = false}) async {
+  Future<Map<String, dynamic>?> _extractMetadata(
+    File file, {
+    bool downloadArtworkIfMissing = false,
+  }) async {
     try {
       Metadata? metadata;
       try {
         // Enforce strict 800ms timeout on native metadata read to prevent scanning/UI hangs
-        metadata = await MetadataGod.readMetadata(file: file.path)
-            .timeout(const Duration(milliseconds: 800));
-      } catch (e) {
+        metadata = await MetadataGod.readMetadata(
+          file: file.path,
+        ).timeout(const Duration(milliseconds: 800));
+      } catch (e) {}
 
+      // Fallback: when metadata_god fails or returns null for key fields
+      if (metadata == null ||
+          (metadata.artist == null &&
+              metadata.album == null &&
+              metadata.title == null)) {
+        try {
+          final tag = await audiotags.AudioTags.read(file.path);
+          if (tag != null) {
+            // Merge AudioTags with any partial metadata_god results
+            metadata = Metadata(
+              title: metadata?.title ?? tag.title,
+              artist: metadata?.artist ?? tag.trackArtist ?? tag.albumArtist,
+              album: metadata?.album ?? tag.album,
+              albumArtist: metadata?.albumArtist ?? tag.albumArtist,
+              genre: metadata?.genre ?? tag.genre,
+              trackNumber: metadata?.trackNumber ?? tag.trackNumber,
+              year: metadata?.year ?? tag.year,
+              durationMs:
+                  metadata?.durationMs ??
+                  (tag.duration != null ? tag.duration! * 1000.0 : null),
+              picture:
+                  metadata?.picture ??
+                  (tag.pictures.isNotEmpty
+                      ? Picture(
+                          mimeType:
+                              tag.pictures.first.mimeType?.name ?? 'image/jpeg',
+                          data: tag.pictures.first.bytes,
+                        )
+                      : null),
+            );
+          }
+        } catch (_) {}
       }
 
       String? artPath;
@@ -278,11 +394,12 @@ class LibraryScanner {
 
       return {
         'song': song,
-        'metadata': metadata ?? Metadata(title: song.title, artist: song.artist, album: song.album),
-        'artPath': artPath
+        'metadata':
+            metadata ??
+            Metadata(title: song.title, artist: song.artist, album: song.album),
+        'artPath': artPath,
       };
     } catch (e) {
-
       return null;
     }
   }

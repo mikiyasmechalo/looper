@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/features/search/presentation/search_view.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 
 class KeyboardHandler extends ConsumerStatefulWidget {
@@ -33,7 +34,28 @@ class _KeyboardHandlerState extends ConsumerState<KeyboardHandler> {
     // Direct check against our search focus node
     if (focus == ref.read(searchFocusNodeProvider)) return true;
 
-    // Robust check for whether the current focus is within an editable text field
+    // Walk up the focus context to find any text-editing widget.
+    // This covers TextFields inside dialogs, bottom sheets, and overlays
+    // where the debug label alone isn't reliable.
+    final context = focus.context;
+    if (context != null) {
+      // The focused widget itself is an EditableText (most common case)
+      if (context.widget is EditableText) return true;
+
+      // Check ancestors — covers cases where the focus node belongs to a
+      // wrapper but the actual editable is a parent/child in the same subtree
+      bool found = false;
+      context.visitAncestorElements((element) {
+        if (element.widget is EditableText || element.widget is TextField) {
+          found = true;
+          return false; // stop walking
+        }
+        return true;
+      });
+      if (found) return true;
+    }
+
+    // Fallback: debug label heuristic
     final label = focus.debugLabel?.toLowerCase() ?? '';
     return label.contains('editabletext') ||
         label.contains('textfield') ||
@@ -44,22 +66,44 @@ class _KeyboardHandlerState extends ConsumerState<KeyboardHandler> {
   bool _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return false;
 
+    final key = event.logicalKey;
+    final nav = ref.read(appNavigationProvider.notifier);
+
+    // Escape key: clear search, exit search view, close popups, collapse player or go back
+    if (key == LogicalKeyboardKey.escape) {
+      final query = ref.read(searchQueryProvider);
+      if (query.isNotEmpty) {
+        ref.read(searchQueryProvider.notifier).state = '';
+      }
+      if (FocusManager.instance.primaryFocus != null) {
+        FocusManager.instance.primaryFocus?.unfocus();
+      }
+      final navState = ref.read(appNavigationProvider);
+      if (navState.activeItem == NavItem.search) {
+        nav.setItem(NavItem.home);
+        return true;
+      }
+      if (navState.isPlayerExpanded) {
+        nav.setPlayerExpansion(false);
+        return true;
+      }
+      if (rootNavigatorKey.currentState?.canPop() == true) {
+        rootNavigatorKey.currentState?.pop();
+        return true;
+      }
+      if (navState.history.isNotEmpty || navState.activeItem != NavItem.home) {
+        nav.goBack();
+        return true;
+      }
+      return true;
+    }
+
     // If we're typing, ignore all playback shortcuts so they can reach the text field
     if (_isEditing()) {
-      // Exception: Escape key should still work to unfocus
-      if (event.logicalKey == LogicalKeyboardKey.escape) {
-        if (FocusManager.instance.primaryFocus ==
-            ref.read(searchFocusNodeProvider)) {
-          FocusManager.instance.primaryFocus?.unfocus();
-          return true;
-        }
-      }
       return false; // Let it bubble to TextField
     }
 
     final playback = ref.read(playbackProvider.notifier);
-    final nav = ref.read(appNavigationProvider.notifier);
-    final key = event.logicalKey;
 
     // Global Playback Shortcuts
     if (key == LogicalKeyboardKey.space) {
@@ -131,6 +175,9 @@ class _KeyboardHandlerState extends ConsumerState<KeyboardHandler> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    return Listener(
+      onPointerDown: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      child: widget.child,
+    );
   }
 }

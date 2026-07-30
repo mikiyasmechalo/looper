@@ -61,7 +61,9 @@ class AudioService {
   Future<void> setStopOnTaskRemoved(bool value) async {
     if (!Platform.isAndroid) return;
     try {
-      await _broadcastChannel.invokeMethod('setStopOnTaskRemoved', {'value': value});
+      await _broadcastChannel.invokeMethod('setStopOnTaskRemoved', {
+        'value': value,
+      });
     } catch (_) {}
   }
 
@@ -166,8 +168,14 @@ class AudioService {
     // SpatialFlow Audio Stream Buffering & Readahead Calculations
     try {
       await player.setRawProperty('demuxer-max-bytes', '262144000'); // 250MB
-      await player.setRawProperty('demuxer-readahead-secs', '60'); // 60s forward readahead
-      await player.setRawProperty('demuxer-max-back-bytes', '104857600'); // 100MB back-cache
+      await player.setRawProperty(
+        'demuxer-readahead-secs',
+        '60',
+      ); // 60s forward readahead
+      await player.setRawProperty(
+        'demuxer-max-back-bytes',
+        '104857600',
+      ); // 100MB back-cache
     } catch (e) {}
 
     try {
@@ -208,10 +216,6 @@ class AudioService {
           MediaAction.setRepeatMode,
         },
         interruptionPolicy: _interruptionPolicy,
-        requestFocusOnPlay: _requestFocusOnPlay,
-        releaseFocusOnPause: _releaseFocusOnPause,
-        stopOnOtherSession: _stopOnOtherSession,
-        restartOnFocusGain: _restartOnFocusGain,
       ),
     );
   }
@@ -344,10 +348,12 @@ class AudioService {
   Future<List<Map<String, String>>> getAudioDevices() async {
     try {
       return player.state.audioDevices
-          .map<Map<String, String>>((d) => {
-                'name': (d.name as String?) ?? '',
-                'description': (d.description as String?) ?? ''
-              })
+          .map<Map<String, String>>(
+            (d) => {
+              'name': (d.name as String?) ?? '',
+              'description': (d.description as String?) ?? '',
+            },
+          )
           .toList();
     } catch (e) {
       return [];
@@ -437,10 +443,6 @@ class AudioService {
           MediaAction.setRepeatMode,
         },
         interruptionPolicy: policy,
-        requestFocusOnPlay: _requestFocusOnPlay,
-        releaseFocusOnPause: _releaseFocusOnPause,
-        stopOnOtherSession: _stopOnOtherSession,
-        restartOnFocusGain: _restartOnFocusGain,
       ),
     );
   }
@@ -458,7 +460,9 @@ class AudioService {
     bool stopOnOtherSession = true,
     bool restartOnFocusGain = true,
   }) async {
-    LoggerHelper.write('AudioService: play() requested for path: $path, title: ${metadata?['title']}, play: $play');
+    LoggerHelper.write(
+      'AudioService: play() requested for path: $path, title: ${metadata?['title']}, play: $play',
+    );
     if (equalizerGains != null) {
       _lastEqualizerGains = equalizerGains;
     }
@@ -486,7 +490,10 @@ class AudioService {
     final String artist = metadata?['artist']?.toString() ?? 'Unknown Artist';
     final String album = metadata?['album']?.toString() ?? 'Unknown Album';
     final Duration? duration = metadata?['duration'] != null
-        ? Duration(milliseconds: int.tryParse(metadata?['duration']?.toString() ?? '0') ?? 0)
+        ? Duration(
+            milliseconds:
+                int.tryParse(metadata?['duration']?.toString() ?? '0') ?? 0,
+          )
         : null;
 
     await updateMediaSessionMetadata(
@@ -578,10 +585,44 @@ class AudioService {
     try {
       await player.updateAudioEffects((e) {
         final List<double> bandsFreq = [
-          65, 92, 131, 185, 262, 370, 523, 740, 1000, 1400, 2000, 2900, 4100, 5900, 8300, 11700, 16600, 20000
+          65,
+          92,
+          131,
+          185,
+          262,
+          370,
+          523,
+          740,
+          1000,
+          1400,
+          2000,
+          2900,
+          4100,
+          5900,
+          8300,
+          11700,
+          16600,
+          20000,
         ];
         final List<double> bandsWidth = [
-          20, 30, 40, 60, 80, 110, 160, 220, 300, 420, 600, 850, 1200, 1750, 2500, 3500, 5000, 6000
+          20,
+          30,
+          40,
+          60,
+          80,
+          110,
+          160,
+          220,
+          300,
+          420,
+          600,
+          850,
+          1200,
+          1750,
+          2500,
+          3500,
+          5000,
+          6000,
         ];
         final List<AnequalizerBand> bands = [];
         for (int i = 0; i < 18; i++) {
@@ -613,7 +654,9 @@ class AudioService {
     if (_lastEqualizerGains == null) return;
     _lastEqualizerGains![18] = preamp;
     try {
-      await player.setVolumeGain(_equalizerEnabled ? preamp.clamp(-12.0, 12.0) : 0.0);
+      await player.setVolumeGain(
+        _equalizerEnabled ? preamp.clamp(-12.0, 12.0) : 0.0,
+      );
     } catch (_) {}
   }
 
@@ -746,10 +789,44 @@ class AudioService {
 
     // 1. 18-band anequalizer settings
     final List<double> bandsFreq = [
-      65, 92, 131, 185, 262, 370, 523, 740, 1000, 1400, 2000, 2900, 4100, 5900, 8300, 11700, 16600, 20000
+      65,
+      92,
+      131,
+      185,
+      262,
+      370,
+      523,
+      740,
+      1000,
+      1400,
+      2000,
+      2900,
+      4100,
+      5900,
+      8300,
+      11700,
+      16600,
+      20000,
     ];
     final List<double> bandsWidth = [
-      20, 30, 40, 60, 80, 110, 160, 220, 300, 420, 600, 850, 1200, 1750, 2500, 3500, 5000, 6000
+      20,
+      30,
+      40,
+      60,
+      80,
+      110,
+      160,
+      220,
+      300,
+      420,
+      600,
+      850,
+      1200,
+      1750,
+      2500,
+      3500,
+      5000,
+      6000,
     ];
 
     final List<AnequalizerBand> bands = [];

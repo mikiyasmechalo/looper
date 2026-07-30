@@ -66,13 +66,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ref.read(playbackProvider.notifier).playFromFile(initialFile);
         // If playing from file, maybe skip the folder prompt for now
         if (settings.libraryFolders.isNotEmpty) {
-          ref.read(libraryProvider.notifier).scanSavedFolders(showVisualIndicator: false);
+          ref
+              .read(libraryProvider.notifier)
+              .scanSavedFolders(showVisualIndicator: false);
         }
         return;
       }
 
       // Always trigger background scan for saved/discovered folders on startup
-      ref.read(libraryProvider.notifier).scanSavedFolders(showVisualIndicator: false);
+      ref
+          .read(libraryProvider.notifier)
+          .scanSavedFolders(showVisualIndicator: false);
     });
   }
 
@@ -84,7 +88,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final library = ref.watch(libraryProvider);
     final nav = ref.watch(appNavigationProvider);
-    final currentSongArtPath = ref.watch(playbackProvider.select((s) => s.currentSong?.artPath));
+    final currentSongArtPath = ref.watch(
+      playbackProvider.select((s) => s.currentSong?.artPath),
+    );
     final settings = ref.watch(settingsProvider);
     final isDynamic = settings.enableDynamicTheming;
     final l10n = AppLocalizations.of(context)!;
@@ -105,10 +111,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    final bool hasBgLayer = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+    final bool hasBgLayer =
+        settings.enableDynamicTheming || settings.keepBackgroundGradient;
 
     return Scaffold(
-      backgroundColor: hasBgLayer ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: hasBgLayer
+          ? Colors.transparent
+          : Theme.of(context).scaffoldBackgroundColor,
       drawer: isNarrow
           ? Drawer(
               child: Container(
@@ -121,8 +130,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Stack(
           children: [
             // Global Background Art / persistent gradient
-            if (!showWelcome && (settings.enableDynamicTheming || settings.keepBackgroundGradient)) ...[
-              if (currentSongArtPath != null && settings.enableDynamicTheming && (settings.keepBackgroundGradient || nav.activeItem != NavItem.settings)) ...[
+            if (!showWelcome &&
+                (settings.enableDynamicTheming ||
+                    settings.keepBackgroundGradient)) ...[
+              if (currentSongArtPath != null &&
+                  settings.enableDynamicTheming &&
+                  (settings.keepBackgroundGradient ||
+                      nav.activeItem != NavItem.settings)) ...[
                 Positioned.fill(
                   child: RepaintBoundary(
                     child: Stack(
@@ -131,7 +145,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 1000),
                             child: ImageFiltered(
-                              imageFilter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                              imageFilter: ImageFilter.blur(
+                                sigmaX: 16,
+                                sigmaY: 16,
+                              ),
                               child: Image.file(
                                 File(currentSongArtPath),
                                 key: ValueKey(currentSongArtPath),
@@ -141,7 +158,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ),
                         Positioned.fill(
-                          child: Container(color: Colors.black.withValues(alpha: 0.8)),
+                          child: Container(
+                            color: Colors.black.withValues(alpha: 0.8),
+                          ),
                         ),
                       ],
                     ),
@@ -157,7 +176,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         center: Alignment.topRight,
                         radius: 1.5,
                         colors: [
-                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.18),
+                          Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.18),
                           Theme.of(context).scaffoldBackgroundColor,
                         ],
                         stops: const [0.0, 1.0],
@@ -167,8 +188,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ],
             ],
-
-
 
             Column(
               children: [
@@ -204,7 +223,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ),
                                       ),
                                     ),
-                                    child: Sidebar(l10n: l10n),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: Sidebar(l10n: l10n),
+                                    ),
                                   ),
 
                                 // Main Content Area
@@ -267,7 +289,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                 Spacer(),
                                                 _HeaderButton(
                                                   onTap: () {
-                                                    FolderPickerHelper.pickFolder(context, ref);
+                                                    FolderPickerHelper.pickFolder(
+                                                      context,
+                                                      ref,
+                                                    );
                                                   },
                                                   icon: LucideIcons.plus,
                                                   label: 'Add Folder',
@@ -334,7 +359,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     BuildContext context,
     AppLocalizations l10n,
   ) {
-    if (!library.isInitialized || (library.isScanning && library.songs.isEmpty)) {
+    if (!library.isInitialized ||
+        (library.isScanning && library.songs.isEmpty)) {
       return const AppLoadingIndicator();
     }
 
@@ -391,6 +417,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return library.songs.isEmpty
             ? _buildEmptyState(context, l10n)
             : SongsList(songs: library.songs, key: const ValueKey('songs'));
+      case NavItem.genres:
+        return const GenresGrid(key: ValueKey('genres'));
       case NavItem.home:
       default:
         return library.songs.isEmpty
@@ -437,6 +465,7 @@ class Sidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final nav = ref.watch(appNavigationProvider);
     final activeItem = nav.activeItem;
+    final highlightItem = nav.highlightItem;
 
     void navigateTo(NavItem item) {
       ref.read(appNavigationProvider.notifier).setItem(item);
@@ -452,7 +481,10 @@ class Sidebar extends ConsumerWidget {
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: (constraints.maxHeight - 32).clamp(0.0, double.infinity),
+                minHeight: (constraints.maxHeight - 32).clamp(
+                  0.0,
+                  double.infinity,
+                ),
               ), // -32 for padding
               child: IntrinsicHeight(
                 child: Column(
@@ -479,56 +511,82 @@ class Sidebar extends ConsumerWidget {
                     _SidebarItem(
                       customIcon: AppIcons.home,
                       label: 'Home',
-                      isSelected: activeItem == NavItem.home,
+                      isSelected:
+                          activeItem == NavItem.home ||
+                          highlightItem == NavItem.home,
                       onTap: () => navigateTo(NavItem.home),
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.songs,
                       label: l10n.songs,
-                      isSelected: activeItem == NavItem.songs,
+                      isSelected:
+                          activeItem == NavItem.songs ||
+                          highlightItem == NavItem.songs,
                       onTap: () => navigateTo(NavItem.songs),
                     ),
                     if ((ref.watch(albumsProvider).value?.length ?? 0) >= 6)
                       _SidebarItem(
                         icon: LucideIcons.disc,
                         label: l10n.albums,
-                        isSelected: activeItem == NavItem.albums,
+                        isSelected:
+                            activeItem == NavItem.albums ||
+                            highlightItem == NavItem.albums,
                         onTap: () => navigateTo(NavItem.albums),
                       ),
                     _SidebarItem(
                       icon: LucideIcons.mic2,
                       label: l10n.artists,
-                      isSelected: activeItem == NavItem.artists,
+                      isSelected:
+                          activeItem == NavItem.artists ||
+                          highlightItem == NavItem.artists,
                       onTap: () => navigateTo(NavItem.artists),
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.library,
                       label: l10n.playlists,
-                      isSelected: activeItem == NavItem.playlists,
+                      isSelected:
+                          activeItem == NavItem.playlists ||
+                          highlightItem == NavItem.playlists,
                       onTap: () => navigateTo(NavItem.playlists),
                     ),
                     _SidebarItem(
                       icon: LucideIcons.clock,
                       label: 'Recently Played',
-                      isSelected: activeItem == NavItem.recentlyPlayed,
+                      isSelected:
+                          activeItem == NavItem.recentlyPlayed ||
+                          highlightItem == NavItem.recentlyPlayed,
                       onTap: () => navigateTo(NavItem.recentlyPlayed),
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.heart,
                       label: 'Favorites',
-                      isSelected: activeItem == NavItem.favorites,
+                      isSelected:
+                          activeItem == NavItem.favorites ||
+                          highlightItem == NavItem.favorites,
                       onTap: () => navigateTo(NavItem.favorites),
                     ),
                     _SidebarItem(
                       icon: LucideIcons.listOrdered,
                       label: l10n.playQueue,
-                      isSelected: activeItem == NavItem.queue,
+                      isSelected:
+                          activeItem == NavItem.queue ||
+                          highlightItem == NavItem.queue,
                       onTap: () => navigateTo(NavItem.queue),
+                    ),
+                    _SidebarItem(
+                      icon: LucideIcons.radio,
+                      label: l10n.genres,
+                      isSelected:
+                          activeItem == NavItem.genres ||
+                          highlightItem == NavItem.genres,
+                      onTap: () => navigateTo(NavItem.genres),
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.settings,
                       label: l10n.settings,
-                      isSelected: activeItem == NavItem.settings,
+                      isSelected:
+                          activeItem == NavItem.settings ||
+                          highlightItem == NavItem.settings,
                       onTap: () => navigateTo(NavItem.settings),
                     ),
                     const SizedBox(height: 16),
@@ -578,30 +636,43 @@ class _HeaderButton extends StatelessWidget {
             53,
             53,
           ).withValues(alpha: isDynamic ? 0.3 : 0.1),
-          border: Border.all(color: Colors.white10.withValues(alpha: 0.1), width: 1),
+          border: Border.all(
+            color: Colors.white10.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon == LucideIcons.arrowLeft)
-              SvgPicture.asset(
-                AppIcons.back,
-                width: AppIcons.headerIcon.s,
-                height: AppIcons.headerIcon.s,
-                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-              )
-            else
-              Icon(icon, size: AppIcons.headerIcon.s, color: Colors.white),
-            SizedBox(width: 10.s),
-            Text(
-              label,
-              style: AppFonts.jostStyle(
-                color: Colors.white,
-                fontSize: 14.ts,
-                fontWeight: FontWeight.normal,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          clipBehavior: Clip.hardEdge,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon == LucideIcons.arrowLeft)
+                SvgPicture.asset(
+                  AppIcons.back,
+                  width: AppIcons.headerIcon.s,
+                  height: AppIcons.headerIcon.s,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                )
+              else
+                Icon(icon, size: AppIcons.headerIcon.s, color: Colors.white),
+              SizedBox(width: 10.s),
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppFonts.jostStyle(
+                    color: Colors.white,
+                    fontSize: 14.ts,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -629,39 +700,43 @@ class _SidebarItem extends StatelessWidget {
     final Color selectedColor = colorScheme.primary;
     final Color unselectedColor = Colors.white.withValues(alpha: 0.4);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: const BoxDecoration(color: Colors.transparent),
-      child: ListTile(
-        leading: customIcon != null
-            ? SvgPicture.asset(
-                customIcon!,
-                width: AppIcons.sidebarIcon.s,
-                height: AppIcons.sidebarIcon.s,
-                colorFilter: ColorFilter.mode(
-                  isSelected ? selectedColor : unselectedColor,
-                  BlendMode.srcIn,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          leading: customIcon != null
+              ? SvgPicture.asset(
+                  customIcon!,
+                  width: AppIcons.sidebarIcon.s,
+                  height: AppIcons.sidebarIcon.s,
+                  colorFilter: ColorFilter.mode(
+                    isSelected ? selectedColor : unselectedColor,
+                    BlendMode.srcIn,
+                  ),
+                )
+              : Icon(
+                  icon,
+                  size: AppIcons.sidebarIcon.s,
+                  color: isSelected ? selectedColor : unselectedColor,
                 ),
-              )
-            : Icon(
-                icon,
-                size: AppIcons.sidebarIcon.s,
-                color: isSelected ? selectedColor : unselectedColor,
-              ),
-        title: Text(
-          label,
-          style: AppFonts.jostStyle(
-            fontSize: 14.ts,
-            color: isSelected ? selectedColor : unselectedColor,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          title: Text(
+            label,
+            style: AppFonts.jostStyle(
+              fontSize: 14.ts,
+              color: isSelected ? selectedColor : unselectedColor,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          onTap: onTap,
         ),
-        dense: true,
-        visualDensity: VisualDensity.compact,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        onTap: onTap,
       ),
     );
   }

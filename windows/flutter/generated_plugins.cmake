@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  audiotags
   dynamic_color
   ffmpeg_kit_flutter_new_full
   isar_flutter_libs

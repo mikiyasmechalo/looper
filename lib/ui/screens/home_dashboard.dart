@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,7 +22,9 @@ class DashboardGenresData {
   DashboardGenresData({required this.sortedGenres, required this.genresMap});
 }
 
-final dashboardGenresDataProvider = Provider.autoDispose<DashboardGenresData>((ref) {
+final dashboardGenresDataProvider = Provider.autoDispose<DashboardGenresData>((
+  ref,
+) {
   final songs = ref.watch(libraryProvider.select((l) => l.songs));
   final genresMap = <String, List<Song>>{};
   for (var song in songs) {
@@ -79,45 +80,46 @@ class HomeDashboard extends ConsumerWidget {
         }
 
         // Support desktop-specific helper rows at the very top
-        orderedChildren.add(_buildRecentlyPlayed(ref, isNarrow, isDynamic));
+        orderedChildren.add(
+          _buildRecentlyPlayed(context, ref, isNarrow, isDynamic),
+        );
         orderedChildren.add(const SizedBox(height: 16));
-        orderedChildren.add(_buildAlbumsIfSmall(ref, isNarrow, isDynamic));
+        orderedChildren.add(
+          _buildAlbumsIfSmall(context, ref, isNarrow, isDynamic),
+        );
         orderedChildren.add(const SizedBox(height: 16));
 
         // Render sections dynamically in user's customized order
         for (final section in settings.homeSectionOrder) {
           if (section == 'quick_picks') {
-            orderedChildren.add(_buildQuickPicks(ref, isNarrow, isMedium, isDynamic));
+            orderedChildren.add(
+              _buildQuickPicks(context, ref, isNarrow, isMedium, isDynamic),
+            );
             orderedChildren.add(const SizedBox(height: 16));
           } else if (section == 'songs') {
-            // Render Featured Artists and Albums for the "songs" slot on desktop
-            orderedChildren.add(_buildTopArtists(ref, isNarrow, isDynamic));
+            orderedChildren.add(_buildTopArtists(context, ref, isNarrow));
             orderedChildren.add(const SizedBox(height: 16));
-            orderedChildren.add(_buildFeaturedAlbums(ref, isNarrow, isDynamic, context));
+            orderedChildren.add(
+              _buildFeaturedAlbums(ref, isNarrow, isDynamic, context),
+            );
             orderedChildren.add(const SizedBox(height: 16));
-          } else if (section == 'artists') {
-            if (settings.showHomeArtists && library.artists.isNotEmpty) {
-              orderedChildren.add(
-                _buildDesktopHorizontalSection(
-                  title: 'Artists',
-                  onViewAll: () => ref.read(appNavigationProvider.notifier).setItem(NavItem.artists),
-                  itemCount: library.artists.length,
-                  itemBuilder: (context, index) {
-                    return _buildDesktopArtistItem(ref, library.artists[index], l10n);
-                  },
-                ),
-              );
-              orderedChildren.add(const SizedBox(height: 16));
-            }
           } else if (section == 'albums') {
             if (settings.showHomeAlbums && library.albums.isNotEmpty) {
               orderedChildren.add(
                 _buildDesktopHorizontalSection(
+                  context,
                   title: 'Albums',
-                  onViewAll: () => ref.read(appNavigationProvider.notifier).setItem(NavItem.albums),
+                  onViewAll: () => ref
+                      .read(appNavigationProvider.notifier)
+                      .setItem(NavItem.albums),
                   itemCount: library.albums.length,
+                  isNarrow: isNarrow,
                   itemBuilder: (context, index) {
-                    return _buildDesktopAlbumItem(ref, library.albums[index], l10n);
+                    return _buildDesktopAlbumItem(
+                      ref,
+                      library.albums[index],
+                      l10n,
+                    );
                   },
                 ),
               );
@@ -127,12 +129,21 @@ class HomeDashboard extends ConsumerWidget {
             if (settings.showHomeGenres && genres.isNotEmpty) {
               orderedChildren.add(
                 _buildDesktopHorizontalSection(
+                  context,
                   title: 'Genres',
-                  onViewAll: () => ref.read(appNavigationProvider.notifier).setItem(NavItem.genres),
+                  onViewAll: () => ref
+                      .read(appNavigationProvider.notifier)
+                      .setItem(NavItem.genres),
                   itemCount: genres.length,
+                  isNarrow: isNarrow,
                   itemBuilder: (context, index) {
                     final genre = genres[index];
-                    return _buildDesktopGenreItem(ref, genre, genresMap[genre]!, l10n);
+                    return _buildDesktopGenreItem(
+                      ref,
+                      genre,
+                      genresMap[genre]!,
+                      l10n,
+                    );
                   },
                 ),
               );
@@ -155,23 +166,22 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildAlbumsIfSmall(WidgetRef ref, bool isNarrow, bool isDynamic) {
+  Widget _buildAlbumsIfSmall(
+    BuildContext context,
+    WidgetRef ref,
+    bool isNarrow,
+    bool isDynamic,
+  ) {
     final albums = ref.watch(albumsProvider).value ?? [];
     if (albums.length >= 6 || albums.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'My Albums',
-          style: TextStyle(
-            fontSize: (isNarrow ? 14 : 18).ts,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+        _buildSectionHeader(context, title: 'My Albums', isNarrow: isNarrow),
         const SizedBox(height: 16),
         SizedBox(
-          height: isNarrow ? 200 : 230,
+          height: isNarrow ? 170 : 190,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: albums.length,
@@ -208,8 +218,8 @@ class HomeDashboard extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(12),
                           placeholder: Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 
-                                isDynamic ? 0.8 : 0.1,
+                              color: Colors.grey.withValues(
+                                alpha: isDynamic ? 0.8 : 0.1,
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -222,8 +232,9 @@ class HomeDashboard extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontWeight: FontWeight.normal,
+                            fontWeight: FontWeight.w600,
                             fontSize: 13,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -233,7 +244,7 @@ class HomeDashboard extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.grey,
+                            color: Colors.white38,
                           ),
                         ),
                       ],
@@ -248,7 +259,12 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentlyPlayed(WidgetRef ref, bool isNarrow, bool isDynamic) {
+  Widget _buildRecentlyPlayed(
+    BuildContext context,
+    WidgetRef ref,
+    bool isNarrow,
+    bool isDynamic,
+  ) {
     final recentSongs = ref.watch(recentlyPlayedProvider).value ?? [];
 
     if (recentSongs.isEmpty) return const SizedBox.shrink();
@@ -256,16 +272,14 @@ class HomeDashboard extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recently Played',
-          style: TextStyle(
-            fontSize: (isNarrow ? 14 : 18).ts,
-            fontWeight: FontWeight.w400,
-          ),
+        _buildSectionHeader(
+          context,
+          title: 'Recently Played',
+          isNarrow: isNarrow,
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: isNarrow ? 200 : 230,
+          height: isNarrow ? 172 : 192,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: recentSongs.length.clamp(0, 10),
@@ -289,8 +303,8 @@ class HomeDashboard extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(12),
                           placeholder: Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 
-                                isDynamic ? 0.8 : 0.1,
+                              color: Colors.grey.withValues(
+                                alpha: isDynamic ? 0.8 : 0.1,
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -303,8 +317,9 @@ class HomeDashboard extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontWeight: FontWeight.normal,
+                            fontWeight: FontWeight.w600,
                             fontSize: 13,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -314,7 +329,7 @@ class HomeDashboard extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.grey,
+                            color: Colors.white38,
                           ),
                         ),
                       ],
@@ -330,6 +345,7 @@ class HomeDashboard extends ConsumerWidget {
   }
 
   Widget _buildQuickPicks(
+    BuildContext context,
     WidgetRef ref,
     bool isNarrow,
     bool isMedium,
@@ -351,12 +367,10 @@ class HomeDashboard extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Quick Picks',
-              style: TextStyle(
-                fontSize: isNarrow ? 14 : 18,
-                fontWeight: FontWeight.w400,
-              ),
+            _buildSectionHeader(
+              context,
+              title: 'Quick Picks',
+              isNarrow: isNarrow,
             ),
             const SizedBox(height: 16),
             GridView.builder(
@@ -371,10 +385,14 @@ class HomeDashboard extends ConsumerWidget {
               itemCount: songs.length,
               itemBuilder: (context, index) {
                 final song = songs[index];
-                final isCurrent =
-                    ref.watch(playbackProvider.select((s) => s.currentSong?.path == song.path));
-                final isPlaying =
-                    ref.watch(playbackProvider.select((s) => s.isPlaying));
+                final isCurrent = ref.watch(
+                  playbackProvider.select(
+                    (s) => s.currentSong?.path == song.path,
+                  ),
+                );
+                final isPlaying = ref.watch(
+                  playbackProvider.select((s) => s.isPlaying),
+                );
 
                 return InkWell(
                   onTap: () => ref.read(playbackProvider.notifier).play(song),
@@ -400,7 +418,10 @@ class HomeDashboard extends ConsumerWidget {
                             width: 54,
                             height: 54,
                             borderRadius: BorderRadius.circular(4),
-                            placeholder: const Icon(LucideIcons.music, size: 20),
+                            placeholder: const Icon(
+                              LucideIcons.music,
+                              size: 20,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -414,8 +435,9 @@ class HomeDashboard extends ConsumerWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.normal,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 13,
+                                  color: Colors.white,
                                 ),
                               ),
                               Text(
@@ -424,7 +446,7 @@ class HomeDashboard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey,
+                                  color: Colors.white38,
                                 ),
                               ),
                             ],
@@ -444,37 +466,96 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopArtists(WidgetRef ref, bool isNarrow, bool isDynamic) {
+  Widget _buildTopArtists(BuildContext context, WidgetRef ref, bool isNarrow) {
     final artistsAsync = ref.watch(artistsProvider);
 
     return artistsAsync.when(
       data: (artists) {
         if (artists.isEmpty) return const SizedBox.shrink();
 
-        // Take a slice for featured artists
         final featuredArtists = artists.take(10).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Featured Artists',
-              style: TextStyle(
-                fontSize: isNarrow ? 14 : 18,
-                fontWeight: FontWeight.w400,
-              ),
+            _buildSectionHeader(
+              context,
+              title: 'Artists',
+              isNarrow: isNarrow,
+              onViewAll: () => ref
+                  .read(appNavigationProvider.notifier)
+                  .setItem(NavItem.artists),
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: isNarrow ? 110 : 130,
+              height: isNarrow ? 140 : 160,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: featuredArtists.length,
                 itemBuilder: (context, index) {
                   final artist = featuredArtists[index];
-                  return _FeaturedArtistCard(
-                    artist: artist,
-                    isNarrow: isNarrow,
+                  return Container(
+                    width: isNarrow ? 120 : 140,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: InkWell(
+                      onTap: () async {
+                        final songs = await DbService.isar.songs
+                            .filter()
+                            .artistEqualTo(artist.name)
+                            .findAll();
+                        ref
+                            .read(appNavigationProvider.notifier)
+                            .showCollection(
+                              title: artist.name,
+                              subtitle: 'Artist',
+                              art: artist.artPath,
+                              imageUrl: artist.artistImageUrl,
+                              songs: songs,
+                            );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: isNarrow ? 100 : 120,
+                            height: isNarrow ? 100 : 120,
+                            child: ClipOval(
+                              child: OptimizedImage(
+                                imageUrl: artist.artistImageUrl,
+                                imagePath: artist.artPath,
+                                fit: BoxFit.cover,
+                                placeholder: Container(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  child: const Center(
+                                    child: Icon(
+                                      LucideIcons.user,
+                                      size: 32,
+                                      color: Colors.white38,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              artist.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),
@@ -487,7 +568,12 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeaturedAlbums(WidgetRef ref, bool isNarrow, bool isDynamic, BuildContext context) {
+  Widget _buildFeaturedAlbums(
+    WidgetRef ref,
+    bool isNarrow,
+    bool isDynamic,
+    BuildContext context,
+  ) {
     final albumsAsync = ref.watch(albumsProvider);
     final l10n = AppLocalizations.of(context)!;
 
@@ -495,46 +581,30 @@ class HomeDashboard extends ConsumerWidget {
       data: (albums) {
         if (albums.isEmpty) return const SizedBox.shrink();
 
-        // Take a slice for featured albums (max 10)
         final featuredAlbums = albums.take(10).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  l10n.albums,
-                  style: TextStyle(
-                    fontSize: isNarrow ? 14 : 18,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    ref.read(appNavigationProvider.notifier).setItem(NavItem.albums);
-                  },
-                  child: Text(
-                    l10n.viewAll,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ],
+            _buildSectionHeader(
+              context,
+              title: l10n.albums,
+              isNarrow: isNarrow,
+              onViewAll: () => ref
+                  .read(appNavigationProvider.notifier)
+                  .setItem(NavItem.albums),
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: isNarrow ? 200 : 230,
+              height: isNarrow ? 150 : 170,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: featuredAlbums.length,
                 itemBuilder: (context, index) {
                   final album = featuredAlbums[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
+                  return Container(
+                    width: isNarrow ? 120 : 140,
+                    margin: const EdgeInsets.only(right: 16),
                     child: InkWell(
                       onTap: () async {
                         final songs = await DbService.isar.songs
@@ -551,49 +621,57 @@ class HomeDashboard extends ConsumerWidget {
                             );
                       },
                       borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: isNarrow ? 120 : 140,
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            OptimizedImage(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: OptimizedImage(
                               imagePath: album.artPath,
                               height: isNarrow ? 104 : 124,
                               width: isNarrow ? 104 : 124,
-                              borderRadius: BorderRadius.circular(12),
+                              fit: BoxFit.cover,
                               placeholder: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(alpha: 
-                                    isDynamic ? 0.8 : 0.1,
+                                color: Colors.white.withValues(alpha: 0.05),
+                                child: const Center(
+                                  child: Icon(
+                                    LucideIcons.disc,
+                                    size: 32,
+                                    color: Colors.white38,
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Center(child: Icon(LucideIcons.disc)),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Text(
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
                               album.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontWeight: FontWeight.normal,
+                                color: Colors.white,
                                 fontSize: 13,
+                                fontWeight: FontWeight.w600,
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              album.artist ?? 'Unknown',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ],
-                        ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              album.artist ?? 'Unknown',
+                              style: const TextStyle(
+                                color: Colors.white38,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -608,41 +686,60 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDesktopHorizontalSection({
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required String title,
+    required bool isNarrow,
+    VoidCallback? onViewAll,
+  }) {
+    final accentColor = Theme.of(context).colorScheme.primary;
+    final header = Text(
+      title,
+      style: TextStyle(
+        fontSize: (isNarrow ? 18 : 24).ts,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+    );
+    if (onViewAll == null) return header;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        header,
+        TextButton(
+          onPressed: onViewAll,
+          child: Row(
+            children: [
+              Text(
+                'View All',
+                style: TextStyle(color: accentColor, fontSize: 13),
+              ),
+              const SizedBox(width: 4),
+              Icon(LucideIcons.chevronRight, size: 16, color: accentColor),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopHorizontalSection(
+    BuildContext context, {
     required String title,
     required VoidCallback onViewAll,
     required int itemCount,
+    required bool isNarrow,
     required Widget Function(BuildContext, int) itemBuilder,
   }) {
     if (itemCount == 0) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            TextButton(
-              onPressed: onViewAll,
-              child: const Row(
-                children: [
-                  Text(
-                    'View All',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(LucideIcons.chevronRight, size: 16, color: Colors.white70),
-                ],
-              ),
-            ),
-          ],
+        _buildSectionHeader(
+          context,
+          title: title,
+          isNarrow: isNarrow,
+          onViewAll: onViewAll,
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -658,77 +755,28 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDesktopArtistItem(WidgetRef ref, Artist artist, AppLocalizations l10n) {
-    return Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 16),
-      child: InkWell(
-        onTap: () async {
-          final songs = await DbService.isar.songs.filter().artistEqualTo(artist.name).findAll();
-          ref.read(appNavigationProvider.notifier).showCollection(
-            title: artist.name,
-            subtitle: l10n.artist,
-            art: artist.artPath,
-            imageUrl: artist.artistImageUrl,
-            songs: songs,
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: ClipOval(
-                child: OptimizedImage(
-                  imageUrl: artist.artistImageUrl != null && artist.artistImageUrl!.startsWith('http') ? artist.artistImageUrl : null,
-                  imagePath: artist.artistImageUrl != null && !artist.artistImageUrl!.startsWith('http') ? artist.artistImageUrl : artist.artPath,
-                  fit: BoxFit.cover,
-                  placeholder: Container(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    child: const Center(
-                      child: Icon(
-                        LucideIcons.user,
-                        size: 32,
-                        color: Colors.white38,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              artist.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopAlbumItem(WidgetRef ref, Album album, AppLocalizations l10n) {
+  Widget _buildDesktopAlbumItem(
+    WidgetRef ref,
+    Album album,
+    AppLocalizations l10n,
+  ) {
     return Container(
       width: 130,
       margin: const EdgeInsets.only(right: 16),
       child: InkWell(
         onTap: () async {
-          final songs = await DbService.isar.songs.filter().albumEqualTo(album.name).findAll();
-          ref.read(appNavigationProvider.notifier).showCollection(
-            title: album.name,
-            subtitle: album.artist ?? l10n.unknownArtist,
-            art: album.artPath,
-            songs: songs,
-          );
+          final songs = await DbService.isar.songs
+              .filter()
+              .albumEqualTo(album.name)
+              .findAll();
+          ref
+              .read(appNavigationProvider.notifier)
+              .showCollection(
+                title: album.name,
+                subtitle: album.artist ?? l10n.unknownArtist,
+                art: album.artPath,
+                songs: songs,
+              );
         },
         borderRadius: BorderRadius.circular(16),
         child: Column(
@@ -758,10 +806,7 @@ class HomeDashboard extends ConsumerWidget {
             ),
             Text(
               album.artist ?? l10n.unknownArtist,
-              style: const TextStyle(
-                color: Colors.white38,
-                fontSize: 11,
-              ),
+              style: const TextStyle(color: Colors.white38, fontSize: 11),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -771,17 +816,24 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDesktopGenreItem(WidgetRef ref, String genre, List<Song> genreSongs, AppLocalizations l10n) {
+  Widget _buildDesktopGenreItem(
+    WidgetRef ref,
+    String genre,
+    List<Song> genreSongs,
+    AppLocalizations l10n,
+  ) {
     return Container(
       width: 140,
       margin: const EdgeInsets.only(right: 16),
       child: InkWell(
         onTap: () {
-          ref.read(appNavigationProvider.notifier).showCollection(
-            title: genre,
-            subtitle: l10n.genre,
-            songs: genreSongs,
-          );
+          ref
+              .read(appNavigationProvider.notifier)
+              .showCollection(
+                title: genre,
+                subtitle: l10n.genre,
+                songs: genreSongs,
+              );
         },
         borderRadius: BorderRadius.circular(16),
         child: Container(
@@ -801,7 +853,7 @@ class HomeDashboard extends ConsumerWidget {
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -810,83 +862,7 @@ class HomeDashboard extends ConsumerWidget {
               const SizedBox(height: 4),
               Text(
                 '${genreSongs.length} ${l10n.songs}',
-                style: const TextStyle(
-                  color: Colors.white38,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FeaturedArtistCard extends ConsumerWidget {
-  final Artist artist;
-  final bool isNarrow;
-
-  const _FeaturedArtistCard({required this.artist, required this.isNarrow});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: InkWell(
-        onTap: () async {
-          final artistSongs = await DbService.isar.songs
-              .filter()
-              .artistEqualTo(artist.name)
-              .findAll();
-          ref
-              .read(appNavigationProvider.notifier)
-              .showCollection(
-                title: artist.name,
-                subtitle: 'Artist',
-                art: artist.artPath,
-                imageUrl: artist.artistImageUrl,
-                songs: artistSongs,
-              );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: isNarrow ? 80 : 100,
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            children: [
-              Container(
-                width: isNarrow ? 64 : 80,
-                height: isNarrow ? 64 : 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: OptimizedImage(
-                    imageUrl: artist.artistImageUrl,
-                    imagePath: artist.artPath,
-                    fit: BoxFit.cover,
-                    placeholder: Container(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      child: const Icon(LucideIcons.user, color: Colors.grey),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                artist.name,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
               ),
             ],
           ),

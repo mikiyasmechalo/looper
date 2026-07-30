@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:io';
+import 'package:flutter/gestures.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,15 +35,23 @@ class _PremiumPlayerBar extends ConsumerWidget {
     final song = ref.watch(playbackProvider.select((s) => s.currentSong));
     if (song == null) return const SizedBox.shrink();
 
-    final isFavorite = ref.watch(playbackProvider.select((s) => s.currentSong?.isFavorite ?? false));
+    final isFavorite = ref.watch(
+      playbackProvider.select((s) => s.currentSong?.isFavorite ?? false),
+    );
     final isShuffle = ref.watch(playbackProvider.select((s) => s.isShuffle));
     final repeatMode = ref.watch(playbackProvider.select((s) => s.repeatMode));
     final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
     final volume = ref.watch(playbackProvider.select((s) => s.volume));
 
-    final isLyricsActive = ref.watch(appNavigationProvider.select((s) => s.activeItem == NavItem.lyrics));
-    final isQueueActive = ref.watch(appNavigationProvider.select((s) => s.activeItem == NavItem.queue));
-    final isDynamic = ref.watch(settingsProvider.select((s) => s.enableDynamicTheming));
+    final isLyricsActive = ref.watch(
+      appNavigationProvider.select((s) => s.activeItem == NavItem.lyrics),
+    );
+    final isQueueActive = ref.watch(
+      appNavigationProvider.select((s) => s.activeItem == NavItem.queue),
+    );
+    final isDynamic = ref.watch(
+      settingsProvider.select((s) => s.enableDynamicTheming),
+    );
 
     final title = song.title;
     final artist = song.artist ?? AppLocalizations.of(context)!.unknownArtist;
@@ -79,86 +88,123 @@ class _PremiumPlayerBar extends ConsumerWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                 child: Padding(
-                padding: const EdgeInsets.only(left: 14),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: isVeryNarrow ? 3 : 4,
-                      child: _buildSongInfo(context, title, artist, artPath, isVeryNarrow),
-                    ),
-
-                    if (!isVeryNarrow)
-                      Container(
-                        height: 40,
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        color: Colors.white10,
+                  padding: const EdgeInsets.only(left: 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: isVeryNarrow ? 3 : 4,
+                        child: _buildSongInfo(
+                          context,
+                          title,
+                          artist,
+                          artPath,
+                          isVeryNarrow,
+                        ),
                       ),
 
-                    _buildControls(context, ref, colorScheme, isPlaying, isShuffle, repeatMode, isVeryNarrow),
+                      if (!isVeryNarrow)
+                        Container(
+                          height: 40,
+                          width: 1,
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
+                          color: Colors.white10,
+                        ),
 
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      flex: isNarrow ? 4 : 6,
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          final position = ref.watch(playbackProvider.select((s) => s.position));
-                          final duration = ref.watch(playbackProvider.select((s) => s.duration));
-                          final isPlayingVal = ref.watch(playbackProvider.select((s) => s.isPlaying));
-                          return ExpressiveSlider(
-                            position: position,
-                            duration: duration,
-                            isPlaying: isPlayingVal,
-                            onSeek: (pos) => ref.read(playbackProvider.notifier).seek(pos),
-                            onSeekStart: () => ref.read(playbackProvider.notifier).startScrubbing(),
-                            onSeekEnd: () => ref.read(playbackProvider.notifier).stopScrubbing(),
-                            color: colorScheme.primary,
-                          );
-                        },
+                      _buildControls(
+                        context,
+                        ref,
+                        colorScheme,
+                        isPlaying,
+                        isShuffle,
+                        repeatMode,
+                        isVeryNarrow,
                       ),
-                    ),
 
-                    if (!isVeryNarrow) ...[
-                      const SizedBox(width: 24),
-                      Container(
-                        height: 40,
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        color: Colors.white10,
-                      ),
                       const SizedBox(width: 12),
-                    ],
-                    if (!isNarrow) ...[
-                      const SizedBox(width: 16),
-                      _buildVolumeControl(context, ref, volume),
-                      const SizedBox(width: 16),
-                    ],
 
-                    const Spacer(),
+                      Expanded(
+                        flex: isNarrow ? 4 : 6,
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final position = ref.watch(
+                              playbackProvider.select((s) => s.position),
+                            );
+                            final duration = ref.watch(
+                              playbackProvider.select((s) => s.duration),
+                            );
+                            final isPlayingVal = ref.watch(
+                              playbackProvider.select((s) => s.isPlaying),
+                            );
+                            return ExpressiveSlider(
+                              position: position,
+                              duration: duration,
+                              isPlaying: isPlayingVal,
+                              onSeek: (pos) =>
+                                  ref.read(playbackProvider.notifier).seek(pos),
+                              onSeekStart: () => ref
+                                  .read(playbackProvider.notifier)
+                                  .startScrubbing(),
+                              onSeekEnd: () => ref
+                                  .read(playbackProvider.notifier)
+                                  .stopScrubbing(),
+                              color: colorScheme.primary,
+                            );
+                          },
+                        ),
+                      ),
 
-                    _buildActions(context, ref, colorScheme, isFavorite, isLyricsActive, isQueueActive, isVeryNarrow),
-                  ],
+                      if (!isVeryNarrow) ...[
+                        const SizedBox(width: 24),
+                        Container(
+                          height: 40,
+                          width: 1,
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
+                          color: Colors.white10,
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      if (!isNarrow) ...[
+                        const SizedBox(width: 16),
+                        _buildVolumeControl(context, ref, volume),
+                        const SizedBox(width: 16),
+                      ],
+
+                      const Spacer(),
+
+                      _buildActions(
+                        context,
+                        ref,
+                        colorScheme,
+                        isFavorite,
+                        isLyricsActive,
+                        isQueueActive,
+                        isVeryNarrow,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
       },
     );
   }
 
-  Widget _buildSongInfo(BuildContext context, String title, String artist, String? artPath, bool isVeryNarrow) {
+  Widget _buildSongInfo(
+    BuildContext context,
+    String title,
+    String artist,
+    String? artPath,
+    bool isVeryNarrow,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.max,
       children: [
         Container(
           width: (isVeryNarrow ? 40 : 56).s,
           height: (isVeryNarrow ? 40 : 56).s,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
           child: OptimizedImage(
             imagePath: artPath,
             borderRadius: BorderRadius.circular(6),
@@ -269,7 +315,8 @@ class _PremiumPlayerBar extends ConsumerWidget {
         if (!isVeryNarrow) ...[
           const SizedBox(width: 12),
           IconButton(
-            onPressed: () => ref.read(playbackProvider.notifier).toggleShuffle(),
+            onPressed: () =>
+                ref.read(playbackProvider.notifier).toggleShuffle(),
             icon: SvgPicture.asset(
               'assets/music_bar_Icons/shuffle.svg',
               width: 12,
@@ -284,7 +331,8 @@ class _PremiumPlayerBar extends ConsumerWidget {
         ],
         if (!isVeryNarrow)
           IconButton(
-            onPressed: () => ref.read(playbackProvider.notifier).nextRepeatMode(),
+            onPressed: () =>
+                ref.read(playbackProvider.notifier).nextRepeatMode(),
             icon: SvgPicture.asset(
               repeatMode == RepeatMode.one
                   ? 'assets/music_bar_Icons/repeat_1.svg'
@@ -309,7 +357,11 @@ class _PremiumPlayerBar extends ConsumerWidget {
     );
   }
 
-  Widget _buildVolumeControl(BuildContext context, WidgetRef ref, double volume) {
+  Widget _buildVolumeControl(
+    BuildContext context,
+    WidgetRef ref,
+    double volume,
+  ) {
     return ClipRect(
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -333,26 +385,35 @@ class _PremiumPlayerBar extends ConsumerWidget {
           const SizedBox(width: 8),
           SizedBox(
             width: 100,
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: Platform.isLinux ? 4.0 : 6.0,
-                trackShape: const EqualHeightTrackShape(),
-                thumbShape: LineThumbShape(
-                  thumbHeight: Platform.isLinux ? 8 : 0,
-                  thumbWidth: 3,
+            child: Listener(
+              onPointerSignal: (event) {
+                if (event is PointerScrollEvent) {
+                  final delta = event.scrollDelta.dy > 0 ? -0.05 : 0.05;
+                  ref.read(playbackProvider.notifier).adjustVolume(delta);
+                }
+              },
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: Platform.isLinux ? 4.0 : 6.0,
+                  trackShape: const EqualHeightTrackShape(),
+                  thumbShape: LineThumbShape(
+                    thumbHeight: Platform.isLinux ? 8 : 0,
+                    thumbWidth: 3,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 14,
+                  ),
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
+                  inactiveTrackColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
+                  thumbColor: Colors.white,
                 ),
-                overlayShape: const RoundSliderOverlayShape(
-                  overlayRadius: 14,
+                child: Slider(
+                  value: volume,
+                  onChanged: (vol) =>
+                      ref.read(playbackProvider.notifier).setVolume(vol),
                 ),
-                activeTrackColor: Theme.of(context).colorScheme.primary,
-                inactiveTrackColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.1),
-                thumbColor: Colors.white,
-              ),
-              child: Slider(
-                value: volume,
-                onChanged: (vol) => ref.read(playbackProvider.notifier).setVolume(vol),
               ),
             ),
           ),
@@ -385,7 +446,8 @@ class _PremiumPlayerBar extends ConsumerWidget {
                 BlendMode.srcIn,
               ),
             ),
-            onPressed: () => ref.read(playbackProvider.notifier).toggleFavorite(),
+            onPressed: () =>
+                ref.read(playbackProvider.notifier).toggleFavorite(),
             tooltip: 'Favorite',
           ),
         const SizedBox(width: 4),
@@ -399,7 +461,9 @@ class _PremiumPlayerBar extends ConsumerWidget {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () => ref.read(appNavigationProvider.notifier).toggleItem(NavItem.lyrics),
+          onPressed: () => ref
+              .read(appNavigationProvider.notifier)
+              .toggleItem(NavItem.lyrics),
           tooltip: 'Lyrics',
         ),
         const SizedBox(width: 4),
@@ -409,7 +473,9 @@ class _PremiumPlayerBar extends ConsumerWidget {
             size: 16,
             color: isQueueActive ? colorScheme.primary : Colors.white54,
           ),
-          onPressed: () => ref.read(appNavigationProvider.notifier).toggleItem(NavItem.queue),
+          onPressed: () => ref
+              .read(appNavigationProvider.notifier)
+              .toggleItem(NavItem.queue),
           tooltip: 'Queue',
         ),
       ],
@@ -454,16 +520,14 @@ class _BouncyTap extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
 
-  const _BouncyTap({
-    required this.child,
-    required this.onTap,
-  });
+  const _BouncyTap({required this.child, required this.onTap});
 
   @override
   State<_BouncyTap> createState() => _BouncyTapState();
 }
 
-class _BouncyTapState extends State<_BouncyTap> with SingleTickerProviderStateMixin {
+class _BouncyTapState extends State<_BouncyTap>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -474,9 +538,10 @@ class _BouncyTapState extends State<_BouncyTap> with SingleTickerProviderStateMi
       vsync: this,
       duration: const Duration(milliseconds: 90),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.92,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -495,10 +560,7 @@ class _BouncyTapState extends State<_BouncyTap> with SingleTickerProviderStateMi
       },
       onTapCancel: () => _controller.reverse(),
       behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
 }

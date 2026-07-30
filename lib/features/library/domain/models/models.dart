@@ -15,6 +15,9 @@ class Song {
   String? artist;
 
   @Index()
+  String? albumArtist;
+
+  @Index()
   String? album;
 
   String? genre;
@@ -153,6 +156,7 @@ class AppSettings {
   bool dynamicAccentColor = true;
   int sortStrategyIndex = 0;
   bool sortAscending = true;
+  bool useAlbumArtistForArtists = true;
   int albumSortOptionIndex = 0;
   int artistSortOptionIndex = 0;
   int genreSortOptionIndex = 0;
@@ -190,8 +194,4 @@ class AppSettings {
   bool cacheOnlineStreams = true;
 }
 
-enum PlaybackMode {
-  hybrid,
-  localOnly,
-  onlineOnly,
-}
+enum PlaybackMode { hybrid, localOnly, onlineOnly }

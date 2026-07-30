@@ -62,8 +62,11 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
     final isDynamic = settings.enableDynamicTheming;
     final nav = ref.watch(appNavigationProvider);
     final l10n = AppLocalizations.of(context)!;
-    // Remove global watch of searchQueryProvider to prevent rebuilds on every keystroke
-    // final query = ref.watch(searchQueryProvider);
+    ref.listen<String>(searchQueryProvider, (prev, next) {
+      if (next.isEmpty && _controller.text.isNotEmpty) {
+        _controller.clear();
+      }
+    });
 
     if (nav.activeItem == NavItem.lyrics) {
       return const SizedBox.shrink();
@@ -105,66 +108,92 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
                 horizontal: 16,
                 // vertical: 2,
               ),
-              child: TextField(
-                focusNode: ref.watch(searchFocusNodeProvider),
-                controller: _controller,
-                onChanged: (val) {
-                  _debounceTimer?.cancel();
-                  _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-                    ref.read(searchQueryProvider.notifier).state = val;
-                  });
-                  if (val.isNotEmpty && nav.activeItem != NavItem.search) {
-                    ref
-                        .read(appNavigationProvider.notifier)
-                        .setItem(NavItem.search);
-                  }
-                },
-                decoration: InputDecoration(
-                  hintText: l10n.searchSongsHint,
-                  hintStyle: AppFonts.jostStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    AppIcons.search,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                    width: AppIcons.sizeSmall.s,
+                    height: AppIcons.sizeSmall.s,
                   ),
-                  prefixIcon: SizedBox(
-                    width: 50,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          AppIcons.search,
-                          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                          width: AppIcons.sizeSmall.s,
-                          height: AppIcons.sizeSmall.s,
+                  Container(
+                    height: 30,
+                    width: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    color: Colors.white10,
+                  ),
+                  Expanded(
+                    child: SizedBox(
+                      height: 30,
+                      child: TextField(
+                        focusNode: ref.watch(searchFocusNodeProvider),
+                        controller: _controller,
+                        textAlignVertical: TextAlignVertical.center,
+                        onChanged: (val) {
+                          // Retained 300ms Debounce from Impl 1
+                          _debounceTimer?.cancel();
+                          _debounceTimer = Timer(
+                            const Duration(milliseconds: 300),
+                            () {
+                              ref.read(searchQueryProvider.notifier).state =
+                                  val;
+                            },
+                          );
+
+                          if (val.isNotEmpty &&
+                              nav.activeItem != NavItem.search) {
+                            ref
+                                .read(appNavigationProvider.notifier)
+                                .setItem(NavItem.search);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: l10n.searchSongsHint,
+                          hintStyle: AppFonts.jostStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
                         ),
-                        Container(
-                          height: 30,
-                          width: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                          color: Colors.white10,
+                        style: AppFonts.jostStyle(
+                          color: Colors.white,
+                          fontSize: 14,
                         ),
-                      ],
+                        canRequestFocus: true,
+                      ),
                     ),
                   ),
-                  suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                  ValueListenableBuilder<TextEditingValue>(
                     valueListenable: _controller,
                     builder: (context, value, child) {
                       return value.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(
-                                LucideIcons.x,
-                                size: 18,
-                                color: Colors.white70,
+                          ? SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(18),
+                                  onTap: _clearSearch,
+                                  child: const Center(
+                                    child: Icon(
+                                      LucideIcons.x,
+                                      size: 18,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              onPressed: _clearSearch,
                             )
                           : const SizedBox.shrink();
                     },
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                style: AppFonts.jostStyle(color: Colors.white, fontSize: 14),
-                canRequestFocus: true,
+                ],
               ),
             );
 
@@ -186,5 +215,4 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
       ),
     );
   }
-  
 }

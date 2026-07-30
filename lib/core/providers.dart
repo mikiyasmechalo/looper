@@ -5,7 +5,7 @@ import 'db_service.dart';
 import 'package:isar/isar.dart';
 
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final audioServiceProvider = Provider<AudioService>((ref) {
   final service = AudioService();

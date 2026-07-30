@@ -109,22 +109,23 @@ class CollectionDetailView extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
-                        child: PremiumSection(
-                          useExpanded: false,
-                           borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(32),
-                          bottomLeft: Radius.circular(32),
-                          topRight: Radius.circular(10),
-                          bottomRight: Radius.circular(10),
+                      if (isNarrow)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+                          child: PremiumSection(
+                            useExpanded: false,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(32),
+                              bottomLeft: Radius.circular(32),
+                              topRight: Radius.circular(10),
+                              bottomRight: Radius.circular(10),
+                            ),
+                            width: 44,
+                            height: 44,
+                            onTap: () => ref.read(appNavigationProvider.notifier).goBack(),
+                            child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
+                          ),
                         ),
-                          width: 44,
-                          height: 44,
-                          onTap: () => ref.read(appNavigationProvider.notifier).goBack(),
-                          child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
-                        ),
-                      ),
                       // Header - Now always a Row for cover and name
                       Container(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
