@@ -43,8 +43,41 @@ final genresProvider = Provider<List<String>>((ref) {
   return genreSet.toList()..sort();
 });
 
-class AlbumsGrid extends ConsumerWidget {
+final Map<String, double> _gridScrollOffsets = {};
+
+class AlbumsGrid extends ConsumerStatefulWidget {
   const AlbumsGrid({super.key});
+
+  @override
+  ConsumerState<AlbumsGrid> createState() => _AlbumsGridState();
+}
+
+class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
+  late final ScrollController _scrollController = ScrollController(
+    initialScrollOffset: _gridScrollOffsets['albums'] ?? 0,
+    keepScrollOffset: false,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      _gridScrollOffsets['albums'] = _scrollController.offset;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_scrollController.hasClients) {
+      _gridScrollOffsets['albums'] = _scrollController.offset;
+    }
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   List<Album> _sort(List<Album> albums, AlbumSortOption opt) {
     final list = List<Album>.from(albums);
@@ -87,11 +120,7 @@ class AlbumsGrid extends ConsumerWidget {
         AlbumSortOption.yearOldest => l10n.sortYearOldest,
       };
 
-  void _showSortMenu(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations l10n,
-  ) {
+  void _showSortMenu(AppLocalizations l10n) {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -123,7 +152,7 @@ class AlbumsGrid extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final albumsAsync = ref.watch(albumsProvider);
     final sortOpt = ref.watch(albumSortProvider);
     final l10n = AppLocalizations.of(context)!;
@@ -133,7 +162,6 @@ class AlbumsGrid extends ConsumerWidget {
         final albums = _sort(raw, sortOpt);
         return Column(
           children: [
-            // Sort toolbar
             Padding(
               padding: EdgeInsets.fromLTRB(24.s, 16.s, 24.s, 0),
               child: Row(
@@ -147,7 +175,7 @@ class AlbumsGrid extends ConsumerWidget {
                   ),
                   const Spacer(),
                   TextButton.icon(
-                    onPressed: () => _showSortMenu(context, ref, l10n),
+                    onPressed: () => _showSortMenu(l10n),
                     icon: const Icon(LucideIcons.arrowUpDown, size: 14),
                     label: Text(
                       _sortLabel(sortOpt, l10n),
@@ -163,6 +191,7 @@ class AlbumsGrid extends ConsumerWidget {
             Expanded(
               child: ClipRect(
                 child: GridView.builder(
+                  controller: _scrollController,
                   padding: EdgeInsets.all(24.s),
                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 200.s,
@@ -315,26 +344,162 @@ class _AlbumCard extends ConsumerWidget {
   }
 }
 
-class ArtistsGrid extends ConsumerWidget {
+class ArtistsGrid extends ConsumerStatefulWidget {
   const ArtistsGrid({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDynamic = ref.watch(settingsProvider).enableDynamicTheming;
+  ConsumerState<ArtistsGrid> createState() => _ArtistsGridState();
+}
+
+class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
+  late final ScrollController _scrollController = ScrollController(
+    initialScrollOffset: _gridScrollOffsets['artists'] ?? 0,
+    keepScrollOffset: false,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      _gridScrollOffsets['artists'] = _scrollController.offset;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_scrollController.hasClients) {
+      _gridScrollOffsets['artists'] = _scrollController.offset;
+    }
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  List<Artist> _sort(List<Artist> artists, ArtistSortOption opt, List<Song> allSongs) {
+    final list = List<Artist>.from(artists);
+    switch (opt) {
+      case ArtistSortOption.nameAsc:
+        list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      case ArtistSortOption.nameDesc:
+        list.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+      case ArtistSortOption.songCountDesc:
+      case ArtistSortOption.songCountAsc:
+        final songCounts = <String, int>{};
+        for (final song in allSongs) {
+          final names = <String>{};
+          if (song.artist != null) names.add(song.artist!);
+          if (song.albumArtist != null) names.add(song.albumArtist!);
+          for (final name in names) {
+            songCounts[name] = (songCounts[name] ?? 0) + 1;
+          }
+        }
+        list.sort((a, b) {
+          final diff = (songCounts[a.name] ?? 0).compareTo(songCounts[b.name] ?? 0);
+          return opt == ArtistSortOption.songCountDesc ? -diff : diff;
+        });
+    }
+    return list;
+  }
+
+  String _sortLabel(ArtistSortOption opt, AppLocalizations l10n) =>
+      switch (opt) {
+        ArtistSortOption.nameAsc => l10n.sortAlphabeticalAZ,
+        ArtistSortOption.nameDesc => l10n.sortAlphabeticalZA,
+        ArtistSortOption.songCountDesc => l10n.sortMostSongs,
+        ArtistSortOption.songCountAsc => l10n.sortLeastSongs,
+      };
+
+  void _showSortMenu(AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AppBottomSheetContainer(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.sortBy,
+              style: AppFonts.jostStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            for (final opt in ArtistSortOption.values)
+              _SortItem(
+                label: _sortLabel(opt, l10n),
+                value: opt,
+                provider: artistSortProvider,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final artistsAsync = ref.watch(artistsProvider);
+    final sortOpt = ref.watch(artistSortProvider);
+    final allSongs = ref.watch(libraryProvider.select((s) => s.songs));
+    final l10n = AppLocalizations.of(context)!;
 
     return artistsAsync.when(
-      data: (artists) => GridView.builder(
-        padding: EdgeInsets.all(24.s),
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 180.s,
-          childAspectRatio: 0.8,
-          crossAxisSpacing: 20,
-          mainAxisSpacing: 20,
-        ),
-        itemCount: artists.length,
-        itemBuilder: (context, index) => _ArtistCard(artist: artists[index]),
-      ),
+      data: (raw) {
+        final artists = _sort(raw, sortOpt, allSongs);
+        return Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(24.s, 16.s, 24.s, 0),
+              child: Row(
+                children: [
+                  Text(
+                    '${artists.length} ${l10n.artists}',
+                    style: AppFonts.jostStyle(
+                      color: Colors.white54,
+                      fontSize: 13.ts,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => _showSortMenu(l10n),
+                    icon: const Icon(LucideIcons.arrowUpDown, size: 14),
+                    label: Text(
+                      _sortLabel(sortOpt, l10n),
+                      style: AppFonts.jostStyle(fontSize: 13.ts),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ClipRect(
+                child: GridView.builder(
+                  controller: _scrollController,
+                  padding: EdgeInsets.all(24.s),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 180.s,
+                    childAspectRatio: 0.8,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                  ),
+                  itemCount: artists.length,
+                  itemBuilder: (context, index) => _ArtistCard(artist: artists[index]),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
       loading: () => const AppLoadingIndicator(),
       error: (e, s) => Center(child: Text('Error: $e')),
     );
@@ -358,6 +523,8 @@ class _ArtistCard extends ConsumerWidget {
         final songs = await DbService.isar.songs
             .filter()
             .artistEqualTo(artist.name)
+            .or()
+            .albumArtistEqualTo(artist.name)
             .findAll();
         final isLocalImage =
             artist.artistImageUrl != null &&

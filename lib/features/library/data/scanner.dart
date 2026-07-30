@@ -117,7 +117,8 @@ class LibraryScanner {
       return ScanResult(songsCount: 0, musicFolders: {});
     }
 
-    // Get all existing songs in the database that are located under this scan path
+    // Get all existing songs under this scan path
+    // (keys lowercased for case-insensitive comparison on Windows)
     final prefix = path.endsWith('/') ? path : '$path/';
     final songsInPathDb = await DbService.isar.songs
         .filter()
@@ -125,13 +126,14 @@ class LibraryScanner {
         .or()
         .pathEqualTo(path)
         .findAll();
+
     final Map<String, Song> dbSongsMap = {
-      for (var s in songsInPathDb) s.path: s,
+      for (var s in songsInPathDb) s.path.toLowerCase(): s,
     };
 
     // Find deleted files (present in DB but no longer on disk)
     final Set<String> currentFilePaths = filesToProcess
-        .map((f) => f.path)
+        .map((f) => f.path.toLowerCase())
         .toSet();
     final List<int> idsToDelete = [];
     dbSongsMap.forEach((p, song) {
@@ -149,7 +151,7 @@ class LibraryScanner {
     // Check and update dateAdded of existing songs to match file modification time
     final List<Song> songsToUpdate = [];
     for (final file in filesToProcess) {
-      final dbSong = dbSongsMap[file.path];
+      final dbSong = dbSongsMap[file.path.toLowerCase()];
       if (dbSong != null) {
         try {
           final fileDate = file.lastModifiedSync();
@@ -227,7 +229,7 @@ class LibraryScanner {
 
     // Find new files to process (on disk but not in DB)
     final List<File> newFilesToProcess = filesToProcess
-        .where((f) => !dbSongsMap.containsKey(f.path))
+        .where((f) => !dbSongsMap.containsKey(f.path.toLowerCase()))
         .toList();
 
     // If requested, add discovered folders to settings
@@ -255,12 +257,19 @@ class LibraryScanner {
           await DbService.isar.writeTxn(() async {
             for (final data in batchResults) {
               final song = data['song'] as Song;
-              final albumName = data['album'] as String?;
-              final artistName = data['artist'] as String?;
-              final albumArtistName = data['albumArtist'] as String?;
+              final albumName = (data['album'] as String?) ?? song.album;
+              final artistName = (data['artist'] as String?) ?? song.artist;
+              final albumArtistName = (data['albumArtist'] as String?) ?? song.albumArtist;
               final artPath = data['artPath'] as String?;
 
-              // Put song directly in DB
+              // Put song — reuse ID if path already exists to avoid unique violations
+              final existingSong = await DbService.isar.songs
+                  .filter()
+                  .pathEqualTo(song.path)
+                  .findFirst();
+              if (existingSong != null) {
+                song.id = existingSong.id;
+              }
               await DbService.isar.songs.put(song);
 
               if (albumName != null) {
@@ -379,6 +388,7 @@ class LibraryScanner {
         ..title = metadata?.title ?? p.basenameWithoutExtension(file.path)
         ..artist = metadata?.artist ?? 'Unknown Artist'
         ..album = metadata?.album ?? 'Unknown Album'
+        ..albumArtist = metadata?.albumArtist
         ..genre = metadata?.genre
         ..duration = metadata?.durationMs?.toInt()
         ..trackNumber = metadata?.trackNumber

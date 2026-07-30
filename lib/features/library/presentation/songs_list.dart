@@ -523,24 +523,6 @@ void _showSortBottomSheet(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _SortOption(
-                              label: l10n.dateAdded,
-                              icon: LucideIcons.calendar,
-                              isSelected:
-                                  state.sortStrategy ==
-                                  SongSortStrategy.dateAdded,
-                              accentColor: accentColor,
-                              isLast: false,
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                ref
-                                    .read(libraryProvider.notifier)
-                                    .setSortStrategy(
-                                      SongSortStrategy.dateAdded,
-                                    );
-                                Navigator.pop(context);
-                              },
-                            ),
-                            _SortOption(
                               label: l10n.title,
                               icon: LucideIcons.type,
                               isSelected:
@@ -582,6 +564,24 @@ void _showSortBottomSheet(
                                 ref
                                     .read(libraryProvider.notifier)
                                     .setSortStrategy(SongSortStrategy.album);
+                                Navigator.pop(context);
+                              },
+                            ),
+                            _SortOption(
+                              label: l10n.dateAdded,
+                              icon: LucideIcons.calendar,
+                              isSelected:
+                                  state.sortStrategy ==
+                                  SongSortStrategy.dateAdded,
+                              accentColor: accentColor,
+                              isLast: false,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                ref
+                                    .read(libraryProvider.notifier)
+                                    .setSortStrategy(
+                                      SongSortStrategy.dateAdded,
+                                    );
                                 Navigator.pop(context);
                               },
                             ),
@@ -808,6 +808,8 @@ Future<void> _navigateToArtist(
   final artistSongs = await DbService.isar.songs
       .filter()
       .artistEqualTo(song.artist!)
+      .or()
+      .albumArtistEqualTo(song.artist!)
       .findAll();
 
   final artist = await DbService.isar.artists

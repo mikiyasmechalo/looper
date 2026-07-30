@@ -928,6 +928,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       });
 
       final count = await ref.read(libraryProvider.notifier).scanLibrary(path);
+      if (!mounted) return;
       if (count == 0) {
         setState(() {
           _currentState = WelcomeState.noSongs;

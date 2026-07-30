@@ -25,7 +25,7 @@ enum AlbumSortOption {
   yearOldest,
 }
 
-enum ArtistSortOption { nameAsc, nameDesc }
+enum ArtistSortOption { nameAsc, nameDesc, songCountDesc, songCountAsc }
 
 enum GenreSortOption { nameAsc, nameDesc, songCountDesc, songCountAsc }
 
@@ -52,8 +52,22 @@ final sortedArtistsCategoryProvider = Provider.autoDispose<List<Artist>>((ref) {
   final sorted = List<Artist>.from(library.artists);
   if (sortOption == ArtistSortOption.nameAsc) {
     sorted.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-  } else {
+  } else if (sortOption == ArtistSortOption.nameDesc) {
     sorted.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+  } else {
+    final songCounts = <String, int>{};
+    for (final song in library.songs) {
+      final names = <String>{};
+      if (song.artist != null) names.add(song.artist!);
+      if (song.albumArtist != null) names.add(song.albumArtist!);
+      for (final name in names) {
+        songCounts[name] = (songCounts[name] ?? 0) + 1;
+      }
+    }
+    sorted.sort((a, b) {
+      final diff = (songCounts[a.name] ?? 0).compareTo(songCounts[b.name] ?? 0);
+      return sortOption == ArtistSortOption.songCountDesc ? -diff : diff;
+    });
   }
   return sorted;
 });

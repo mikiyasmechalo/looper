@@ -13,10 +13,10 @@ import 'package:looper_player/features/playback/data/lyrics_fetcher.dart';
 import 'dart:async';
 
 enum SongSortStrategy {
-  dateAdded,
   title,
   artist,
   album,
+  dateAdded,
   duration,
   year,
   playCount,
@@ -40,7 +40,7 @@ class LibraryState {
     this.artists = const [],
     this.albums = const [],
     this.playlists = const [],
-    this.sortStrategy = SongSortStrategy.dateAdded,
+    this.sortStrategy = SongSortStrategy.title,
     this.isAscending = false,
   });
 

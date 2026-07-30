@@ -42,9 +42,14 @@ class OptimizedImage extends StatelessWidget {
       ),
     );
 
-    final String? resolvedImageUrl = imageUrl ??
-        ((imagePath != null && (imagePath!.startsWith('http://') || imagePath!.startsWith('https://'))) ? imagePath : null);
-    final String? resolvedImagePath = (resolvedImageUrl == null) ? imagePath : null;
+    final bool imageUrlIsHttp = imageUrl?.startsWith('http') ?? false;
+    final bool imagePathIsHttp = imagePath?.startsWith('http') ?? false;
+    final String? resolvedImageUrl = imageUrlIsHttp
+        ? imageUrl
+        : (imagePathIsHttp ? imagePath : null);
+    final String? resolvedImagePath = resolvedImageUrl == null
+        ? (imagePath ?? imageUrl)
+        : null;
 
     Widget imageWidget;
 

@@ -181,7 +181,7 @@ class HomeDashboard extends ConsumerWidget {
         _buildSectionHeader(context, title: 'My Albums', isNarrow: isNarrow),
         const SizedBox(height: 16),
         SizedBox(
-          height: isNarrow ? 170 : 190,
+          height: isNarrow ? 174 : 196,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: albums.length,
@@ -468,12 +468,25 @@ class HomeDashboard extends ConsumerWidget {
 
   Widget _buildTopArtists(BuildContext context, WidgetRef ref, bool isNarrow) {
     final artistsAsync = ref.watch(artistsProvider);
+    final allSongs = ref.watch(libraryProvider.select((s) => s.songs));
 
     return artistsAsync.when(
       data: (artists) {
         if (artists.isEmpty) return const SizedBox.shrink();
 
-        final featuredArtists = artists.take(10).toList();
+        final playCounts = <String, int>{};
+        for (final song in allSongs) {
+          final names = <String>{};
+          if (song.artist != null) names.add(song.artist!);
+          if (song.albumArtist != null) names.add(song.albumArtist!);
+          for (final name in names) {
+            playCounts[name] = (playCounts[name] ?? 0) + song.playCount;
+          }
+        }
+
+        final sorted = List<Artist>.from(artists)
+          ..sort((a, b) => (playCounts[b.name] ?? 0).compareTo(playCounts[a.name] ?? 0));
+        final featuredArtists = sorted.take(10).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,6 +515,8 @@ class HomeDashboard extends ConsumerWidget {
                         final songs = await DbService.isar.songs
                             .filter()
                             .artistEqualTo(artist.name)
+                            .or()
+                            .albumArtistEqualTo(artist.name)
                             .findAll();
                         ref
                             .read(appNavigationProvider.notifier)
