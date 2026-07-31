@@ -443,6 +443,15 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
   Future<void> resetAndRescan() async {
     if (!await _requestPermissions()) return;
     state = state.copyWith(isScanning: true);
+
+    // Preserve downloaded artist images across the reset so they aren't
+    // re-downloaded from the network after rescanning.
+    final artistsBefore = await DbService.isar.artists.where().findAll();
+    final savedArtistImages = <String, String>{
+      for (final a in artistsBefore)
+        if (a.artistImageUrl != null) a.name: a.artistImageUrl!,
+    };
+
     await DbService.isar.writeTxn(() async {
       await DbService.isar.songs.clear();
       await DbService.isar.albums.clear();
@@ -456,6 +465,21 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
         await LibraryScanner().scanDirectory(folder);
       }
     }
+
+    // Re-link preserved artist images to the freshly recreated artist records.
+    if (savedArtistImages.isNotEmpty) {
+      final newArtists = await DbService.isar.artists.where().findAll();
+      await DbService.isar.writeTxn(() async {
+        for (final artist in newArtists) {
+          final saved = savedArtistImages[artist.name];
+          if (saved != null) {
+            artist.artistImageUrl = saved;
+            await DbService.isar.artists.put(artist);
+          }
+        }
+      });
+    }
+
     state = state.copyWith(isScanning: false);
   }
 

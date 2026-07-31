@@ -27,6 +27,7 @@ class SongsList extends ConsumerWidget {
   final String? searchQuery;
   final Playlist? playlist;
   final ScrollController? controller;
+  final bool showShuffleButton;
 
   const SongsList({
     super.key,
@@ -36,6 +37,7 @@ class SongsList extends ConsumerWidget {
     this.searchQuery,
     this.playlist,
     this.controller,
+    this.showShuffleButton = false,
   });
 
   @override
@@ -48,9 +50,32 @@ class SongsList extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${songs.length} ${l10n.songs}',
-                style: AppFonts.jostStyle(color: Colors.grey, fontSize: 13),
+              Row(
+                children: [
+                  Text(
+                    '${songs.length} ${l10n.songs}',
+                    style: AppFonts.jostStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                  if (showShuffleButton && !Platform.isAndroid) ...[
+                    const SizedBox(width: 4),
+                    IconButton(
+                      onPressed: songs.isEmpty
+                          ? null
+                          : () {
+                              HapticFeedback.lightImpact();
+                              ref
+                                  .read(playbackProvider.notifier)
+                                  .playShuffled(songs);
+                            },
+                      icon: const Icon(LucideIcons.shuffle, size: 18),
+                      tooltip: l10n.shuffleTitle,
+                      style: IconButton.styleFrom(
+                        foregroundColor:
+                            Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Row(
                 children: [
@@ -254,6 +279,12 @@ class SongTile extends ConsumerWidget {
             ref.read(playbackProvider.notifier).play(song);
           }
         },
+        onSecondaryTap: () => showSongOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          song: song,
+          playlist: playlist,
+        ),
         child: ListTile(
           contentPadding: const EdgeInsets.only(
             left: 16,
@@ -749,8 +780,13 @@ class _SortOption extends StatelessWidget {
 class _SongTileBouncyTap extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
+  final VoidCallback? onSecondaryTap;
 
-  const _SongTileBouncyTap({required this.child, required this.onTap});
+  const _SongTileBouncyTap({
+    required this.child,
+    required this.onTap,
+    this.onSecondaryTap,
+  });
 
   @override
   State<_SongTileBouncyTap> createState() => _SongTileBouncyTapState();
@@ -789,6 +825,7 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap>
         widget.onTap();
       },
       onTapCancel: () => _controller.reverse(),
+      onSecondaryTap: widget.onSecondaryTap,
       behavior: HitTestBehavior.opaque,
       child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
@@ -825,5 +862,6 @@ Future<void> _navigateToArtist(
         art: artist?.artPath ?? song.artPath,
         imageUrl: artist?.artistImageUrl,
         songs: artistSongs,
+        highlightItem: NavItem.artists,
       );
 }

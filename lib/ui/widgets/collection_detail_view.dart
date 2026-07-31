@@ -19,14 +19,13 @@ import 'package:looper_player/core/app_fonts.dart';
 // Persistent collection sorting is stored in settings.collectionSortOptionIndex
 
 enum CollectionSortOption {
-  defaultOrder,
-  titleAsc,
-  titleDesc,
-  artistAsc,
-  albumAsc,
+  trackNumber,
+  title,
+  artist,
+  album,
+  playCount,
   duration,
-  yearNewest,
-  yearOldest,
+  year,
 }
 
 class CollectionDetailView extends ConsumerWidget {
@@ -68,31 +67,44 @@ class CollectionDetailView extends ConsumerWidget {
         : songs;
 
     final sortOptionIndex = ref.watch(settingsProvider.select((s) => s.collectionSortOptionIndex));
+    final isAscending = ref.watch(settingsProvider.select((s) => s.collectionSortAscending));
     final sortOption = CollectionSortOption.values[sortOptionIndex.clamp(0, CollectionSortOption.values.length - 1)];
     final sortedSongs = List<Song>.from(songsToRender);
     switch (sortOption) {
-      case CollectionSortOption.defaultOrder:
+      case CollectionSortOption.trackNumber:
+        sortedSongs.sort((a, b) => isAscending
+            ? (a.trackNumber ?? 0).compareTo(b.trackNumber ?? 0)
+            : (b.trackNumber ?? 0).compareTo(a.trackNumber ?? 0));
         break;
-      case CollectionSortOption.titleAsc:
-        sortedSongs.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+      case CollectionSortOption.title:
+        sortedSongs.sort((a, b) => isAscending
+            ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
+            : b.title.toLowerCase().compareTo(a.title.toLowerCase()));
         break;
-      case CollectionSortOption.titleDesc:
-        sortedSongs.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
+      case CollectionSortOption.artist:
+        sortedSongs.sort((a, b) => isAscending
+            ? (a.artist ?? '').toLowerCase().compareTo((b.artist ?? '').toLowerCase())
+            : (b.artist ?? '').toLowerCase().compareTo((a.artist ?? '').toLowerCase()));
         break;
-      case CollectionSortOption.artistAsc:
-        sortedSongs.sort((a, b) => (a.artist ?? '').toLowerCase().compareTo((b.artist ?? '').toLowerCase()));
+      case CollectionSortOption.album:
+        sortedSongs.sort((a, b) => isAscending
+            ? (a.album ?? '').toLowerCase().compareTo((b.album ?? '').toLowerCase())
+            : (b.album ?? '').toLowerCase().compareTo((a.album ?? '').toLowerCase()));
         break;
-      case CollectionSortOption.albumAsc:
-        sortedSongs.sort((a, b) => (a.album ?? '').toLowerCase().compareTo((b.album ?? '').toLowerCase()));
+      case CollectionSortOption.playCount:
+        sortedSongs.sort((a, b) => isAscending
+            ? (a.playCount).compareTo(b.playCount)
+            : (b.playCount).compareTo(a.playCount));
         break;
       case CollectionSortOption.duration:
-        sortedSongs.sort((a, b) => (a.duration ?? 0).compareTo(b.duration ?? 0));
+        sortedSongs.sort((a, b) => isAscending
+            ? (a.duration ?? 0).compareTo(b.duration ?? 0)
+            : (b.duration ?? 0).compareTo(a.duration ?? 0));
         break;
-      case CollectionSortOption.yearNewest:
-        sortedSongs.sort((a, b) => (b.year ?? 0).compareTo(a.year ?? 0));
-        break;
-      case CollectionSortOption.yearOldest:
-        sortedSongs.sort((a, b) => (a.year ?? 0).compareTo(b.year ?? 0));
+      case CollectionSortOption.year:
+        sortedSongs.sort((a, b) => isAscending
+            ? (a.year ?? 0).compareTo(b.year ?? 0)
+            : (b.year ?? 0).compareTo(a.year ?? 0));
         break;
     }
 
@@ -262,8 +274,9 @@ class CollectionDetailView extends ConsumerWidget {
               useExpanded: false,
               onTap: () {
                 HapticFeedback.lightImpact();
-                ref.read(playbackProvider.notifier).toggleShuffle();
-                ref.read(playbackProvider.notifier).setPlaylist(songsToRender);
+                ref
+                    .read(playbackProvider.notifier)
+                    .playShuffled(songsToRender);
               },
               child: const Icon(LucideIcons.shuffle, size: 16, color: Colors.white),
             ),
@@ -304,91 +317,172 @@ class CollectionDetailView extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final l10n = AppLocalizations.of(context)!;
+        final settings = ref.watch(settingsProvider);
+        final accentColor = Color(settings.accentColor);
+        final sortIdx = settings.collectionSortOptionIndex;
+        final isAscending = settings.collectionSortAscending;
         final bool isArtistCollection = (subtitle != null && (subtitle!.toLowerCase() == 'artist' || subtitle == l10n.artist)) ||
             (songs.isNotEmpty && songs.every((s) => s.artist?.toLowerCase() == title.toLowerCase()));
+        final bool isAlbumCollection = !isArtistCollection;
 
         return AppBottomSheetContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                l10n.sortBy,
-                style: AppFonts.jostStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      l10n.sortOrder,
+                      style: AppFonts.jostStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      ref.read(settingsProvider.notifier).updateCollectionSortAscending(!isAscending);
+                    },
+                    icon: Icon(
+                      isAscending ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
+                      size: 18,
+                    ),
+                    label: Text(
+                      isAscending ? l10n.ascending : l10n.descending,
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: accentColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              PremiumSection(
-                borderRadius: BorderRadius.circular(20),
-                padding: EdgeInsets.zero,
-                useExpanded: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildSortItem(context, ref, l10n.sortDefault, CollectionSortOption.defaultOrder),
-                    const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                    _buildSortItem(context, ref, l10n.sortAlphabeticalAZ, CollectionSortOption.titleAsc),
-                    const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                    _buildSortItem(context, ref, l10n.sortAlphabeticalZA, CollectionSortOption.titleDesc),
-                    if (!isArtistCollection) ...[
-                      const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                      _buildSortItem(context, ref, l10n.sortArtistAsc, CollectionSortOption.artistAsc),
-                    ],
-                    const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                    _buildSortItem(context, ref, l10n.sortAlbumAsc, CollectionSortOption.albumAsc),
-                    const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                    _buildSortItem(context, ref, l10n.sortDuration, CollectionSortOption.duration),
-                    const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                    _buildSortItem(context, ref, l10n.sortYearNewest, CollectionSortOption.yearNewest),
-                    const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                    _buildSortItem(context, ref, l10n.sortYearOldest, CollectionSortOption.yearOldest),
-                  ],
+              const Divider(color: Colors.white10, height: 24),
+              Flexible(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                    child: PremiumSection(
+                      borderRadius: BorderRadius.circular(20),
+                      padding: EdgeInsets.zero,
+                      useExpanded: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _SortOption(
+                            label: 'Track #',
+                            icon: LucideIcons.list,
+                            isSelected: sortIdx == CollectionSortOption.trackNumber.index,
+                            accentColor: accentColor,
+                            isLast: false,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.trackNumber.index);
+                              Navigator.pop(context);
+                            },
+                          ),
+                          const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                          _SortOption(
+                            label: l10n.title,
+                            icon: LucideIcons.type,
+                            isSelected: sortIdx == CollectionSortOption.title.index,
+                            accentColor: accentColor,
+                            isLast: false,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.title.index);
+                              Navigator.pop(context);
+                            },
+                          ),
+                          if (!isArtistCollection) ...[
+                            const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                            _SortOption(
+                              label: l10n.artist,
+                              icon: LucideIcons.mic2,
+                              isSelected: sortIdx == CollectionSortOption.artist.index,
+                              accentColor: accentColor,
+                              isLast: false,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.artist.index);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ],
+                          if (!isAlbumCollection) ...[
+                            const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                            _SortOption(
+                              label: l10n.album,
+                              icon: LucideIcons.disc,
+                              isSelected: sortIdx == CollectionSortOption.album.index,
+                              accentColor: accentColor,
+                              isLast: false,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.album.index);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ],
+                          const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                          _SortOption(
+                            label: l10n.mostPlayed,
+                            icon: LucideIcons.trendingUp,
+                            isSelected: sortIdx == CollectionSortOption.playCount.index,
+                            accentColor: accentColor,
+                            isLast: false,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.playCount.index);
+                              Navigator.pop(context);
+                            },
+                          ),
+                          const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                          _SortOption(
+                            label: l10n.duration,
+                            icon: LucideIcons.clock,
+                            isSelected: sortIdx == CollectionSortOption.duration.index,
+                            accentColor: accentColor,
+                            isLast: false,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.duration.index);
+                              Navigator.pop(context);
+                            },
+                          ),
+                          const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                          _SortOption(
+                            label: l10n.year,
+                            icon: LucideIcons.calendarDays,
+                            isSelected: sortIdx == CollectionSortOption.year.index,
+                            accentColor: accentColor,
+                            isLast: true,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.year.index);
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSortItem(
-    BuildContext context,
-    WidgetRef ref,
-    String label,
-    CollectionSortOption value,
-  ) {
-    final settings = ref.watch(settingsProvider);
-    final isSelected = settings.collectionSortOptionIndex == value.index;
-    final accentColor = Color(settings.accentColor);
-
-    return InkWell(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(value.index);
-        Navigator.pop(context);
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: AppFonts.jostStyle(
-                color: isSelected ? accentColor : Colors.white70,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 15,
-              ),
-            ),
-            if (isSelected)
-              Icon(LucideIcons.check, color: accentColor, size: 20),
-          ],
-        ),
-      ),
     );
   }
 
@@ -622,6 +716,78 @@ class CollectionDetailView extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _SortOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final Color accentColor;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  const _SortOption({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.accentColor,
+    required this.isLast,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 22,
+                  color: isSelected
+                      ? accentColor
+                      : Colors.white.withValues(alpha: 0.9),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppFonts.jostStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      LucideIcons.check,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (!isLast)
+          const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+      ],
     );
   }
 }

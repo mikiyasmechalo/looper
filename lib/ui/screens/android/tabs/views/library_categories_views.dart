@@ -17,57 +17,64 @@ import 'package:looper_player/features/settings/presentation/settings_notifier.d
 import 'package:looper_player/core/app_fonts.dart';
 
 enum AlbumSortOption {
-  nameAsc,
-  nameDesc,
-  dateAddedNewest,
-  dateAddedOldest,
-  yearNewest,
-  yearOldest,
+  name,
+  dateAdded,
+  year,
+  songCount,
+  artistAlbumArtist,
 }
 
-enum ArtistSortOption { nameAsc, nameDesc, songCountDesc, songCountAsc }
+enum ArtistSortOption { name, songCount }
 
 enum GenreSortOption { nameAsc, nameDesc, songCountDesc, songCountAsc }
 
 final albumSortProvider = StateProvider<AlbumSortOption>(
-  (ref) => AlbumSortOption.nameAsc,
+  (ref) => AlbumSortOption.name,
 );
+final albumSortAscendingProvider = StateProvider<bool>((ref) => true);
 final artistSortProvider = StateProvider<ArtistSortOption>(
-  (ref) => ArtistSortOption.nameAsc,
+  (ref) => ArtistSortOption.name,
 );
+final artistSortAscendingProvider = StateProvider<bool>((ref) => true);
 final genreSortProvider = StateProvider<GenreSortOption>(
   (ref) => GenreSortOption.nameAsc,
 );
 final artistViewModeProvider = StateProvider<bool>(
   (ref) => false,
-); // false = Grid, true = List
+);
 
 final sortedArtistsCategoryProvider = Provider.autoDispose<List<Artist>>((ref) {
   final library = ref.watch(libraryProvider);
   final sortOptionIndex = ref.watch(
     settingsProvider.select((s) => s.artistSortOptionIndex),
   );
+  final sortAscending = ref.watch(
+    settingsProvider.select((s) => s.sortAscending),
+  );
   final sortOption = ArtistSortOption
       .values[sortOptionIndex.clamp(0, ArtistSortOption.values.length - 1)];
   final sorted = List<Artist>.from(library.artists);
-  if (sortOption == ArtistSortOption.nameAsc) {
-    sorted.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-  } else if (sortOption == ArtistSortOption.nameDesc) {
-    sorted.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
-  } else {
-    final songCounts = <String, int>{};
-    for (final song in library.songs) {
-      final names = <String>{};
-      if (song.artist != null) names.add(song.artist!);
-      if (song.albumArtist != null) names.add(song.albumArtist!);
-      for (final name in names) {
-        songCounts[name] = (songCounts[name] ?? 0) + 1;
+  switch (sortOption) {
+    case ArtistSortOption.name:
+      sorted.sort((a, b) => sortAscending
+          ? a.name.toLowerCase().compareTo(b.name.toLowerCase())
+          : b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+      break;
+    case ArtistSortOption.songCount:
+      final songCounts = <String, int>{};
+      for (final song in library.songs) {
+        final names = <String>{};
+        if (song.artist != null) names.add(song.artist!);
+        if (song.albumArtist != null) names.add(song.albumArtist!);
+        for (final name in names) {
+          songCounts[name] = (songCounts[name] ?? 0) + 1;
+        }
       }
-    }
-    sorted.sort((a, b) {
-      final diff = (songCounts[a.name] ?? 0).compareTo(songCounts[b.name] ?? 0);
-      return sortOption == ArtistSortOption.songCountDesc ? -diff : diff;
-    });
+      sorted.sort((a, b) {
+        final diff = (songCounts[a.name] ?? 0).compareTo(songCounts[b.name] ?? 0);
+        return sortAscending ? diff : -diff;
+      });
+      break;
   }
   return sorted;
 });
@@ -179,20 +186,7 @@ class CategoryDetailWrapper extends ConsumerWidget {
                         context,
                         ref,
                         l10n.sortAlphabeticalAZ,
-                        AlbumSortOption.nameAsc.index,
-                        'album',
-                      ),
-                      const Divider(
-                        color: Colors.white10,
-                        height: 1,
-                        indent: 20,
-                        endIndent: 20,
-                      ),
-                      _buildSortItem(
-                        context,
-                        ref,
-                        l10n.sortAlphabeticalZA,
-                        AlbumSortOption.nameDesc.index,
+                        AlbumSortOption.name.index,
                         'album',
                       ),
                       const Divider(
@@ -205,20 +199,7 @@ class CategoryDetailWrapper extends ConsumerWidget {
                         context,
                         ref,
                         l10n.sortRecentlyAdded,
-                        AlbumSortOption.dateAddedNewest.index,
-                        'album',
-                      ),
-                      const Divider(
-                        color: Colors.white10,
-                        height: 1,
-                        indent: 20,
-                        endIndent: 20,
-                      ),
-                      _buildSortItem(
-                        context,
-                        ref,
-                        l10n.sortOldestAdded,
-                        AlbumSortOption.dateAddedOldest.index,
+                        AlbumSortOption.dateAdded.index,
                         'album',
                       ),
                       const Divider(
@@ -231,7 +212,7 @@ class CategoryDetailWrapper extends ConsumerWidget {
                         context,
                         ref,
                         l10n.sortYearNewest,
-                        AlbumSortOption.yearNewest.index,
+                        AlbumSortOption.year.index,
                         'album',
                       ),
                       const Divider(
@@ -243,8 +224,21 @@ class CategoryDetailWrapper extends ConsumerWidget {
                       _buildSortItem(
                         context,
                         ref,
-                        l10n.sortYearOldest,
-                        AlbumSortOption.yearOldest.index,
+                        l10n.sortMostSongs,
+                        AlbumSortOption.songCount.index,
+                        'album',
+                      ),
+                      const Divider(
+                        color: Colors.white10,
+                        height: 1,
+                        indent: 20,
+                        endIndent: 20,
+                      ),
+                      _buildSortItem(
+                        context,
+                        ref,
+                        l10n.artist,
+                        AlbumSortOption.artistAlbumArtist.index,
                         'album',
                       ),
                     ] else if (title == 'Artists') ...[
@@ -252,7 +246,7 @@ class CategoryDetailWrapper extends ConsumerWidget {
                         context,
                         ref,
                         l10n.sortAlphabeticalAZ,
-                        ArtistSortOption.nameAsc.index,
+                        ArtistSortOption.name.index,
                         'artist',
                       ),
                       const Divider(
@@ -264,8 +258,8 @@ class CategoryDetailWrapper extends ConsumerWidget {
                       _buildSortItem(
                         context,
                         ref,
-                        l10n.sortAlphabeticalZA,
-                        ArtistSortOption.nameDesc.index,
+                        l10n.sortMostSongs,
+                        ArtistSortOption.songCount.index,
                         'artist',
                       ),
                     ] else if (title == 'Genres') ...[
@@ -496,37 +490,37 @@ class AlbumsGridView extends ConsumerWidget {
     final sortOptionIndex = ref.watch(
       settingsProvider.select((s) => s.albumSortOptionIndex),
     );
+    final sortAscending = ref.watch(
+      settingsProvider.select((s) => s.collectionSortAscending),
+    );
     final sortOption = AlbumSortOption
         .values[sortOptionIndex.clamp(0, AlbumSortOption.values.length - 1)];
     final Stream<List<Album>> albumStream;
     switch (sortOption) {
-      case AlbumSortOption.nameAsc:
+      case AlbumSortOption.name:
+        albumStream = (sortAscending
+            ? DbService.isar.albums.where().sortByName()
+            : DbService.isar.albums.where().sortByNameDesc()).watch(
+          fireImmediately: true,
+        );
+        break;
+      case AlbumSortOption.dateAdded:
+        albumStream = (sortAscending
+            ? DbService.isar.albums.where().sortByDateAdded()
+            : DbService.isar.albums.where().sortByDateAddedDesc()).watch(
+          fireImmediately: true,
+        );
+        break;
+      case AlbumSortOption.year:
+        albumStream = (sortAscending
+            ? DbService.isar.albums.where().sortByYear()
+            : DbService.isar.albums.where().sortByYearDesc()).watch(
+          fireImmediately: true,
+        );
+        break;
+      case AlbumSortOption.songCount:
+      case AlbumSortOption.artistAlbumArtist:
         albumStream = DbService.isar.albums.where().sortByName().watch(
-          fireImmediately: true,
-        );
-        break;
-      case AlbumSortOption.nameDesc:
-        albumStream = DbService.isar.albums.where().sortByNameDesc().watch(
-          fireImmediately: true,
-        );
-        break;
-      case AlbumSortOption.dateAddedNewest:
-        albumStream = DbService.isar.albums.where().sortByDateAddedDesc().watch(
-          fireImmediately: true,
-        );
-        break;
-      case AlbumSortOption.dateAddedOldest:
-        albumStream = DbService.isar.albums.where().sortByDateAdded().watch(
-          fireImmediately: true,
-        );
-        break;
-      case AlbumSortOption.yearNewest:
-        albumStream = DbService.isar.albums.where().sortByYearDesc().watch(
-          fireImmediately: true,
-        );
-        break;
-      case AlbumSortOption.yearOldest:
-        albumStream = DbService.isar.albums.where().sortByYear().watch(
           fireImmediately: true,
         );
         break;

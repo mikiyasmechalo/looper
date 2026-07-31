@@ -416,7 +416,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case NavItem.songs:
         return library.songs.isEmpty
             ? _buildEmptyState(context, l10n)
-            : SongsList(songs: library.songs, key: const ValueKey('songs'));
+            : SongsList(
+                songs: library.songs,
+                showShuffleButton: true,
+                key: const ValueKey('songs'),
+              );
       case NavItem.genres:
         return const GenresGrid(key: ValueKey('genres'));
       case NavItem.home:

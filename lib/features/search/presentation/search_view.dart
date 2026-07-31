@@ -657,6 +657,7 @@ class _ArtistResultCard extends ConsumerWidget {
               subtitle: l10n.artist,
               songs: songs,
               art: artist.artPath,
+              highlightItem: NavItem.artists,
             );
       },
       child: Container(
@@ -709,6 +710,7 @@ class _AlbumResultCard extends ConsumerWidget {
               subtitle: album.artist ?? l10n.unknownArtist,
               songs: songs,
               art: album.artPath,
+              highlightItem: NavItem.albums,
             );
       },
       child: Container(

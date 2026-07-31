@@ -60,12 +60,30 @@ final homeSortedArtistsProvider = Provider<List<Artist>>((ref) {
   final library = ref.watch(libraryProvider);
   final settings = ref.watch(settingsProvider);
   final artistSort = ArtistSortOption.values[settings.artistSortOptionIndex.clamp(0, ArtistSortOption.values.length - 1)];
+  final asc = settings.collectionSortAscending;
 
   final artists = List<Artist>.from(library.artists);
-  if (artistSort == ArtistSortOption.nameAsc) {
-    artists.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-  } else {
-    artists.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+  switch (artistSort) {
+    case ArtistSortOption.name:
+      artists.sort((a, b) => asc
+          ? a.name.toLowerCase().compareTo(b.name.toLowerCase())
+          : b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+      break;
+    case ArtistSortOption.songCount:
+      final songCounts = <String, int>{};
+      for (final song in library.songs) {
+        final names = <String>{};
+        if (song.artist != null) names.add(song.artist!);
+        if (song.albumArtist != null) names.add(song.albumArtist!);
+        for (final name in names) {
+          songCounts[name] = (songCounts[name] ?? 0) + 1;
+        }
+      }
+      artists.sort((a, b) {
+        final diff = (songCounts[a.name] ?? 0).compareTo(songCounts[b.name] ?? 0);
+        return asc ? diff : -diff;
+      });
+      break;
   }
   return artists;
 });
@@ -76,34 +94,41 @@ final homeSortedAlbumsProvider = Provider<List<Album>>((ref) {
   final albumSort = AlbumSortOption.values[settings.albumSortOptionIndex.clamp(0, AlbumSortOption.values.length - 1)];
 
   final albums = List<Album>.from(library.albums);
+  final asc = settings.collectionSortAscending;
   switch (albumSort) {
-    case AlbumSortOption.nameAsc:
-      albums.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    case AlbumSortOption.name:
+      albums.sort((a, b) => asc
+          ? a.name.toLowerCase().compareTo(b.name.toLowerCase())
+          : b.name.toLowerCase().compareTo(a.name.toLowerCase()));
       break;
-    case AlbumSortOption.nameDesc:
-      albums.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+    case AlbumSortOption.dateAdded:
+      albums.sort((a, b) => asc
+          ? a.dateAdded.compareTo(b.dateAdded)
+          : b.dateAdded.compareTo(a.dateAdded));
       break;
-    case AlbumSortOption.dateAddedNewest:
-      albums.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
-      break;
-    case AlbumSortOption.dateAddedOldest:
-      albums.sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
-      break;
-    case AlbumSortOption.yearNewest:
+    case AlbumSortOption.year:
       albums.sort((a, b) {
         if (a.year == null && b.year == null) return 0;
         if (a.year == null) return 1;
         if (b.year == null) return -1;
-        return b.year!.compareTo(a.year!);
+        return asc ? a.year!.compareTo(b.year!) : b.year!.compareTo(a.year!);
       });
       break;
-    case AlbumSortOption.yearOldest:
-      albums.sort((a, b) {
-        if (a.year == null && b.year == null) return 0;
-        if (a.year == null) return 1;
-        if (b.year == null) return -1;
-        return a.year!.compareTo(b.year!);
-      });
+    case AlbumSortOption.songCount:
+      final counts = <String, int>{};
+      for (final song in library.songs) {
+        if (song.album != null) {
+          counts[song.album!] = (counts[song.album!] ?? 0) + 1;
+        }
+      }
+      albums.sort((a, b) => asc
+          ? (counts[a.name] ?? 0).compareTo(counts[b.name] ?? 0)
+          : (counts[b.name] ?? 0).compareTo(counts[a.name] ?? 0));
+      break;
+    case AlbumSortOption.artistAlbumArtist:
+      albums.sort((a, b) => asc
+          ? (a.artist ?? '').toLowerCase().compareTo((b.artist ?? '').toLowerCase())
+          : (b.artist ?? '').toLowerCase().compareTo((a.artist ?? '').toLowerCase()));
       break;
   }
   return albums;

@@ -277,6 +277,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..artistSortOptionIndex = s.artistSortOptionIndex
       ..genreSortOptionIndex = s.genreSortOptionIndex
       ..collectionSortOptionIndex = s.collectionSortOptionIndex
+      ..collectionSortAscending = s.collectionSortAscending
       ..homeDarkness = s.homeDarkness
       ..songsDarkness = s.songsDarkness
       ..libraryDarkness = s.libraryDarkness
@@ -692,6 +693,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateCollectionSortOptionIndex(int index) async {
     final newState = _clone(state)..collectionSortOptionIndex = index;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateCollectionSortAscending(bool ascending) async {
+    final newState = _clone(state)..collectionSortAscending = ascending;
     await _save(newState);
     state = newState;
   }

@@ -202,6 +202,7 @@ class HomeDashboard extends ConsumerWidget {
                           subtitle: album.artist,
                           art: album.artPath,
                           songs: songs,
+                          highlightItem: NavItem.albums,
                         );
                   },
                   borderRadius: BorderRadius.circular(16),
@@ -526,6 +527,7 @@ class HomeDashboard extends ConsumerWidget {
                               art: artist.artPath,
                               imageUrl: artist.artistImageUrl,
                               songs: songs,
+                              highlightItem: NavItem.artists,
                             );
                       },
                       borderRadius: BorderRadius.circular(16),
@@ -633,6 +635,7 @@ class HomeDashboard extends ConsumerWidget {
                               subtitle: album.artist,
                               art: album.artPath,
                               songs: songs,
+                              highlightItem: NavItem.albums,
                             );
                       },
                       borderRadius: BorderRadius.circular(16),
@@ -791,6 +794,7 @@ class HomeDashboard extends ConsumerWidget {
                 subtitle: album.artist ?? l10n.unknownArtist,
                 art: album.artPath,
                 songs: songs,
+                highlightItem: NavItem.albums,
               );
         },
         borderRadius: BorderRadius.circular(16),

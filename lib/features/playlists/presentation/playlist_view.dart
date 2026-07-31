@@ -176,6 +176,7 @@ class _PlaylistCard extends ConsumerWidget {
               subtitle: 'Playlist',
               songs: orderedSongs,
               playlist: playlist,
+              highlightItem: NavItem.playlists,
             );
       },
       borderRadius: BorderRadius.circular(12),

@@ -527,6 +527,27 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
+  /// Starts playback of [songs] in a fully shuffled order, including a
+  /// random first song, and turns shuffle mode on.
+  Future<void> playShuffled(List<Song> songs) async {
+    if (songs.isEmpty) return;
+
+    _originalPlaylist = List.from(songs);
+    _playlist = List<Song>.from(songs)..shuffle();
+    _currentIndex = 0;
+    _manualQueueCount = 0;
+
+    if (!state.isShuffle) {
+      state = state.copyWith(isShuffle: true);
+      await ref.read(settingsProvider.notifier).updateShuffle(true);
+    }
+
+    state = state.copyWith(queue: List.from(_playlist));
+    play(_playlist[_currentIndex]);
+    await _saveQueueState();
+    _updateNotification();
+  }
+
   Future<void> play(Song song, {bool forceDisableCrossfade = false, bool play = true, Duration? initialPosition}) async {
     if (song.isOnlineStream) {
       if (song.streamUrl == null || _isStreamUrlExpired(song.streamUrl)) {
