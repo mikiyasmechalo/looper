@@ -230,7 +230,26 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
       final artists = allArtists.where((a) => a.artistImageUrl == null).toList();
       final service = ArtistImageService();
 
+      // First pass: re-link images that already exist on disk (e.g. after a
+      // Reset & Rescan). No network calls, no rate-limit delay.
+      final needsDownload = <Artist>[];
       for (final artist in artists) {
+        if (state.isScanning) break;
+        if (artist.name == 'Unknown Artist') continue;
+
+        final cached = await service.findLocalImage(artist.name);
+        if (cached != null) {
+          await DbService.isar.writeTxn(() async {
+            artist.artistImageUrl = cached;
+            await DbService.isar.artists.put(artist);
+          });
+        } else {
+          needsDownload.add(artist);
+        }
+      }
+
+      // Second pass: download only genuinely missing artist images.
+      for (final artist in needsDownload) {
         // Yield/stop fetching immediately if a library scan starts
         if (state.isScanning) break;
         if (artist.name == 'Unknown Artist') continue;
@@ -410,6 +429,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
         if (showVisualIndicator) {
           state = state.copyWith(isScanning: false);
         }
+        _fetchMissingArtistImages();
         return;
       }
 
@@ -424,6 +444,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
       if (showVisualIndicator) {
         state = state.copyWith(isScanning: false);
       }
+      _fetchMissingArtistImages();
     } finally {
       _isScanRunning = false;
     }
@@ -445,11 +466,14 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     state = state.copyWith(isScanning: true);
 
     // Preserve downloaded artist images across the reset so they aren't
-    // re-downloaded from the network after rescanning.
+    // re-downloaded from the network after rescanning. Keyed by the same
+    // normalized name used for the cache filenames so minor tag differences
+    // (case, whitespace, stray characters) still match.
     final artistsBefore = await DbService.isar.artists.where().findAll();
     final savedArtistImages = <String, String>{
       for (final a in artistsBefore)
-        if (a.artistImageUrl != null) a.name: a.artistImageUrl!,
+        if (a.artistImageUrl != null)
+          _normalizeArtistKey(a.name): a.artistImageUrl!,
     };
 
     await DbService.isar.writeTxn(() async {
@@ -471,7 +495,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
       final newArtists = await DbService.isar.artists.where().findAll();
       await DbService.isar.writeTxn(() async {
         for (final artist in newArtists) {
-          final saved = savedArtistImages[artist.name];
+          final saved = savedArtistImages[_normalizeArtistKey(artist.name)];
           if (saved != null) {
             artist.artistImageUrl = saved;
             await DbService.isar.artists.put(artist);
@@ -481,7 +505,16 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     }
 
     state = state.copyWith(isScanning: false);
+
+    // Explicitly kick off the fetch pass now that scanning is done. The Isar
+    // watch that drives _fetchMissingArtistImages only fires on DB writes, and
+    // flipping isScanning is a plain state change, so without this the
+    // disk-relink fallback would never run this session.
+    _fetchMissingArtistImages();
   }
+
+  String _normalizeArtistKey(String name) =>
+      name.trim().toLowerCase().replaceAll(RegExp(r'[^\w\s]+'), '');
 
   Future<int> scanLibrary(String path, {bool updateIsScanning = true}) async {
     if (!await _requestPermissions()) return 0;
@@ -518,6 +551,11 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     if (updateIsScanning) {
       state = state.copyWith(isScanning: false);
     }
+
+    // Ensure any newly created artists get their images fetched now that the
+    // scan is over (the Isar watch only fires on DB writes, not on the
+    // isScanning state change).
+    _fetchMissingArtistImages();
 
     return totalSongsFound;
   }

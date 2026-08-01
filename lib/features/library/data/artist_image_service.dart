@@ -12,6 +12,12 @@ class ArtistImageService {
 
   Future<String?> getArtistImage(String artistName) async {
     try {
+      // Return an existing cached image without hitting the network. Downloaded
+      // files survive library resets (they live outside the database), so this
+      // prevents re-downloading after Reset & Rescan.
+      final cached = await findLocalImage(artistName);
+      if (cached != null) return cached;
+
       final settings = await DbService.isar.appSettings.get(0);
       if (settings != null && !settings.enableInternet) {
         return null;
@@ -38,7 +44,24 @@ class ArtistImageService {
     return null;
   }
 
-  Future<String?> _downloadAndSaveImage(String artistName, String url) async {
+  /// Returns the path of an already-downloaded artist image for [artistName]
+  /// if it exists on disk, without touching the network.
+  Future<String?> findLocalImage(String artistName) async {
+    try {
+      final appDir = await getApplicationSupportDirectory();
+      final fileName = '${artistName.replaceAll(RegExp(r'[^\w\s]+'), '')}.jpg';
+      final file = File(p.join(appDir.path, 'artist_images', fileName));
+      if (await file.exists()) return file.path;
+    } catch (e) {
+
+    }
+    return null;
+  }
+
+  Future<String?> _downloadAndSaveImage(
+    String artistName,
+    String url,
+  ) async {
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -48,6 +71,7 @@ class ArtistImageService {
 
         final fileName = '${artistName.replaceAll(RegExp(r'[^\w\s]+'), '')}.jpg';
         final file = File(p.join(artistDir.path, fileName));
+        if (await file.exists()) return file.path;
         await file.writeAsBytes(response.bodyBytes);
         return file.path;
       }

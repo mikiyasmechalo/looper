@@ -35,6 +35,22 @@ final dashboardGenresDataProvider = Provider.autoDispose<DashboardGenresData>((
   return DashboardGenresData(sortedGenres: genres, genresMap: genresMap);
 });
 
+/// Albums sorted by total play count (most played first) for the home screen's
+/// "top albums" preview.
+final topAlbumsProvider = Provider<List<Album>>((ref) {
+  final songs = ref.watch(libraryProvider.select((l) => l.songs));
+  final albums = ref.watch(libraryProvider.select((l) => l.albums));
+  final counts = <String, int>{};
+  for (final song in songs) {
+    if (song.album != null && song.album!.isNotEmpty) {
+      counts[song.album!] = (counts[song.album!] ?? 0) + song.playCount;
+    }
+  }
+  final sorted = List<Album>.from(albums)
+    ..sort((a, b) => (counts[b.name] ?? 0).compareTo(counts[a.name] ?? 0));
+  return sorted;
+});
+
 class HomeDashboard extends ConsumerWidget {
   const HomeDashboard({super.key});
 
@@ -104,7 +120,8 @@ class HomeDashboard extends ConsumerWidget {
             );
             orderedChildren.add(const SizedBox(height: 16));
           } else if (section == 'albums') {
-            if (settings.showHomeAlbums && library.albums.isNotEmpty) {
+            final topAlbums = ref.watch(topAlbumsProvider);
+            if (settings.showHomeAlbums && topAlbums.isNotEmpty) {
               orderedChildren.add(
                 _buildDesktopHorizontalSection(
                   context,
@@ -112,12 +129,12 @@ class HomeDashboard extends ConsumerWidget {
                   onViewAll: () => ref
                       .read(appNavigationProvider.notifier)
                       .setItem(NavItem.albums),
-                  itemCount: library.albums.length,
+                  itemCount: topAlbums.length,
                   isNarrow: isNarrow,
                   itemBuilder: (context, index) {
                     return _buildDesktopAlbumItem(
                       ref,
-                      library.albums[index],
+                      topAlbums[index],
                       l10n,
                     );
                   },
@@ -592,13 +609,14 @@ class HomeDashboard extends ConsumerWidget {
     BuildContext context,
   ) {
     final albumsAsync = ref.watch(albumsProvider);
+    final topAlbums = ref.watch(topAlbumsProvider);
     final l10n = AppLocalizations.of(context)!;
 
     return albumsAsync.when(
       data: (albums) {
         if (albums.isEmpty) return const SizedBox.shrink();
 
-        final featuredAlbums = albums.take(10).toList();
+        final featuredAlbums = topAlbums.take(10).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
