@@ -10,6 +10,7 @@ import 'package:looper_player/features/library/presentation/library_notifier.dar
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
+import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
@@ -267,6 +268,7 @@ class _AndroidHomeTabState extends ConsumerState<AndroidHomeTab> {
 
             art: isLocalImage ? imageUrl : artist.artPath,
             imageUrl: isNetworkImage ? imageUrl : null,
+            images: artist.artistImages,
 
                 songs: songs,
               );
@@ -279,7 +281,8 @@ class _AndroidHomeTabState extends ConsumerState<AndroidHomeTab> {
               width: 92,
               height: 92,
               child: ClipOval(
-                child: OptimizedImage(
+                child: ArtistImage(
+                  images: artist.artistImages,
                   imageUrl: artist.artistImageUrl != null && artist.artistImageUrl!.startsWith('http') ? artist.artistImageUrl : null,
                   imagePath: artist.artistImageUrl != null && !artist.artistImageUrl!.startsWith('http') ? artist.artistImageUrl : artist.artPath,
                   fit: BoxFit.cover,

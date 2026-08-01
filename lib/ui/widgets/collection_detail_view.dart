@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
+import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:looper_player/ui/widgets/app_bottom_sheet.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
@@ -33,6 +34,7 @@ class CollectionDetailView extends ConsumerWidget {
   final String? subtitle;
   final String? artPath;
   final String? imageUrl;
+  final List<String> images;
   final List<Song> songs;
   final Playlist? playlist;
 
@@ -42,6 +44,7 @@ class CollectionDetailView extends ConsumerWidget {
     this.subtitle,
     this.artPath,
     this.imageUrl,
+    this.images = const [],
     required this.songs,
     this.playlist,
   });
@@ -191,7 +194,8 @@ class CollectionDetailView extends ConsumerWidget {
 
   Widget _buildArt(BuildContext context, bool isNarrow) {
     final double size = 140; // Unified size for a cleaner Row look
-    return OptimizedImage(
+    return ArtistImage(
+      images: images,
       imagePath: artPath,
       imageUrl: imageUrl,
       width: size,

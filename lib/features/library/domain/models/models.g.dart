@@ -5727,8 +5727,13 @@ const ArtistSchema = CollectionSchema(
       name: r'artistImageUrl',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(
+    r'artistImages': PropertySchema(
       id: 2,
+      name: r'artistImages',
+      type: IsarType.stringList,
+    ),
+    r'name': PropertySchema(
+      id: 3,
       name: r'name',
       type: IsarType.string,
     )
@@ -5779,6 +5784,13 @@ int _artistEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  bytesCount += 3 + object.artistImages.length * 3;
+  {
+    for (var i = 0; i < object.artistImages.length; i++) {
+      final value = object.artistImages[i];
+      bytesCount += value.length * 3;
+    }
+  }
   bytesCount += 3 + object.name.length * 3;
   return bytesCount;
 }
@@ -5791,7 +5803,8 @@ void _artistSerialize(
 ) {
   writer.writeString(offsets[0], object.artPath);
   writer.writeString(offsets[1], object.artistImageUrl);
-  writer.writeString(offsets[2], object.name);
+  writer.writeStringList(offsets[2], object.artistImages);
+  writer.writeString(offsets[3], object.name);
 }
 
 Artist _artistDeserialize(
@@ -5803,8 +5816,9 @@ Artist _artistDeserialize(
   final object = Artist();
   object.artPath = reader.readStringOrNull(offsets[0]);
   object.artistImageUrl = reader.readStringOrNull(offsets[1]);
+  object.artistImages = reader.readStringList(offsets[2]) ?? [];
   object.id = id;
-  object.name = reader.readString(offsets[2]);
+  object.name = reader.readString(offsets[3]);
   return object;
 }
 
@@ -5820,6 +5834,8 @@ P _artistDeserializeProp<P>(
     case 1:
       return (reader.readStringOrNull(offset)) as P;
     case 2:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 3:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -6305,6 +6321,228 @@ extension ArtistQueryFilter on QueryBuilder<Artist, Artist, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'artistImages',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'artistImages',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'artistImages',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'artistImages',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'artistImages',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'artistImages',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'artistImages',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'artistImages',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'artistImages',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'artistImages',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition> artistImagesLengthEqualTo(
+      int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'artistImages',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition> artistImagesIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'artistImages',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition> artistImagesIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'artistImages',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'artistImages',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition>
+      artistImagesLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'artistImages',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<Artist, Artist, QAfterFilterCondition> artistImagesLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'artistImages',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
   QueryBuilder<Artist, Artist, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -6595,6 +6833,12 @@ extension ArtistQueryWhereDistinct on QueryBuilder<Artist, Artist, QDistinct> {
     });
   }
 
+  QueryBuilder<Artist, Artist, QDistinct> distinctByArtistImages() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'artistImages');
+    });
+  }
+
   QueryBuilder<Artist, Artist, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -6619,6 +6863,12 @@ extension ArtistQueryProperty on QueryBuilder<Artist, Artist, QQueryProperty> {
   QueryBuilder<Artist, String?, QQueryOperations> artistImageUrlProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'artistImageUrl');
+    });
+  }
+
+  QueryBuilder<Artist, List<String>, QQueryOperations> artistImagesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'artistImages');
     });
   }
 

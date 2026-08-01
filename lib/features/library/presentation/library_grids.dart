@@ -11,6 +11,7 @@ import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
+import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/ui/widgets/global_playing_indicator.dart';
 import 'package:isar/isar.dart';
@@ -292,6 +293,15 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
                       foregroundColor: Colors.white70,
                     ),
                   ),
+                  IconButton(
+                    onPressed: () => _showAllAlbumsOptions(context, ref, albums, l10n),
+                    icon: const Icon(LucideIcons.moreHorizontal, size: 16),
+                    tooltip: 'Options',
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -317,6 +327,25 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
       },
       loading: () => const AppLoadingIndicator(),
       error: (e, s) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  Future<void> _showAllAlbumsOptions(
+    BuildContext context,
+    WidgetRef ref,
+    List<Album> albums,
+    AppLocalizations l10n,
+  ) async {
+    final albumNames = albums.map((a) => a.name).toSet();
+    final allSongs = await DbService.isar.songs.where().findAll();
+    final songs = allSongs.where((s) => albumNames.contains(s.album)).toList();
+    if (!context.mounted) return;
+    showCollectionOptionsBottomSheet(
+      context: context,
+      ref: ref,
+      title: '${albums.length} ${l10n.albums}',
+      subtitle: '${songs.length} ${l10n.songs}',
+      songs: songs,
     );
   }
 }
@@ -658,6 +687,15 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
                       foregroundColor: Colors.white70,
                     ),
                   ),
+                  IconButton(
+                    onPressed: () => _showAllArtistsOptions(context, ref, artists, l10n),
+                    icon: const Icon(LucideIcons.moreHorizontal, size: 16),
+                    tooltip: 'Options',
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -682,6 +720,29 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
       },
       loading: () => const AppLoadingIndicator(),
       error: (e, s) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  Future<void> _showAllArtistsOptions(
+    BuildContext context,
+    WidgetRef ref,
+    List<Artist> artists,
+    AppLocalizations l10n,
+  ) async {
+    final artistNames = artists.map((a) => a.name).toSet();
+    final allSongs = await DbService.isar.songs.where().findAll();
+    final songs = allSongs
+        .where((s) =>
+            artistNames.contains(s.artist) ||
+            artistNames.contains(s.albumArtist))
+        .toList();
+    if (!context.mounted) return;
+    showCollectionOptionsBottomSheet(
+      context: context,
+      ref: ref,
+      title: '${artists.length} ${l10n.artists}',
+      subtitle: '${songs.length} ${l10n.songs}',
+      songs: songs,
     );
   }
 }
@@ -725,6 +786,7 @@ class _ArtistCard extends ConsumerWidget {
                 title: artist.name,
                 art: isLocalImage ? artist.artistImageUrl : artist.artPath,
                 imageUrl: isNetworkImage ? artist.artistImageUrl : null,
+                images: artist.artistImages,
                 songs: songs,
                 highlightItem: NavItem.artists,
               );
@@ -766,7 +828,8 @@ class _ArtistCard extends ConsumerWidget {
                   color: Colors.white.withValues(alpha: 0.05),
                 ),
                 child: ClipOval(
-                  child: OptimizedImage(
+                  child: ArtistImage(
+                    images: artist.artistImages,
                     imageUrl: artist.artistImageUrl,
                     imagePath: artist.artPath,
                     fit: BoxFit.cover,

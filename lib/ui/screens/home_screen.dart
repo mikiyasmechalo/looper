@@ -409,6 +409,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           subtitle: nav.collectionSubtitle,
           artPath: nav.collectionArt,
           imageUrl: nav.collectionImageUrl,
+          images: nav.collectionImages,
           songs: nav.collectionSongs,
         );
       case NavItem.queue:

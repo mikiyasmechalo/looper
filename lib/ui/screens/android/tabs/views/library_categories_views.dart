@@ -10,6 +10,7 @@ import 'package:looper_player/features/library/presentation/library_notifier.dar
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
+import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:looper_player/ui/widgets/app_bottom_sheet.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:isar/isar.dart';
@@ -645,6 +646,7 @@ class ArtistsGridView extends ConsumerWidget {
                   subtitle: l10n.artist,
                   art: isLocalImage ? imageUrl : artist.artPath,
                   imageUrl: isNetworkImage ? imageUrl : null,
+                  images: artist.artistImages,
                   songs: songs,
                 );
           },
@@ -652,7 +654,8 @@ class ArtistsGridView extends ConsumerWidget {
             children: [
               Expanded(
                 child: ClipOval(
-                  child: OptimizedImage(
+                  child: ArtistImage(
+                    images: artist.artistImages,
                     imageUrl:
                         artist.artistImageUrl != null &&
                             artist.artistImageUrl!.startsWith('http')

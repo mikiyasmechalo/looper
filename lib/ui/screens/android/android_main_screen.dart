@@ -165,6 +165,7 @@ class _AndroidMainScreenState extends ConsumerState<AndroidMainScreen> with Widg
               subtitle: next.collectionSubtitle,
               artPath: next.collectionArt,
               imageUrl: next.collectionImageUrl,
+              images: next.collectionImages,
               songs: next.collectionSongs,
               playlist: next.activePlaylist,
             ),

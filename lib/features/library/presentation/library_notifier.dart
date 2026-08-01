@@ -227,39 +227,75 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     _isFetchingArtistImages = true;
     try {
       final allArtists = await DbService.isar.artists.where().findAll();
-      final artists = allArtists.where((a) => a.artistImageUrl == null).toList();
       final service = ArtistImageService();
+      final userImageIndex = await service.loadUserImageIndex();
 
-      // First pass: re-link images that already exist on disk (e.g. after a
-      // Reset & Rescan). No network calls, no rate-limit delay.
+      // First pass: rebuild collage lists from what's already on disk (real
+      // photos only, generic placeholders excluded). This re-links images
+      // after a Reset & Rescan and also cleans up any generic avatars that
+      // were previously stored. No network calls, no rate-limit delay.
       final needsDownload = <Artist>[];
-      for (final artist in artists) {
+      for (final artist in allArtists) {
         if (state.isScanning) break;
         if (artist.name == 'Unknown Artist') continue;
 
-        final cached = await service.findLocalImage(artist.name);
-        if (cached != null) {
-          await DbService.isar.writeTxn(() async {
-            artist.artistImageUrl = cached;
-            await DbService.isar.artists.put(artist);
-          });
+        final cached = await service.findLocalImages(
+          artist.name,
+          userImageIndex: userImageIndex,
+        );
+        if (cached.isNotEmpty) {
+          final changed =
+              artist.artistImages.join('|') != cached.join('|') ||
+              artist.artistImageUrl == null;
+          if (changed) {
+            await DbService.isar.writeTxn(() async {
+              artist.artistImages = cached;
+              artist.artistImageUrl ??= cached.first;
+              await DbService.isar.artists.put(artist);
+            });
+          }
         } else {
-          needsDownload.add(artist);
+          // No real images on disk. Clear any stale generic avatars that were
+          // stored in the collage list so they don't keep showing as a collage
+          // of placeholders.
+          if (artist.artistImages.isNotEmpty) {
+            await DbService.isar.writeTxn(() async {
+              artist.artistImages = [];
+              await DbService.isar.artists.put(artist);
+            });
+          }
+          if (artist.artistImageUrl == null) {
+            needsDownload.add(artist);
+          }
         }
       }
 
-      // Second pass: download only genuinely missing artist images.
+      // Second pass: download genuinely missing artist images.
       for (final artist in needsDownload) {
         // Yield/stop fetching immediately if a library scan starts
         if (state.isScanning) break;
         if (artist.name == 'Unknown Artist') continue;
 
-        final localPath = await service.getArtistImage(artist.name);
-        if (localPath != null) {
+        final localPaths = await service.getArtistImages(
+          artist.name,
+          userImageIndex: userImageIndex,
+        );
+        if (localPaths.isNotEmpty) {
           await DbService.isar.writeTxn(() async {
-            artist.artistImageUrl = localPath;
+            artist.artistImages = localPaths;
+            artist.artistImageUrl = localPaths.first;
             await DbService.isar.artists.put(artist);
           });
+        } else {
+          // No real photo for any part of the name. Keep a single generic
+          // avatar as a fallback instead of a collage of placeholders.
+          final primary = await service.getArtistImage(artist.name);
+          if (primary != null) {
+            await DbService.isar.writeTxn(() async {
+              artist.artistImageUrl = primary;
+              await DbService.isar.artists.put(artist);
+            });
+          }
         }
 
         // Wait 2.0 seconds between queries to prevent high CPU, power, and bandwidth usage,
@@ -475,6 +511,11 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
         if (a.artistImageUrl != null)
           _normalizeArtistKey(a.name): a.artistImageUrl!,
     };
+    final savedArtistCollages = <String, List<String>>{
+      for (final a in artistsBefore)
+        if (a.artistImages.isNotEmpty)
+          _normalizeArtistKey(a.name): a.artistImages,
+    };
 
     await DbService.isar.writeTxn(() async {
       await DbService.isar.songs.clear();
@@ -491,13 +532,20 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     }
 
     // Re-link preserved artist images to the freshly recreated artist records.
-    if (savedArtistImages.isNotEmpty) {
+    if (savedArtistImages.isNotEmpty || savedArtistCollages.isNotEmpty) {
       final newArtists = await DbService.isar.artists.where().findAll();
       await DbService.isar.writeTxn(() async {
         for (final artist in newArtists) {
-          final saved = savedArtistImages[_normalizeArtistKey(artist.name)];
+          final key = _normalizeArtistKey(artist.name);
+          final saved = savedArtistImages[key];
           if (saved != null) {
             artist.artistImageUrl = saved;
+          }
+          final collage = savedArtistCollages[key];
+          if (collage != null && collage.isNotEmpty) {
+            artist.artistImages = collage;
+          }
+          if (saved != null || (collage != null && collage.isNotEmpty)) {
             await DbService.isar.artists.put(artist);
           }
         }

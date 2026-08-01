@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
+import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:looper_player/ui/widgets/global_playing_indicator.dart';
 import 'package:looper_player/features/library/presentation/library_grids.dart';
@@ -570,6 +571,7 @@ class HomeDashboard extends ConsumerWidget {
                                 subtitle: 'Artist',
                                 art: artist.artPath,
                                 imageUrl: artist.artistImageUrl,
+                                images: artist.artistImages,
                                 songs: songs,
                                 highlightItem: NavItem.artists,
                               );
@@ -582,7 +584,8 @@ class HomeDashboard extends ConsumerWidget {
                               width: isNarrow ? 100 : 120,
                               height: isNarrow ? 100 : 120,
                               child: ClipOval(
-                                child: OptimizedImage(
+                                child: ArtistImage(
+                                  images: artist.artistImages,
                                   imageUrl: artist.artistImageUrl,
                                   imagePath: artist.artPath,
                                   fit: BoxFit.cover,

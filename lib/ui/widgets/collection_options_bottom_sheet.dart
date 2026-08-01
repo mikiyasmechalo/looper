@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,10 +7,12 @@ import 'package:isar/isar.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/features/library/data/artist_image_service.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playlists/presentation/playlist_view.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
+import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -60,8 +64,63 @@ Future<void> showArtistOptionsBottomSheet({
     title: artist.name,
     artPath: isLocalImage ? artist.artistImageUrl : artist.artPath,
     imageUrl: isNetworkImage ? artist.artistImageUrl : null,
+    images: artist.artistImages,
     songs: songs,
+    imageActionLabel: 'Set Artist Image',
+    onImageAction: () async {
+      Navigator.pop(context);
+      await _changeArtistImage(context, artist);
+    },
   );
+}
+
+/// Lets the user pick local images to assign to an artist whose image the app
+/// couldn't fetch automatically. Picked files are copied into the artist
+/// images cache and stored on the artist record.
+Future<void> _changeArtistImage(
+  BuildContext context,
+  Artist artist,
+) async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    if (!context.mounted) return;
+
+    final service = ArtistImageService();
+    final saved = await service.saveUserImages(
+      artist.name,
+      result.files.map((f) => f.path).whereType<String>().toList(),
+    );
+    if (saved.isEmpty) return;
+
+    await DbService.isar.writeTxn(() async {
+      artist.artistImages = saved;
+      artist.artistImageUrl = saved.first;
+      await DbService.isar.artists.put(artist);
+    });
+
+    scaffoldMessengerKey.currentState?.clearSnackBars();
+    scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Assigned ${saved.length} image${saved.length == 1 ? '' : 's'} to ${artist.name}',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    scaffoldMessengerKey.currentState?.clearSnackBars();
+    scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text('Could not set image: $e'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 }
 
 /// Generic context menu for a collection of [songs].
@@ -72,7 +131,10 @@ void showCollectionOptionsBottomSheet({
   String? subtitle,
   String? artPath,
   String? imageUrl,
+  List<String>? images,
   required List<Song> songs,
+  String? imageActionLabel,
+  Future<void> Function()? onImageAction,
 }) {
   showModalBottomSheet(
     context: context,
@@ -85,7 +147,10 @@ void showCollectionOptionsBottomSheet({
       subtitle: subtitle,
       artPath: artPath,
       imageUrl: imageUrl,
+      images: images,
       songs: songs,
+      imageActionLabel: imageActionLabel,
+      onImageAction: onImageAction,
     ),
   );
 }
@@ -95,14 +160,20 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   final String? subtitle;
   final String? artPath;
   final String? imageUrl;
+  final List<String>? images;
   final List<Song> songs;
+  final String? imageActionLabel;
+  final Future<void> Function()? onImageAction;
 
   const _CollectionOptionsSheetContent({
     required this.title,
     this.subtitle,
     this.artPath,
     this.imageUrl,
+    this.images,
     required this.songs,
+    this.imageActionLabel,
+    this.onImageAction,
   });
 
   void _showPlaylistSelector(
@@ -195,7 +266,8 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
             child: Row(
               children: [
-                OptimizedImage(
+                ArtistImage(
+                  images: images,
                   imageUrl: imageUrl,
                   imagePath: artPath,
                   width: 52,
@@ -322,6 +394,16 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                         _showPlaylistSelector(context, ref);
                       },
                     ),
+                    if (imageActionLabel != null && onImageAction != null)
+                      MenuOptionTile(
+                        label: imageActionLabel!,
+                        icon: LucideIcons.imagePlus,
+                        iconColor: accentColor,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          onImageAction!();
+                        },
+                      ),
                   ],
                 ),
               ),

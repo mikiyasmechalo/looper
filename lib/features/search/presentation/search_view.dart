@@ -657,6 +657,8 @@ class _ArtistResultCard extends ConsumerWidget {
               subtitle: l10n.artist,
               songs: songs,
               art: artist.artPath,
+              imageUrl: artist.artistImageUrl,
+              images: artist.artistImages,
               highlightItem: NavItem.artists,
             );
       },

@@ -30,6 +30,7 @@ class NavigationState {
   final String? collectionSubtitle;
   final String? collectionArt;
   final String? collectionImageUrl;
+  final List<String> collectionImages;
   final List<Song> collectionSongs;
   final Playlist? activePlaylist;
   final List<NavigationState> history;
@@ -42,6 +43,7 @@ class NavigationState {
     this.collectionSubtitle,
     this.collectionArt,
     this.collectionImageUrl,
+    this.collectionImages = const [],
     this.collectionSongs = const [],
     this.activePlaylist,
     this.history = const [],
@@ -55,6 +57,7 @@ class NavigationState {
     String? collectionSubtitle,
     String? collectionArt,
     String? collectionImageUrl,
+    List<String>? collectionImages,
     List<Song>? collectionSongs,
     Playlist? activePlaylist,
     List<NavigationState>? history,
@@ -69,6 +72,7 @@ class NavigationState {
       collectionSubtitle: collectionSubtitle ?? this.collectionSubtitle,
       collectionArt: collectionArt ?? this.collectionArt,
       collectionImageUrl: collectionImageUrl ?? this.collectionImageUrl,
+      collectionImages: collectionImages ?? this.collectionImages,
       collectionSongs: collectionSongs ?? this.collectionSongs,
       activePlaylist: activePlaylist ?? this.activePlaylist,
       history: history ?? this.history,
@@ -112,6 +116,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
     String? subtitle,
     String? art,
     String? imageUrl,
+    List<String>? images,
     required List<Song> songs,
     Playlist? playlist,
     NavItem? highlightItem,
@@ -132,6 +137,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
       collectionSubtitle: subtitle,
       collectionArt: art,
       collectionImageUrl: imageUrl,
+      collectionImages: images ?? const [],
       collectionSongs: songs,
       activePlaylist: playlist,
       history: newHistory,
@@ -159,6 +165,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
       collectionSubtitle: state.collectionSubtitle,
       collectionArt: state.collectionArt,
       collectionImageUrl: state.collectionImageUrl,
+      collectionImages: state.collectionImages,
       collectionSongs: state.collectionSongs,
       activePlaylist: state.activePlaylist,
       isPlayerExpanded: state.isPlayerExpanded,

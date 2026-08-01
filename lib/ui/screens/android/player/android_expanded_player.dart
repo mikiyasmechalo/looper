@@ -524,6 +524,7 @@ class _AndroidExpandedPlayerState extends ConsumerState<AndroidExpandedPlayer>
                                               subtitle: l10n.artists,
                                               art: artist?.artPath ?? song.artPath,
                                               imageUrl: artist?.artistImageUrl,
+                                              images: artist?.artistImages ?? const [],
                                               songs: artistSongs,
                                             );
                                           }

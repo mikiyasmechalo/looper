@@ -78,6 +78,11 @@ class Artist {
 
   String? artPath;
   String? artistImageUrl;
+
+  /// Local file paths of downloaded artist images. May contain several images
+  /// (e.g. when the artist name includes collaborations like "A ft. B") which
+  /// are rendered as a collage.
+  List<String> artistImages = [];
 }
 
 @collection
