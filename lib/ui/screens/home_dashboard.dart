@@ -14,6 +14,8 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/db_service.dart';
+import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
+import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'package:isar/isar.dart';
 
 class DashboardGenresData {
@@ -133,6 +135,7 @@ class HomeDashboard extends ConsumerWidget {
                   isNarrow: isNarrow,
                   itemBuilder: (context, index) {
                     return _buildDesktopAlbumItem(
+                      context,
                       ref,
                       topAlbums[index],
                       l10n,
@@ -206,66 +209,75 @@ class HomeDashboard extends ConsumerWidget {
               final album = albums[index];
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: InkWell(
-                  onTap: () async {
-                    final songs = await DbService.isar.songs
-                        .filter()
-                        .albumEqualTo(album.name)
-                        .findAll();
-                    ref
-                        .read(appNavigationProvider.notifier)
-                        .showCollection(
-                          title: album.name,
-                          subtitle: album.artist,
-                          art: album.artPath,
-                          songs: songs,
-                          highlightItem: NavItem.albums,
-                        );
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: isNarrow ? 120 : 140,
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        OptimizedImage(
-                          imagePath: album.artPath,
-                          height: isNarrow ? 104 : 124,
-                          width: isNarrow ? 104 : 124,
-                          borderRadius: BorderRadius.circular(12),
-                          placeholder: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withValues(
-                                alpha: isDynamic ? 0.8 : 0.1,
+                child: GestureDetector(
+                  onSecondaryTap: () => showAlbumOptionsBottomSheet(
+                    context: context,
+                    ref: ref,
+                    album: album,
+                  ),
+                  child: InkWell(
+                    onTap: () async {
+                      final songs = await DbService.isar.songs
+                          .filter()
+                          .albumEqualTo(album.name)
+                          .findAll();
+                      ref
+                          .read(appNavigationProvider.notifier)
+                          .showCollection(
+                            title: album.name,
+                            subtitle: album.artist,
+                            art: album.artPath,
+                            songs: songs,
+                            highlightItem: NavItem.albums,
+                          );
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: isNarrow ? 120 : 140,
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          OptimizedImage(
+                            imagePath: album.artPath,
+                            height: isNarrow ? 104 : 124,
+                            width: isNarrow ? 104 : 124,
+                            borderRadius: BorderRadius.circular(12),
+                            placeholder: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(
+                                  alpha: isDynamic ? 0.8 : 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              borderRadius: BorderRadius.circular(12),
+                              child: const Center(
+                                child: Icon(LucideIcons.disc),
+                              ),
                             ),
-                            child: const Center(child: Icon(LucideIcons.disc)),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          album.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: Colors.white,
+                          const SizedBox(height: 12),
+                          Text(
+                            album.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          album.artist ?? 'Unknown',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.white38,
+                          const SizedBox(height: 4),
+                          Text(
+                            album.artist ?? 'Unknown',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white38,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -412,65 +424,73 @@ class HomeDashboard extends ConsumerWidget {
                   playbackProvider.select((s) => s.isPlaying),
                 );
 
-                return InkWell(
-                  onTap: () => ref.read(playbackProvider.notifier).play(song),
-                  borderRadius: BorderRadius.circular(8),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isCurrent
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.5)
-                          : Colors.white.withValues(alpha: 0.02),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        PlayingOverlay(
-                          isPlaying: isCurrent && isPlaying,
-                          borderRadius: 4,
-                          child: OptimizedImage(
-                            imagePath: song.artPath,
-                            width: 54,
-                            height: 54,
-                            borderRadius: BorderRadius.circular(4),
-                            placeholder: const Icon(
-                              LucideIcons.music,
-                              size: 20,
+                return GestureDetector(
+                  onSecondaryTap: () => showSongOptionsBottomSheet(
+                    context: context,
+                    ref: ref,
+                    song: song,
+                  ),
+                  child: InkWell(
+                    onTap: () =>
+                        ref.read(playbackProvider.notifier).play(song),
+                    borderRadius: BorderRadius.circular(8),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isCurrent
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.5)
+                            : Colors.white.withValues(alpha: 0.02),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          PlayingOverlay(
+                            isPlaying: isCurrent && isPlaying,
+                            borderRadius: 4,
+                            child: OptimizedImage(
+                              imagePath: song.artPath,
+                              width: 54,
+                              height: 54,
+                              borderRadius: BorderRadius.circular(4),
+                              placeholder: const Icon(
+                                LucideIcons.music,
+                                size: 20,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                song.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                  color: Colors.white,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  song.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                song.artist ?? 'Unknown',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white38,
+                                Text(
+                                  song.artist ?? 'Unknown',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white38,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -528,66 +548,74 @@ class HomeDashboard extends ConsumerWidget {
                   return Container(
                     width: isNarrow ? 120 : 140,
                     margin: const EdgeInsets.only(right: 16),
-                    child: InkWell(
-                      onTap: () async {
-                        final songs = await DbService.isar.songs
-                            .filter()
-                            .artistEqualTo(artist.name)
-                            .or()
-                            .albumArtistEqualTo(artist.name)
-                            .findAll();
-                        ref
-                            .read(appNavigationProvider.notifier)
-                            .showCollection(
-                              title: artist.name,
-                              subtitle: 'Artist',
-                              art: artist.artPath,
-                              imageUrl: artist.artistImageUrl,
-                              songs: songs,
-                              highlightItem: NavItem.artists,
-                            );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: isNarrow ? 100 : 120,
-                            height: isNarrow ? 100 : 120,
-                            child: ClipOval(
-                              child: OptimizedImage(
+                    child: GestureDetector(
+                      onSecondaryTap: () =>
+                          showArtistOptionsBottomSheet(
+                            context: context,
+                            ref: ref,
+                            artist: artist,
+                          ),
+                      child: InkWell(
+                        onTap: () async {
+                          final songs = await DbService.isar.songs
+                              .filter()
+                              .artistEqualTo(artist.name)
+                              .or()
+                              .albumArtistEqualTo(artist.name)
+                              .findAll();
+                          ref
+                              .read(appNavigationProvider.notifier)
+                              .showCollection(
+                                title: artist.name,
+                                subtitle: 'Artist',
+                                art: artist.artPath,
                                 imageUrl: artist.artistImageUrl,
-                                imagePath: artist.artPath,
-                                fit: BoxFit.cover,
-                                placeholder: Container(
-                                  color: Colors.white.withValues(alpha: 0.05),
-                                  child: const Center(
-                                    child: Icon(
-                                      LucideIcons.user,
-                                      size: 32,
-                                      color: Colors.white38,
+                                songs: songs,
+                                highlightItem: NavItem.artists,
+                              );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: isNarrow ? 100 : 120,
+                              height: isNarrow ? 100 : 120,
+                              child: ClipOval(
+                                child: OptimizedImage(
+                                  imageUrl: artist.artistImageUrl,
+                                  imagePath: artist.artPath,
+                                  fit: BoxFit.cover,
+                                  placeholder: Container(
+                                    color: Colors.white.withValues(alpha: 0.05),
+                                    child: const Center(
+                                      child: Icon(
+                                        LucideIcons.user,
+                                        size: 32,
+                                        color: Colors.white38,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              artist.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(
+                                artist.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -640,74 +668,81 @@ class HomeDashboard extends ConsumerWidget {
                   return Container(
                     width: isNarrow ? 120 : 140,
                     margin: const EdgeInsets.only(right: 16),
-                    child: InkWell(
-                      onTap: () async {
-                        final songs = await DbService.isar.songs
-                            .filter()
-                            .albumEqualTo(album.name)
-                            .findAll();
-                        ref
-                            .read(appNavigationProvider.notifier)
-                            .showCollection(
-                              title: album.name,
-                              subtitle: album.artist,
-                              art: album.artPath,
-                              songs: songs,
-                              highlightItem: NavItem.albums,
-                            );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: OptimizedImage(
-                              imagePath: album.artPath,
-                              height: isNarrow ? 104 : 124,
-                              width: isNarrow ? 104 : 124,
-                              fit: BoxFit.cover,
-                              placeholder: Container(
-                                color: Colors.white.withValues(alpha: 0.05),
-                                child: const Center(
-                                  child: Icon(
-                                    LucideIcons.disc,
-                                    size: 32,
-                                    color: Colors.white38,
+                    child: GestureDetector(
+                      onSecondaryTap: () => showAlbumOptionsBottomSheet(
+                        context: context,
+                        ref: ref,
+                        album: album,
+                      ),
+                      child: InkWell(
+                        onTap: () async {
+                          final songs = await DbService.isar.songs
+                              .filter()
+                              .albumEqualTo(album.name)
+                              .findAll();
+                          ref
+                              .read(appNavigationProvider.notifier)
+                              .showCollection(
+                                title: album.name,
+                                subtitle: album.artist,
+                                art: album.artPath,
+                                songs: songs,
+                                highlightItem: NavItem.albums,
+                              );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: OptimizedImage(
+                                imagePath: album.artPath,
+                                height: isNarrow ? 104 : 124,
+                                width: isNarrow ? 104 : 124,
+                                fit: BoxFit.cover,
+                                placeholder: Container(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  child: const Center(
+                                    child: Icon(
+                                      LucideIcons.disc,
+                                      size: 32,
+                                      color: Colors.white38,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              album.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(
+                                album.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              album.artist ?? 'Unknown',
-                              style: const TextStyle(
-                                color: Colors.white38,
-                                fontSize: 11,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(
+                                album.artist ?? 'Unknown',
+                                style: const TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 11,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -792,6 +827,7 @@ class HomeDashboard extends ConsumerWidget {
   }
 
   Widget _buildDesktopAlbumItem(
+    BuildContext context,
     WidgetRef ref,
     Album album,
     AppLocalizations l10n,
@@ -799,55 +835,62 @@ class HomeDashboard extends ConsumerWidget {
     return Container(
       width: 130,
       margin: const EdgeInsets.only(right: 16),
-      child: InkWell(
-        onTap: () async {
-          final songs = await DbService.isar.songs
-              .filter()
-              .albumEqualTo(album.name)
-              .findAll();
-          ref
-              .read(appNavigationProvider.notifier)
-              .showCollection(
-                title: album.name,
-                subtitle: album.artist ?? l10n.unknownArtist,
-                art: album.artPath,
-                songs: songs,
-                highlightItem: NavItem.albums,
-              );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AspectRatio(
-              aspectRatio: 1.0,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: OptimizedImage(
-                  imagePath: album.artPath,
-                  fit: BoxFit.cover,
+      child: GestureDetector(
+        onSecondaryTap: () => showAlbumOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          album: album,
+        ),
+        child: InkWell(
+          onTap: () async {
+            final songs = await DbService.isar.songs
+                .filter()
+                .albumEqualTo(album.name)
+                .findAll();
+            ref
+                .read(appNavigationProvider.notifier)
+                .showCollection(
+                  title: album.name,
+                  subtitle: album.artist ?? l10n.unknownArtist,
+                  art: album.artPath,
+                  songs: songs,
+                  highlightItem: NavItem.albums,
+                );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AspectRatio(
+                aspectRatio: 1.0,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: OptimizedImage(
+                    imagePath: album.artPath,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              album.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 8),
+              Text(
+                album.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              album.artist ?? l10n.unknownArtist,
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              Text(
+                album.artist ?? l10n.unknownArtist,
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

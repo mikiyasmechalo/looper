@@ -18,6 +18,7 @@ import 'package:looper_player/features/library/presentation/library_notifier.dar
 import 'package:looper_player/ui/screens/android/tabs/views/library_categories_views.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
 
 // Providers for Albums and Artists
 final albumsProvider = StreamProvider<List<Album>>((ref) {
@@ -336,23 +337,29 @@ class _AlbumCard extends ConsumerWidget {
         nav.activeItem == NavItem.collectionDetail &&
         nav.collectionTitle == album.name;
 
-    return InkWell(
-      onTap: () async {
-        final songs = await DbService.isar.songs
-            .filter()
-            .albumEqualTo(album.name)
-            .findAll();
-        ref
-            .read(appNavigationProvider.notifier)
-            .showCollection(
-              title: album.name,
-              subtitle: album.artist,
-              art: album.artPath,
-              songs: songs,
-              highlightItem: NavItem.albums,
-            );
-      },
-      borderRadius: BorderRadius.circular(24),
+    return GestureDetector(
+      onSecondaryTap: () => showAlbumOptionsBottomSheet(
+        context: context,
+        ref: ref,
+        album: album,
+      ),
+      child: InkWell(
+        onTap: () async {
+          final songs = await DbService.isar.songs
+              .filter()
+              .albumEqualTo(album.name)
+              .findAll();
+          ref
+              .read(appNavigationProvider.notifier)
+              .showCollection(
+                title: album.name,
+                subtitle: album.artist,
+                art: album.artPath,
+                songs: songs,
+                highlightItem: NavItem.albums,
+              );
+        },
+        borderRadius: BorderRadius.circular(24),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(12.s),
@@ -446,6 +453,7 @@ class _AlbumCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -690,32 +698,38 @@ class _ArtistCard extends ConsumerWidget {
         nav.activeItem == NavItem.collectionDetail &&
         nav.collectionTitle == artist.name;
 
-    return InkWell(
-      onTap: () async {
-        final songs = await DbService.isar.songs
-            .filter()
-            .artistEqualTo(artist.name)
-            .or()
-            .albumArtistEqualTo(artist.name)
-            .findAll();
-        final isLocalImage =
-            artist.artistImageUrl != null &&
-            !artist.artistImageUrl!.startsWith('http');
-        final isNetworkImage =
-            artist.artistImageUrl != null &&
-            artist.artistImageUrl!.startsWith('http');
+    return GestureDetector(
+      onSecondaryTap: () => showArtistOptionsBottomSheet(
+        context: context,
+        ref: ref,
+        artist: artist,
+      ),
+      child: InkWell(
+        onTap: () async {
+          final songs = await DbService.isar.songs
+              .filter()
+              .artistEqualTo(artist.name)
+              .or()
+              .albumArtistEqualTo(artist.name)
+              .findAll();
+          final isLocalImage =
+              artist.artistImageUrl != null &&
+              !artist.artistImageUrl!.startsWith('http');
+          final isNetworkImage =
+              artist.artistImageUrl != null &&
+              artist.artistImageUrl!.startsWith('http');
 
-        ref
-            .read(appNavigationProvider.notifier)
-            .showCollection(
-              title: artist.name,
-              art: isLocalImage ? artist.artistImageUrl : artist.artPath,
-              imageUrl: isNetworkImage ? artist.artistImageUrl : null,
-              songs: songs,
-              highlightItem: NavItem.artists,
-            );
-      },
-      borderRadius: BorderRadius.circular(24),
+          ref
+              .read(appNavigationProvider.notifier)
+              .showCollection(
+                title: artist.name,
+                art: isLocalImage ? artist.artistImageUrl : artist.artPath,
+                imageUrl: isNetworkImage ? artist.artistImageUrl : null,
+                songs: songs,
+                highlightItem: NavItem.artists,
+              );
+        },
+        borderRadius: BorderRadius.circular(24),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(12.s),
@@ -779,6 +793,7 @@ class _ArtistCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -895,6 +895,105 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     state = state.copyWith(queue: List.from(_playlist));
   }
 
+  /// Inserts [songs] right after the current song, in the given order.
+  void addNextMany(List<Song> songs) {
+    if (songs.isEmpty) return;
+
+    // Remove duplicates from the upcoming queue to prevent immediate repeat
+    for (final song in songs) {
+      for (int i = _playlist.length - 1; i > _currentIndex; i--) {
+        if (_playlist[i].path == song.path) {
+          _playlist.removeAt(i);
+          if (i <= _currentIndex + _manualQueueCount) {
+            if (_manualQueueCount > 0) _manualQueueCount--;
+          }
+        }
+      }
+      _originalPlaylist.removeWhere((s) => s.path == song.path);
+    }
+
+    final insertIndex = _currentIndex + 1;
+    if (insertIndex >= _playlist.length) {
+      _playlist.addAll(songs);
+    } else {
+      _playlist.insertAll(insertIndex, songs);
+    }
+
+    if (state.currentSong != null) {
+      final origIdx = _originalPlaylist
+          .indexWhere((s) => s.path == state.currentSong!.path);
+      if (origIdx != -1) {
+        _originalPlaylist.insertAll(origIdx + 1, songs);
+      } else {
+        _originalPlaylist.addAll(songs);
+      }
+    } else {
+      _originalPlaylist.addAll(songs);
+    }
+    _manualQueueCount += songs.length;
+
+    state = state.copyWith(queue: List.from(_playlist));
+  }
+
+  /// Appends [songs] to the end of the upcoming queue.
+  void addToQueueMany(List<Song> songs) {
+    if (songs.isEmpty) return;
+
+    // Remove duplicate upcoming songs if present
+    final startSearchIndex = _currentIndex + _manualQueueCount;
+    for (final song in songs) {
+      for (int i = _playlist.length - 1; i > startSearchIndex; i--) {
+        if (_playlist[i].path == song.path) {
+          _playlist.removeAt(i);
+        }
+      }
+      _originalPlaylist.removeWhere((s) => s.path == song.path);
+    }
+
+    if (state.isShuffle) {
+      // Insert randomly into the remaining queue
+      for (final song in songs) {
+        final minIndex = _currentIndex + 1;
+        final maxIndex = _playlist.length;
+        final insertIndex = minIndex >= maxIndex
+            ? minIndex
+            : minIndex + math.Random().nextInt(maxIndex - minIndex + 1);
+
+        if (insertIndex >= _playlist.length) {
+          _playlist.add(song);
+        } else {
+          _playlist.insert(insertIndex, song);
+        }
+      }
+      _originalPlaylist.addAll(songs);
+    } else {
+      final insertIndex = _currentIndex + 1 + _manualQueueCount;
+      if (insertIndex >= _playlist.length) {
+        _playlist.addAll(songs);
+      } else {
+        _playlist.insertAll(insertIndex, songs);
+      }
+
+      // Also insert into _originalPlaylist at corresponding position
+      final refSongIdx = _currentIndex + _manualQueueCount;
+      if (refSongIdx >= 0 && refSongIdx < _playlist.length) {
+        final refSong = _playlist[refSongIdx];
+        final origIdx = _originalPlaylist
+            .indexWhere((s) => s.path == refSong.path);
+        if (origIdx != -1) {
+          _originalPlaylist.insertAll(origIdx + 1, songs);
+        } else {
+          _originalPlaylist.addAll(songs);
+        }
+      } else {
+        _originalPlaylist.addAll(songs);
+      }
+    }
+    _manualQueueCount += songs.length;
+
+    state = state.copyWith(queue: List.from(_playlist));
+  }
+
   Future<void> playFromFile(String path) async {
     // Check if song exists in DB
     final songs = await DbService.isar.songs
