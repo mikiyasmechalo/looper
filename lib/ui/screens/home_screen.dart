@@ -411,6 +411,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           imageUrl: nav.collectionImageUrl,
           images: nav.collectionImages,
           songs: nav.collectionSongs,
+          playlist: nav.activePlaylist,
         );
       case NavItem.queue:
         return const QueueView(key: ValueKey('queue'));
