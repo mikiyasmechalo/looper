@@ -1382,6 +1382,24 @@ abstract class AppLocalizations {
   /// **'Saves the last played song, queue order, and playback position so the app can restore the same session after restart. In real use, this means when the app is reopened, the user can continue from the same song list instead of starting over.'**
   String get persistQueueDesc;
 
+  /// No description provided for @systemTray.
+  ///
+  /// In en, this message translates to:
+  /// **'System Tray'**
+  String get systemTray;
+
+  /// No description provided for @minimizeToTray.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimize to tray'**
+  String get minimizeToTray;
+
+  /// No description provided for @minimizeToTrayDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep running in the system tray when the window is closed.'**
+  String get minimizeToTrayDesc;
+
   /// No description provided for @right.
   ///
   /// In en, this message translates to:

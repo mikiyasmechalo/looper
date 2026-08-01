@@ -697,6 +697,16 @@ class AppLocalizationsPt extends AppLocalizations {
       'Salvar a última música e a fila ao reiniciar a aplicação';
 
   @override
+  String get systemTray => 'Bandeja do sistema';
+
+  @override
+  String get minimizeToTray => 'Minimizar para a bandeja';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Continuar em execução na bandeja do sistema quando a janela for fechada.';
+
+  @override
   String get right => 'Direita';
 
   @override

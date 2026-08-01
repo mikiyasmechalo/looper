@@ -698,6 +698,16 @@ class AppLocalizationsTr extends AppLocalizations {
       'Uygulama yeniden başlatıldığında son oynatılan şarkıyı ve sırayı kaydet';
 
   @override
+  String get systemTray => 'Sistem tepsisi';
+
+  @override
+  String get minimizeToTray => 'Tepsiye küçült';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Pencere kapatıldığında sistem tepsisinde çalışmaya devam eder.';
+
+  @override
   String get right => 'Sağa Hizala';
 
   @override

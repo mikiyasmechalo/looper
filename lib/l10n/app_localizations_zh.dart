@@ -652,6 +652,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get persistQueueDesc => '应用重启时保存上次播放的歌曲和队列';
 
   @override
+  String get systemTray => '系统托盘';
+
+  @override
+  String get minimizeToTray => '最小化到系统托盘';
+
+  @override
+  String get minimizeToTrayDesc => '关闭窗口后在系统托盘中继续运行。';
+
+  @override
   String get right => '居右';
 
   @override

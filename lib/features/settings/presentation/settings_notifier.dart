@@ -261,6 +261,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..enableSlideGesture = s.enableSlideGesture
       ..stopOnTaskRemoved = s.stopOnTaskRemoved
       ..persistQueue = s.persistQueue
+      ..minimizeToTray = s.minimizeToTray
       ..fadePlayPauseStop = s.fadePlayPauseStop
       ..playPauseStopFadeLength = s.playPauseStopFadeLength
       ..resumeAfterCall = s.resumeAfterCall
@@ -417,6 +418,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updatePersistQueue(bool value) async {
     final newState = _clone(state)..persistQueue = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateMinimizeToTray(bool value) async {
+    final newState = _clone(state)..minimizeToTray = value;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

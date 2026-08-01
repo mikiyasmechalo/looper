@@ -691,6 +691,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Saves the last played song, queue order, and playback position so the app can restore the same session after restart. In real use, this means when the app is reopened, the user can continue from the same song list instead of starting over.';
 
   @override
+  String get systemTray => 'System Tray';
+
+  @override
+  String get minimizeToTray => 'Minimize to tray';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Keep running in the system tray when the window is closed.';
+
+  @override
   String get right => 'Right';
 
   @override

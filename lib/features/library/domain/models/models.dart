@@ -198,6 +198,9 @@ class AppSettings {
   int playbackModeIndex = 0; // 0: hybrid, 1: localOnly, 2: onlineOnly
   int streamingQuality = 1; // 0: Low (128k), 1: High (256k)
   bool cacheOnlineStreams = true;
+
+  // Desktop: keep running in the system tray when the window is closed.
+  bool minimizeToTray = false;
 }
 
 enum PlaybackMode { hybrid, localOnly, onlineOnly }

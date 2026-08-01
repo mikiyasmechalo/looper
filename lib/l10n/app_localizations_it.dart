@@ -698,6 +698,16 @@ class AppLocalizationsIt extends AppLocalizations {
       'Salva l\'ultimo brano e la coda al riavvio dell\'applicazione';
 
   @override
+  String get systemTray => 'Area di notifica';
+
+  @override
+  String get minimizeToTray => 'Riduci nell\'area di notifica';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Continua a funzionare nell\'area di notifica quando la finestra viene chiusa.';
+
+  @override
   String get right => 'Destra';
 
   @override

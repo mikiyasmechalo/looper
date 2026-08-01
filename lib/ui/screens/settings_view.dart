@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +21,7 @@ class SettingsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
+    final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -433,6 +436,32 @@ class SettingsView extends ConsumerWidget {
                 ),
               ),
             ),
+
+            // Desktop Section
+            if (isDesktop)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: _Section(
+                    title: l10n.systemTray,
+                    children: [
+                      _PremiumSwitchRow(
+                        icon: LucideIcons.panelTop,
+                        title: l10n.minimizeToTray,
+                        subtitle: l10n.minimizeToTrayDesc,
+                        value: settings.minimizeToTray,
+                        onChanged: (value) {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateMinimizeToTray(value);
+                        },
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             // About Section
             SliverToBoxAdapter(

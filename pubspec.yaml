@@ -76,6 +76,7 @@ dependencies:
   audiotags: ^1.4.2
 
   crypto: any
+  system_tray: ^2.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

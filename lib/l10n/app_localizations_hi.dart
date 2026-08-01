@@ -694,6 +694,16 @@ class AppLocalizationsHi extends AppLocalizations {
       'ऐप रीस्टार्ट होने पर आखिरी बजाया गया गाना और कतार सहेजें';
 
   @override
+  String get systemTray => 'सिस्टम ट्रे';
+
+  @override
+  String get minimizeToTray => 'ट्रे में छोटा करें';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'विंडो बंद होने पर सिस्टम ट्रे में चालू रहें।';
+
+  @override
   String get right => 'दायें';
 
   @override

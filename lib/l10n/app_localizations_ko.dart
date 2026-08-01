@@ -659,6 +659,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get persistQueueDesc => '앱 재시작 시 마지막 재생 곡과 대기열 저장';
 
   @override
+  String get systemTray => '시스템 트레이';
+
+  @override
+  String get minimizeToTray => '트레이로 최소화';
+
+  @override
+  String get minimizeToTrayDesc => '창을 닫아도 시스템 트레이에서 계속 실행됩니다.';
+
+  @override
   String get right => '오른쪽';
 
   @override

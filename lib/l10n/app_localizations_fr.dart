@@ -701,6 +701,16 @@ class AppLocalizationsFr extends AppLocalizations {
       'Sauvegarder le dernier morceau et la file d\'attente lors du redémarrage';
 
   @override
+  String get systemTray => 'Barre des tâches';
+
+  @override
+  String get minimizeToTray => 'Réduire dans la barre des tâches';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Continuer de fonctionner dans la barre des tâches lorsque la fenêtre est fermée.';
+
+  @override
   String get right => 'Droite';
 
   @override

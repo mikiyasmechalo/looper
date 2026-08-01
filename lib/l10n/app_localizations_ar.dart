@@ -689,6 +689,16 @@ class AppLocalizationsAr extends AppLocalizations {
       'حفظ آخر أغنية وقائمة تشغيل عند إعادة تشغيل التطبيق';
 
   @override
+  String get systemTray => 'شريط النظام';
+
+  @override
+  String get minimizeToTray => 'تصغير إلى شريط النظام';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'الاستمرار في العمل في شريط النظام عند إغلاق النافذة.';
+
+  @override
   String get right => 'يمين';
 
   @override

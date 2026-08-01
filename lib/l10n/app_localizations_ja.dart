@@ -658,6 +658,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get persistQueueDesc => 'アプリ再起動時に最後に再生した曲とキューを保存する';
 
   @override
+  String get systemTray => 'システムトレイ';
+
+  @override
+  String get minimizeToTray => 'トレイに最小化';
+
+  @override
+  String get minimizeToTrayDesc => 'ウィンドウを閉じてもシステムトレイで実行し続けます。';
+
+  @override
   String get right => '右寄せ';
 
   @override

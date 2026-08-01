@@ -698,6 +698,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Сохранять последнюю песню и очередь при перезапуске приложения';
 
   @override
+  String get systemTray => 'Системный трей';
+
+  @override
+  String get minimizeToTray => 'Сворачивать в трей';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Продолжать работу в системном трее после закрытия окна.';
+
+  @override
   String get right => 'Справа';
 
   @override

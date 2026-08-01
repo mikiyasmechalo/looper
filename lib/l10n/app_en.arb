@@ -224,6 +224,9 @@
   "resumeOnStartTitle": "Resume on Start",
   "persistQueueTitle": "Persist Last Queue",
   "persistQueueDesc": "Saves the last played song, queue order, and playback position so the app can restore the same session after restart. In real use, this means when the app is reopened, the user can continue from the same song list instead of starting over.",
+  "systemTray": "System Tray",
+  "minimizeToTray": "Minimize to tray",
+  "minimizeToTrayDesc": "Keep running in the system tray when the window is closed.",
   "right": "Right",
   "scanCompleteSongsDetected": "SCAN COMPLETE: {count} SONGS DETECTED!",
   "@scanCompleteSongsDetected": {

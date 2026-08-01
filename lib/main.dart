@@ -15,6 +15,7 @@ import 'package:flutter_performance_optimizer/flutter_performance_optimizer.dart
 
 import 'core/db_service.dart';
 import 'core/app_fonts.dart';
+import 'core/system_tray_service.dart';
 import 'ui/screens/home_screen.dart';
 
 import 'package:metadata_god/metadata_god.dart';
@@ -80,6 +81,7 @@ void main(List<String> args) async {
           await windowManager.show();
           await windowManager.focus();
         });
+        await SystemTrayService.instance.init();
       } catch (e, s) {
         LoggerHelper.write('Failed to initialize Window Manager', e, s);
       }

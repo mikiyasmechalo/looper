@@ -698,6 +698,16 @@ class AppLocalizationsDe extends AppLocalizations {
       'Letzten Titel und Warteschlange bei App-Neustarts speichern';
 
   @override
+  String get systemTray => 'Infobereich';
+
+  @override
+  String get minimizeToTray => 'In den Infobereich minimieren';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Im Hintergrund weiterlaufen, wenn das Fenster geschlossen wird.';
+
+  @override
   String get right => 'Rechts';
 
   @override

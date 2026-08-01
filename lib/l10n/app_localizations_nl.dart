@@ -699,6 +699,16 @@ class AppLocalizationsNl extends AppLocalizations {
       'Sla het laatst afgespeelde nummer en de wachtrij op bij het herstarten van de app';
 
   @override
+  String get systemTray => 'Systeemvak';
+
+  @override
+  String get minimizeToTray => 'Naar systeemvak minimaliseren';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Blijft actief in het systeemvak wanneer het venster wordt gesloten.';
+
+  @override
   String get right => 'Rechts';
 
   @override

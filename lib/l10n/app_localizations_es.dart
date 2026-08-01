@@ -701,6 +701,16 @@ class AppLocalizationsEs extends AppLocalizations {
       'Guardar la última canción y cola al reiniciar la app';
 
   @override
+  String get systemTray => 'Bandeja del sistema';
+
+  @override
+  String get minimizeToTray => 'Minimizar a la bandeja';
+
+  @override
+  String get minimizeToTrayDesc =>
+      'Seguir ejecutándose en la bandeja del sistema al cerrar la ventana.';
+
+  @override
   String get right => 'Derecha';
 
   @override
