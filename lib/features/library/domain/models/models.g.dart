@@ -8227,88 +8227,93 @@ const AppSettingsSchema = CollectionSchema(
       name: r'saveDynamicColor',
       type: IsarType.bool,
     ),
-    r'settingsV2': PropertySchema(
+    r'seekBarStyleIndex': PropertySchema(
       id: 71,
+      name: r'seekBarStyleIndex',
+      type: IsarType.long,
+    ),
+    r'settingsV2': PropertySchema(
+      id: 72,
       name: r'settingsV2',
       type: IsarType.bool,
     ),
     r'settingsV3': PropertySchema(
-      id: 72,
+      id: 73,
       name: r'settingsV3',
       type: IsarType.bool,
     ),
     r'showHomeAlbums': PropertySchema(
-      id: 73,
+      id: 74,
       name: r'showHomeAlbums',
       type: IsarType.bool,
     ),
     r'showHomeArtists': PropertySchema(
-      id: 74,
+      id: 75,
       name: r'showHomeArtists',
       type: IsarType.bool,
     ),
     r'showHomeGenres': PropertySchema(
-      id: 75,
+      id: 76,
       name: r'showHomeGenres',
       type: IsarType.bool,
     ),
     r'showPerformanceOptimizer': PropertySchema(
-      id: 76,
+      id: 77,
       name: r'showPerformanceOptimizer',
       type: IsarType.bool,
     ),
     r'showQualityBadge': PropertySchema(
-      id: 77,
+      id: 78,
       name: r'showQualityBadge',
       type: IsarType.bool,
     ),
     r'shuffle': PropertySchema(
-      id: 78,
+      id: 79,
       name: r'shuffle',
       type: IsarType.bool,
     ),
     r'songsDarkness': PropertySchema(
-      id: 79,
+      id: 80,
       name: r'songsDarkness',
       type: IsarType.double,
     ),
     r'sortAscending': PropertySchema(
-      id: 80,
+      id: 81,
       name: r'sortAscending',
       type: IsarType.bool,
     ),
     r'sortStrategyIndex': PropertySchema(
-      id: 81,
+      id: 82,
       name: r'sortStrategyIndex',
       type: IsarType.long,
     ),
     r'stopOnTaskRemoved': PropertySchema(
-      id: 82,
+      id: 83,
       name: r'stopOnTaskRemoved',
       type: IsarType.bool,
     ),
     r'streamingQuality': PropertySchema(
-      id: 83,
+      id: 84,
       name: r'streamingQuality',
       type: IsarType.long,
     ),
     r'useAlbumArtistForArtists': PropertySchema(
-      id: 84,
+      id: 85,
       name: r'useAlbumArtistForArtists',
       type: IsarType.bool,
     ),
     r'useNewFont': PropertySchema(
-      id: 85,
+      id: 86,
       name: r'useNewFont',
       type: IsarType.bool,
     ),
     r'useNewFontLyrics': PropertySchema(
-      id: 86,
+      id: 87,
       name: r'useNewFontLyrics',
       type: IsarType.bool,
     ),
     r'volume': PropertySchema(
-      id: 87,
+      id: 88,
       name: r'volume',
       type: IsarType.double,
     )
@@ -8441,23 +8446,24 @@ void _appSettingsSerialize(
   writer.writeBool(offsets[68], object.resumeOnBluetoothConnect);
   writer.writeBool(offsets[69], object.resumeOnStart);
   writer.writeBool(offsets[70], object.saveDynamicColor);
-  writer.writeBool(offsets[71], object.settingsV2);
-  writer.writeBool(offsets[72], object.settingsV3);
-  writer.writeBool(offsets[73], object.showHomeAlbums);
-  writer.writeBool(offsets[74], object.showHomeArtists);
-  writer.writeBool(offsets[75], object.showHomeGenres);
-  writer.writeBool(offsets[76], object.showPerformanceOptimizer);
-  writer.writeBool(offsets[77], object.showQualityBadge);
-  writer.writeBool(offsets[78], object.shuffle);
-  writer.writeDouble(offsets[79], object.songsDarkness);
-  writer.writeBool(offsets[80], object.sortAscending);
-  writer.writeLong(offsets[81], object.sortStrategyIndex);
-  writer.writeBool(offsets[82], object.stopOnTaskRemoved);
-  writer.writeLong(offsets[83], object.streamingQuality);
-  writer.writeBool(offsets[84], object.useAlbumArtistForArtists);
-  writer.writeBool(offsets[85], object.useNewFont);
-  writer.writeBool(offsets[86], object.useNewFontLyrics);
-  writer.writeDouble(offsets[87], object.volume);
+  writer.writeLong(offsets[71], object.seekBarStyleIndex);
+  writer.writeBool(offsets[72], object.settingsV2);
+  writer.writeBool(offsets[73], object.settingsV3);
+  writer.writeBool(offsets[74], object.showHomeAlbums);
+  writer.writeBool(offsets[75], object.showHomeArtists);
+  writer.writeBool(offsets[76], object.showHomeGenres);
+  writer.writeBool(offsets[77], object.showPerformanceOptimizer);
+  writer.writeBool(offsets[78], object.showQualityBadge);
+  writer.writeBool(offsets[79], object.shuffle);
+  writer.writeDouble(offsets[80], object.songsDarkness);
+  writer.writeBool(offsets[81], object.sortAscending);
+  writer.writeLong(offsets[82], object.sortStrategyIndex);
+  writer.writeBool(offsets[83], object.stopOnTaskRemoved);
+  writer.writeLong(offsets[84], object.streamingQuality);
+  writer.writeBool(offsets[85], object.useAlbumArtistForArtists);
+  writer.writeBool(offsets[86], object.useNewFont);
+  writer.writeBool(offsets[87], object.useNewFontLyrics);
+  writer.writeDouble(offsets[88], object.volume);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -8539,23 +8545,24 @@ AppSettings _appSettingsDeserialize(
   object.resumeOnBluetoothConnect = reader.readBool(offsets[68]);
   object.resumeOnStart = reader.readBool(offsets[69]);
   object.saveDynamicColor = reader.readBool(offsets[70]);
-  object.settingsV2 = reader.readBool(offsets[71]);
-  object.settingsV3 = reader.readBool(offsets[72]);
-  object.showHomeAlbums = reader.readBool(offsets[73]);
-  object.showHomeArtists = reader.readBool(offsets[74]);
-  object.showHomeGenres = reader.readBool(offsets[75]);
-  object.showPerformanceOptimizer = reader.readBool(offsets[76]);
-  object.showQualityBadge = reader.readBool(offsets[77]);
-  object.shuffle = reader.readBool(offsets[78]);
-  object.songsDarkness = reader.readDouble(offsets[79]);
-  object.sortAscending = reader.readBool(offsets[80]);
-  object.sortStrategyIndex = reader.readLong(offsets[81]);
-  object.stopOnTaskRemoved = reader.readBool(offsets[82]);
-  object.streamingQuality = reader.readLong(offsets[83]);
-  object.useAlbumArtistForArtists = reader.readBool(offsets[84]);
-  object.useNewFont = reader.readBool(offsets[85]);
-  object.useNewFontLyrics = reader.readBool(offsets[86]);
-  object.volume = reader.readDouble(offsets[87]);
+  object.seekBarStyleIndex = reader.readLong(offsets[71]);
+  object.settingsV2 = reader.readBool(offsets[72]);
+  object.settingsV3 = reader.readBool(offsets[73]);
+  object.showHomeAlbums = reader.readBool(offsets[74]);
+  object.showHomeArtists = reader.readBool(offsets[75]);
+  object.showHomeGenres = reader.readBool(offsets[76]);
+  object.showPerformanceOptimizer = reader.readBool(offsets[77]);
+  object.showQualityBadge = reader.readBool(offsets[78]);
+  object.shuffle = reader.readBool(offsets[79]);
+  object.songsDarkness = reader.readDouble(offsets[80]);
+  object.sortAscending = reader.readBool(offsets[81]);
+  object.sortStrategyIndex = reader.readLong(offsets[82]);
+  object.stopOnTaskRemoved = reader.readBool(offsets[83]);
+  object.streamingQuality = reader.readLong(offsets[84]);
+  object.useAlbumArtistForArtists = reader.readBool(offsets[85]);
+  object.useNewFont = reader.readBool(offsets[86]);
+  object.useNewFontLyrics = reader.readBool(offsets[87]);
+  object.volume = reader.readDouble(offsets[88]);
   return object;
 }
 
@@ -8709,7 +8716,7 @@ P _appSettingsDeserializeProp<P>(
     case 70:
       return (reader.readBool(offset)) as P;
     case 71:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 72:
       return (reader.readBool(offset)) as P;
     case 73:
@@ -8725,22 +8732,24 @@ P _appSettingsDeserializeProp<P>(
     case 78:
       return (reader.readBool(offset)) as P;
     case 79:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 80:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 81:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 82:
-      return (reader.readBool(offset)) as P;
-    case 83:
       return (reader.readLong(offset)) as P;
-    case 84:
+    case 83:
       return (reader.readBool(offset)) as P;
+    case 84:
+      return (reader.readLong(offset)) as P;
     case 85:
       return (reader.readBool(offset)) as P;
     case 86:
       return (reader.readBool(offset)) as P;
     case 87:
+      return (reader.readBool(offset)) as P;
+    case 88:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -12404,6 +12413,62 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      seekBarStyleIndexEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'seekBarStyleIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      seekBarStyleIndexGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'seekBarStyleIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      seekBarStyleIndexLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'seekBarStyleIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      seekBarStyleIndexBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'seekBarStyleIndex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       settingsV2EqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -13687,6 +13752,20 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortBySeekBarStyleIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seekBarStyleIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortBySeekBarStyleIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seekBarStyleIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortBySettingsV2() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'settingsV2', Sort.asc);
@@ -14829,6 +14908,20 @@ extension AppSettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenBySeekBarStyleIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seekBarStyleIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenBySeekBarStyleIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'seekBarStyleIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenBySettingsV2() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'settingsV2', Sort.asc);
@@ -15538,6 +15631,13 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctBySeekBarStyleIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'seekBarStyleIndex');
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctBySettingsV2() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'settingsV2');
@@ -16120,6 +16220,12 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, bool, QQueryOperations> saveDynamicColorProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'saveDynamicColor');
+    });
+  }
+
+  QueryBuilder<AppSettings, int, QQueryOperations> seekBarStyleIndexProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'seekBarStyleIndex');
     });
   }
 

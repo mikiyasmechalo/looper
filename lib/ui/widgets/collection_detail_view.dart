@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -190,8 +192,12 @@ class CollectionDetailView extends ConsumerWidget {
                       childCount: sortedSongs.length,
                     ),
                   ),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 200), // Added padding to fix navbar overlap
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    // On mobile the bottom navigation bar overlaps the list,
+                    // so keep generous padding. Desktop has no overlay.
+                    height: (Platform.isAndroid || Platform.isIOS) ? 200 : 32,
+                  ),
                 ),
               ],
             );

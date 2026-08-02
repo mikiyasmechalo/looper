@@ -4,7 +4,6 @@ import 'dart:math';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -16,8 +15,10 @@ import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
+import 'package:looper_player/ui/widgets/premium_progress_bar.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
+import 'package:looper_player/features/playback/presentation/audio_level_provider.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'package:looper_player/features/playback/presentation/waveform_provider.dart';
@@ -837,7 +838,7 @@ class _HorizontalContent extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 32),
-                          VisualizerSeekBar(
+                          _SeekBarView(
                             position: position,
                             duration: duration,
                             isPlaying: isPlaying,
@@ -951,9 +952,9 @@ class _VerticalContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(width: 44),
-                      Expanded(
+                      Flexible(
                         child: Text(
                           song.title,
                           textAlign: TextAlign.center,
@@ -966,6 +967,7 @@ class _VerticalContent extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       SizedBox(
                         width: 44,
                         height: 44,
@@ -1005,7 +1007,7 @@ class _VerticalContent extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: Column(
                       children: [
-                        VisualizerSeekBar(
+                        _SeekBarView(
                           position: position,
                           duration: duration,
                           isPlaying: isPlaying,
@@ -1385,9 +1387,11 @@ String _formatDuration(Duration duration) {
 // ============================================================================
 // VISUALIZER SEEK BAR
 // Doubles as the seek bar and a live audio visualizer. Each bar keeps a fixed
-// base "waveform" shape (used for click/drag-to-seek) and pulses continuously
-// while playing. A Ticker drives the phase from elapsed time so the animation
-// never visibly jumps when it would otherwise restart.
+// base "waveform" shape (used for click/drag-to-seek). While playing, bars
+// dance with the real frequency spectrum from spectrumProvider (mpv's own DSP
+// tap): bass radiates from the playhead outwards to treble, so the whole strip
+// visibly reacts to the music. No Ticker here — Riverpod rebuilds at the tap's
+// emit rate drive the motion.
 // ============================================================================
 
 class VisualizerSeekBar extends ConsumerStatefulWidget {
@@ -1414,120 +1418,53 @@ class VisualizerSeekBar extends ConsumerStatefulWidget {
   ConsumerState<VisualizerSeekBar> createState() => _VisualizerSeekBarState();
 }
 
-class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
-  late List<double> _baseHeights;
-  late List<double> _phases;
-  late List<double> _amplitudes;
-  double _t = 0;
-  double _energy = 0;
-  List<double>? _fineWave;
-  List<double>? _barBases;
+class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar> {
+  late List<double> _baseHeights; // procedural fallback shape
+  List<double>? _barBases; // real per-song waveform, downsampled to barCount
 
   @override
   void initState() {
     super.initState();
-    _generateShape();
-    _ticker = createTicker(_onTick);
-    if (widget.isPlaying) _ticker.start();
+    _generateFallbackShape();
   }
 
-  void _generateShape() {
+  void _generateFallbackShape() {
     _baseHeights = List.generate(widget.barCount, (i) {
-      final v = 18 + 14 * sin(i * 0.34) + 9 * sin(i * 0.71 + 1.3) +
+      final v = 18 +
+          14 * sin(i * 0.34) +
+          9 * sin(i * 0.71 + 1.3) +
           (i % 7 == 0 ? 6 : 0);
       return (v + 20).clamp(14, 100) / 100;
     });
-    _phases = List.generate(widget.barCount, (i) => (i * 0.618) % (2 * pi));
-    _amplitudes = List.generate(
-        widget.barCount, (i) => 0.10 + 0.12 * ((i * 37) % 10) / 10);
   }
 
   void _syncWaveform(List<double>? wave) {
-    if (identical(_fineWave, wave) && _barBases != null) return;
-    _fineWave = wave;
-    if (wave != null && wave.isNotEmpty) {
-      // Downsample the fine timeline to the seekbar's bar count. Blend the
-      // peak (drums/beats) with the average so real dynamics stay visible.
-      _barBases = List.generate(widget.barCount, (i) {
-        final start = (i * wave.length) ~/ widget.barCount;
-        final end = ((i + 1) * wave.length) ~/ widget.barCount;
-        double sum = 0;
-        double peak = 0;
-        for (int j = start; j < end; j++) {
-          final v = wave[j];
-          sum += v;
-          if (v > peak) peak = v;
-        }
-        final avg = end > start ? sum / (end - start) : 0;
-        final value = peak * 0.65 + avg * 0.35;
-        return (pow(value, 0.5).toDouble() * 0.85 + 0.12).clamp(0.12, 1.0);
-      });
-    } else {
+    if (wave == null || wave.isEmpty) {
       _barBases = null;
+      return;
     }
-  }
-
-  void _onTick(Duration elapsed) {
-    setState(() {
-      _t = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
-      final fine = _fineWave;
-      if (widget.isPlaying &&
-          fine != null &&
-          fine.isNotEmpty &&
-          widget.duration.inMilliseconds > 0) {
-        final durationMs = widget.duration.inMilliseconds;
-        final idx =
-            widget.position.inMilliseconds / durationMs * (fine.length - 1);
-        // Energy of the ~0.25s of audio just ahead of the playhead — peak
-        // based so beats produce a punchy visualizer reaction.
-        final secsPerBucket = durationMs / 1000.0 / fine.length;
-        final span = (0.25 /
-                (secsPerBucket.isNaN ? 0.05 : max(secsPerBucket, 0.001)))
-            .round()
-            .clamp(1, 120);
-        double peak = 0;
-        int n = 0;
-        for (int j = 0; j < span; j++) {
-          final k = idx.floor() + j;
-          if (k >= fine.length) break;
-          final v = fine[k];
-          if (v > peak) peak = v;
-          n++;
-        }
-        if (n > 0) {
-          final target = (peak * 1.35).clamp(0.0, 1.0);
-          _energy += (target - _energy) * 0.3;
-        } else {
-          _energy = 0;
-        }
-      } else {
-        _energy = 0;
+    // Downsample the fine timeline to barCount buckets. Blend the peak
+    // (drums/beats) with the average so real dynamics stay visible.
+    _barBases = List.generate(widget.barCount, (i) {
+      final start = (i * wave.length) ~/ widget.barCount;
+      final end = ((i + 1) * wave.length) ~/ widget.barCount;
+      double sum = 0;
+      double peak = 0;
+      for (int j = start; j < end; j++) {
+        final v = wave[j];
+        sum += v;
+        if (v > peak) peak = v;
       }
+      final avg = end > start ? sum / (end - start) : 0.0;
+      final value = peak * 0.65 + avg * 0.35;
+      return (pow(value, 0.5).toDouble() * 0.85 + 0.12).clamp(0.12, 1.0);
     });
   }
 
   @override
   void didUpdateWidget(covariant VisualizerSeekBar old) {
     super.didUpdateWidget(old);
-    if (widget.barCount != old.barCount) {
-      _generateShape();
-      _syncWaveform(_fineWave);
-    }
-    if (widget.isPlaying != old.isPlaying) {
-      if (widget.isPlaying && !_ticker.isActive) {
-        _ticker.start();
-      } else if (!widget.isPlaying) {
-        _ticker.stop();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
+    if (widget.barCount != old.barCount) _generateFallbackShape();
   }
 
   void _seekAt(double dx, double width) {
@@ -1542,14 +1479,21 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
         : ref.watch(waveformProvider(widget.songPath!)).value;
     _syncWaveform(wave);
 
+    // Real, live frequency spectrum from mpv's DSP pipeline. Index 0 is the
+    // lowest band; higher indices are progressively higher frequencies.
+    final spectrum = ref.watch(spectrumProvider);
+
     final progress = widget.duration.inMilliseconds > 0
         ? widget.position.inMilliseconds / widget.duration.inMilliseconds
         : 0.0;
     final accent = Theme.of(context).colorScheme.primary;
     final unfilled = Colors.white.withValues(alpha: 0.08);
-    final waveT = _t * (2 * pi * 1.4) / 3.0;
     final playheadBar = progress * widget.barCount;
     final hasReal = _barBases != null;
+    // Furthest any bar sits from the playhead; used to map a bar's distance
+    // from the playhead onto the frequency axis (bass radiates from the
+    // playhead, treble spreads further out).
+    final maxDist = max(playheadBar, widget.barCount - 1 - playheadBar);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1581,23 +1525,22 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: List.generate(widget.barCount, (i) {
                   final filled = i / widget.barCount < progress;
-                  var factor =
-                      hasReal ? _barBases![i] : _baseHeights[i];
-                  if (widget.isPlaying) {
-                    if (hasReal) {
-                      // Live visualizer: the whole bar strip pumps with the
-                      // current audio energy and a strong wave of bars swells
-                      // out from the playhead, driven by real song dynamics.
-                      final d = i - playheadBar;
-                      final envelope = exp(-d * d / 120);
-                      final pump = 1 + (_energy - 0.55) * 0.9;
-                      factor *=
-                          pump * (1 + envelope * _energy * 1.4);
-                    } else {
-                      final waveAnim = sin(waveT + _phases[i]);
-                      factor *= 1 + waveAnim * _amplitudes[i];
-                    }
+                  var factor = hasReal ? _barBases![i] : _baseHeights[i];
+
+                  if (widget.isPlaying && spectrum.isNotEmpty) {
+                    // Distance from the playhead maps to a spectrum bucket:
+                    // the playhead sits on the bass, and frequency climbs as
+                    // bars spread outwards. sqrt-lifts quiet bands so the
+                    // whole strip visibly dances even during softer parts.
+                    final dist = (i - playheadBar).abs();
+                    final norm = maxDist > 0
+                        ? (dist / maxDist).clamp(0.0, 1.0)
+                        : 0.0;
+                    final bandIdx = (norm * (spectrum.length - 1)).round();
+                    final mag = spectrum[bandIdx];
+                    factor *= 0.45 + 1.55 * pow(mag, 0.5);
                   }
+
                   final barHeight = (factor * widget.height)
                       .clamp(3.0, widget.height)
                       .toDouble();
@@ -1622,6 +1565,137 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
           ),
         );
       },
+    );
+  }
+}
+
+// ============================================================================
+// SEEK BAR STYLE SWITCH
+// Picks the now-playing seek bar based on the user's setting:
+//   0 = visualizer bars, 1 = expressive wiggly slider, 2 = flat clean slider.
+// ============================================================================
+
+class _SeekBarView extends ConsumerWidget {
+  const _SeekBarView({
+    required this.position,
+    required this.duration,
+    required this.isPlaying,
+    required this.onSeek,
+    this.songPath,
+    this.height = 44,
+    this.barCount = 56,
+  });
+
+  final Duration position;
+  final Duration duration;
+  final bool isPlaying;
+  final ValueChanged<Duration> onSeek;
+  final String? songPath;
+  final double height;
+  final int barCount;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final styleIndex = ref.watch(
+      settingsProvider.select((s) => s.seekBarStyleIndex),
+    );
+    final accent = Theme.of(context).colorScheme.primary;
+
+    switch (styleIndex) {
+      case 1:
+        return ExpressiveSlider(
+          position: position,
+          duration: duration,
+          isPlaying: isPlaying,
+          onSeek: onSeek,
+          color: accent,
+          showTimestamps: false,
+        );
+      case 2:
+        return _FlatSeekBar(
+          position: position,
+          duration: duration,
+          isPlaying: isPlaying,
+          onSeek: onSeek,
+          color: accent,
+        );
+      default:
+        return VisualizerSeekBar(
+          position: position,
+          duration: duration,
+          isPlaying: isPlaying,
+          onSeek: onSeek,
+          songPath: songPath,
+          height: height,
+          barCount: barCount,
+        );
+    }
+  }
+}
+
+/// Clean single-line Material slider used for the "flat" seek bar style.
+class _FlatSeekBar extends StatefulWidget {
+  const _FlatSeekBar({
+    required this.position,
+    required this.duration,
+    required this.isPlaying,
+    required this.onSeek,
+    required this.color,
+  });
+
+  final Duration position;
+  final Duration duration;
+  final bool isPlaying;
+  final ValueChanged<Duration> onSeek;
+  final Color color;
+
+  @override
+  State<_FlatSeekBar> createState() => _FlatSeekBarState();
+}
+
+class _FlatSeekBarState extends State<_FlatSeekBar> {
+  double? _dragValue;
+
+  void _seekAt(double value) {
+    setState(() => _dragValue = value);
+    widget.onSeek(widget.duration * value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = widget.duration.inMilliseconds > 0
+        ? widget.position.inMilliseconds / widget.duration.inMilliseconds
+        : 0.0;
+    final value = (_dragValue ?? progress).clamp(0.0, 1.0);
+
+    return Listener(
+      onPointerSignal: (event) {
+        if (event is PointerScrollEvent) {
+          // Scroll wheel over the seek bar nudges the playback position.
+          final deltaMs = -event.scrollDelta.dy / 120.0 * 10000;
+          final clamped = Duration(
+            milliseconds: (widget.position.inMilliseconds + deltaMs)
+                .clamp(0, widget.duration.inMilliseconds)
+                .round(),
+          );
+          widget.onSeek(clamped);
+        }
+      },
+      child: SliderTheme(
+        data: SliderTheme.of(context).copyWith(
+          trackHeight: 4,
+          activeTrackColor: widget.color,
+          inactiveTrackColor: Colors.white10,
+          trackShape: const PremiumGapTrackShape(gap: 6),
+          thumbShape: const LineThumbShape(thumbHeight: 16, thumbWidth: 6),
+          overlayShape: SliderComponentShape.noOverlay,
+        ),
+        child: Slider(
+          value: value,
+          onChanged: _seekAt,
+          onChangeEnd: (_) => setState(() => _dragValue = null),
+        ),
+      ),
     );
   }
 }

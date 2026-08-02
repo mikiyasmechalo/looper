@@ -20,6 +20,7 @@ class SystemTrayService {
 
   final SystemTray _systemTray = SystemTray();
   bool _initialized = false;
+  bool _quitInProgress = false;
 
   bool get isSupported =>
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
@@ -83,18 +84,29 @@ class SystemTrayService {
   }
 
   Future<void> _quit() async {
+    if (_quitInProgress) return;
+    _quitInProgress = true;
     try {
       await _systemTray.destroy();
     } catch (e, s) {
       LoggerHelper.write('Failed to destroy SystemTray', e, s);
     }
-    await windowManager.destroy();
+    try {
+      // Let the window close through the native WM_CLOSE → WM_DESTROY flow.
+      // windowManager.destroy() calls PostQuitMessage(0), which bypasses that
+      // lifecycle and races the engine's window teardown, crashing in
+      // flutter_windows.dll on exit.
+      await windowManager.setPreventClose(false);
+      await windowManager.close();
+    } catch (e, s) {
+      LoggerHelper.write('Failed to close window', e, s);
+    }
   }
 
   /// Called from the window close listener when the close button is pressed.
   Future<void> handleCloseRequest() async {
     if (!isSupported) {
-      await windowManager.destroy();
+      await _quit();
       return;
     }
 
@@ -109,7 +121,7 @@ class SystemTrayService {
     if (minimizeToTray) {
       await windowManager.hide();
     } else {
-      await windowManager.destroy();
+      await _quit();
     }
   }
 }

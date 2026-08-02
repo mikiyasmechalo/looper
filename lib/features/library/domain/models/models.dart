@@ -205,6 +205,12 @@ class AppSettings {
   // Desktop: open the now-playing view in true fullscreen (hides the OS
   // taskbar / title bar controls).
   bool nowPlayingFullscreen = false;
+
+  // Desktop: seek bar style in the now-playing view.
+  // 0: visualizer bars, 1: expressive wiggly slider, 2: flat clean slider.
+  int seekBarStyleIndex = 0;
 }
+
+enum SeekBarStyle { visualizer, expressive, flat }
 
 enum PlaybackMode { hybrid, localOnly, onlineOnly }

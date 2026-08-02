@@ -469,6 +469,34 @@ class SettingsView extends ConsumerWidget {
                               .read(settingsProvider.notifier)
                               .updateNowPlayingFullscreen(value);
                         },
+                        isLast: false,
+                      ),
+                      _PremiumDropdownRow<int>(
+                        icon: LucideIcons.barChart2,
+                        title: 'Now playing seek bar',
+                        value: settings.seekBarStyleIndex,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text('Visualizer'),
+                          ),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text('Expressive'),
+                          ),
+                          DropdownMenuItem(
+                            value: 2,
+                            child: Text('Flat'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            HapticFeedback.lightImpact();
+                            ref
+                                .read(settingsProvider.notifier)
+                                .updateSeekBarStyle(value);
+                          }
+                        },
                         isLast: true,
                       ),
                     ],
