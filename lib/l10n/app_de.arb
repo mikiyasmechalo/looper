@@ -315,6 +315,12 @@
   "systemTray": "Infobereich",
   "minimizeToTray": "In den Infobereich minimieren",
   "minimizeToTrayDesc": "Im Hintergrund weiterlaufen, wenn das Fenster geschlossen wird.",
+  "nowPlayingFullscreen": "Jetzt läuft in echtem Vollbild",
+  "nowPlayingFullscreenDesc": "Öffnet die Jetzt-wird-gespielt-Ansicht ohne Fensterrahmen und Taskleiste.",
+  "songOptions": "Songoptionen",
+  "fullscreen": "Vollbild",
+  "exitFullscreen": "Vollbild beenden",
+
   "persistQueueTitle": "Letzte Warteschlange beibehalten",
   "selectFontFamily": "Schriftfamilie auswählen",
   "sortAlbumAsc": "Album (A-Z)",

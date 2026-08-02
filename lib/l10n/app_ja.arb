@@ -315,6 +315,12 @@
   "systemTray": "システムトレイ",
   "minimizeToTray": "トレイに最小化",
   "minimizeToTrayDesc": "ウィンドウを閉じてもシステムトレイで実行し続けます。",
+  "nowPlayingFullscreen": "再生中を真のフルスクリーンに",
+  "nowPlayingFullscreenDesc": "ウィンドウ枠とタスクバーなしで再生中ビューを開きます。",
+  "songOptions": "曲のオプション",
+  "fullscreen": "全画面",
+  "exitFullscreen": "全画面を終了",
+
   "persistQueueTitle": "最後のキューを保持",
   "selectFontFamily": "フォントファミリーの選択",
   "sortAlbumAsc": "アルバム (A-Z)",

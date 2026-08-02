@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/gestures.dart';
@@ -12,6 +13,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:looper_player/ui/widgets/color_maper.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'premium_progress_bar.dart';
 
 class PlayerBar extends ConsumerWidget {
@@ -41,7 +43,6 @@ class _PremiumPlayerBar extends ConsumerWidget {
     final isShuffle = ref.watch(playbackProvider.select((s) => s.isShuffle));
     final repeatMode = ref.watch(playbackProvider.select((s) => s.repeatMode));
     final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
-    final volume = ref.watch(playbackProvider.select((s) => s.volume));
 
     final isLyricsActive = ref.watch(
       appNavigationProvider.select((s) => s.activeItem == NavItem.lyrics),
@@ -59,8 +60,13 @@ class _PremiumPlayerBar extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool isNarrow = constraints.maxWidth < 900;
         final bool isVeryNarrow = constraints.maxWidth < 600;
+        final bool stackControls = constraints.maxWidth < 1100;
+        final bool wideVolume = constraints.maxWidth > 1100;
+        final bool hoverVolume = !isVeryNarrow && !wideVolume;
+
+        void openPlayer() =>
+            ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
 
         return Container(
           height: 80.s,
@@ -93,12 +99,21 @@ class _PremiumPlayerBar extends ConsumerWidget {
                     children: [
                       Expanded(
                         flex: isVeryNarrow ? 3 : 4,
-                        child: _buildSongInfo(
-                          context,
-                          title,
-                          artist,
-                          artPath,
-                          isVeryNarrow,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: openPlayer,
+                          onSecondaryTap: () => showSongOptionsBottomSheet(
+                            context: context,
+                            ref: ref,
+                            song: song,
+                          ),
+                          child: _buildSongInfo(
+                            context,
+                            title,
+                            artist,
+                            artPath,
+                            isVeryNarrow,
+                          ),
                         ),
                       ),
 
@@ -118,38 +133,49 @@ class _PremiumPlayerBar extends ConsumerWidget {
                         isShuffle,
                         repeatMode,
                         isVeryNarrow,
+                        stackControls,
                       ),
 
                       const SizedBox(width: 12),
 
                       Expanded(
-                        flex: isNarrow ? 4 : 6,
-                        child: Consumer(
-                          builder: (context, ref, child) {
-                            final position = ref.watch(
-                              playbackProvider.select((s) => s.position),
-                            );
-                            final duration = ref.watch(
-                              playbackProvider.select((s) => s.duration),
-                            );
-                            final isPlayingVal = ref.watch(
-                              playbackProvider.select((s) => s.isPlaying),
-                            );
-                            return ExpressiveSlider(
-                              position: position,
-                              duration: duration,
-                              isPlaying: isPlayingVal,
-                              onSeek: (pos) =>
-                                  ref.read(playbackProvider.notifier).seek(pos),
-                              onSeekStart: () => ref
-                                  .read(playbackProvider.notifier)
-                                  .startScrubbing(),
-                              onSeekEnd: () => ref
-                                  .read(playbackProvider.notifier)
-                                  .stopScrubbing(),
-                              color: colorScheme.primary,
-                            );
-                          },
+                        flex: stackControls ? 4 : 6,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: openPlayer,
+                          onSecondaryTap: () => showSongOptionsBottomSheet(
+                            context: context,
+                            ref: ref,
+                            song: song,
+                          ),
+                          child: Consumer(
+                            builder: (context, ref, child) {
+                              final position = ref.watch(
+                                playbackProvider.select((s) => s.position),
+                              );
+                              final duration = ref.watch(
+                                playbackProvider.select((s) => s.duration),
+                              );
+                              final isPlayingVal = ref.watch(
+                                playbackProvider.select((s) => s.isPlaying),
+                              );
+                              return ExpressiveSlider(
+                                position: position,
+                                duration: duration,
+                                isPlaying: isPlayingVal,
+                                onSeek: (pos) => ref
+                                    .read(playbackProvider.notifier)
+                                    .seek(pos),
+                                onSeekStart: () => ref
+                                    .read(playbackProvider.notifier)
+                                    .startScrubbing(),
+                                onSeekEnd: () => ref
+                                    .read(playbackProvider.notifier)
+                                    .stopScrubbing(),
+                                color: colorScheme.primary,
+                              );
+                            },
+                          ),
                         ),
                       ),
 
@@ -163,13 +189,17 @@ class _PremiumPlayerBar extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                       ],
-                      if (!isNarrow) ...[
+                      if (wideVolume) ...[
                         const SizedBox(width: 16),
-                        _buildVolumeControl(context, ref, volume),
+                        const _VolumeInlineControl(),
                         const SizedBox(width: 16),
                       ],
+                      if (hoverVolume) ...[const _VolumeHoverControl()],
 
-                      const Spacer(),
+                      if (stackControls)
+                        const SizedBox(width: 16)
+                      else
+                        const Spacer(),
 
                       _buildActions(
                         context,
@@ -256,6 +286,7 @@ class _PremiumPlayerBar extends ConsumerWidget {
     bool isShuffle,
     RepeatMode repeatMode,
     bool isVeryNarrow,
+    bool stacked,
   ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -312,113 +343,73 @@ class _PremiumPlayerBar extends ConsumerWidget {
             color: Colors.white10,
           ),
 
-        if (!isVeryNarrow) ...[
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: () =>
-                ref.read(playbackProvider.notifier).toggleShuffle(),
-            icon: SvgPicture.asset(
-              'assets/music_bar_Icons/shuffle.svg',
-              width: 12,
-              height: 12,
-              colorFilter: ColorFilter.mode(
-                isShuffle ? colorScheme.primary : Colors.white38,
-                BlendMode.srcIn,
-              ),
-            ),
-            tooltip: 'Shuffle',
-          ),
-        ],
         if (!isVeryNarrow)
-          IconButton(
-            onPressed: () =>
-                ref.read(playbackProvider.notifier).nextRepeatMode(),
-            icon: SvgPicture.asset(
-              repeatMode == RepeatMode.one
-                  ? 'assets/music_bar_Icons/repeat_1.svg'
-                  : 'assets/music_bar_Icons/repeat.svg',
-              width: 12,
-              height: 12,
-              colorFilter: repeatMode == RepeatMode.one
-                  ? null
-                  : ColorFilter.mode(
-                      repeatMode == RepeatMode.all
-                          ? Colors.white
-                          : Colors.white38,
-                      BlendMode.srcIn,
-                    ),
-              colorMapper: repeatMode == RepeatMode.one
-                  ? AccentColorMapper(colorScheme.primary)
-                  : null,
-            ),
-            tooltip: 'Repeat',
-          ),
+          stacked
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildShuffle(ref, colorScheme, isShuffle),
+                    const SizedBox(height: 8),
+                    _buildRepeat(ref, colorScheme, repeatMode),
+                  ],
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 12),
+                    _buildShuffle(ref, colorScheme, isShuffle),
+                    const SizedBox(width: 16),
+                    _buildRepeat(ref, colorScheme, repeatMode),
+                  ],
+                ),
       ],
     );
   }
 
-  Widget _buildVolumeControl(
-    BuildContext context,
+  Widget _buildShuffle(WidgetRef ref, ColorScheme colorScheme, bool isShuffle) {
+    return IconButton(
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      onPressed: () => ref.read(playbackProvider.notifier).toggleShuffle(),
+      icon: SvgPicture.asset(
+        'assets/music_bar_Icons/shuffle.svg',
+        width: 12,
+        height: 12,
+        colorFilter: ColorFilter.mode(
+          isShuffle ? colorScheme.primary : Colors.white38,
+          BlendMode.srcIn,
+        ),
+      ),
+      tooltip: 'Shuffle',
+    );
+  }
+
+  Widget _buildRepeat(
     WidgetRef ref,
-    double volume,
+    ColorScheme colorScheme,
+    RepeatMode repeatMode,
   ) {
-    return ClipRect(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => ref.read(playbackProvider.notifier).toggleMute(),
-            icon: SvgPicture.asset(
-              volume == 0
-                  ? 'assets/music_bar_Icons/mute.svg'
-                  : 'assets/music_bar_Icons/volume.svg',
-              width: 12,
-              height: 12,
-              colorFilter: ColorFilter.mode(
-                volume == 0 ? Colors.white38 : Colors.white,
+    return IconButton(
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      onPressed: () => ref.read(playbackProvider.notifier).nextRepeatMode(),
+      icon: SvgPicture.asset(
+        repeatMode == RepeatMode.one
+            ? 'assets/music_bar_Icons/repeat_1.svg'
+            : 'assets/music_bar_Icons/repeat.svg',
+        width: 12,
+        height: 12,
+        colorFilter: repeatMode == RepeatMode.one
+            ? null
+            : ColorFilter.mode(
+                repeatMode == RepeatMode.all ? Colors.white : Colors.white38,
                 BlendMode.srcIn,
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 100,
-            child: Listener(
-              onPointerSignal: (event) {
-                if (event is PointerScrollEvent) {
-                  final delta = event.scrollDelta.dy > 0 ? -0.05 : 0.05;
-                  ref.read(playbackProvider.notifier).adjustVolume(delta);
-                }
-              },
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: Platform.isLinux ? 4.0 : 6.0,
-                  trackShape: const EqualHeightTrackShape(),
-                  thumbShape: LineThumbShape(
-                    thumbHeight: Platform.isLinux ? 8 : 0,
-                    thumbWidth: 3,
-                  ),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 14,
-                  ),
-                  activeTrackColor: Theme.of(context).colorScheme.primary,
-                  inactiveTrackColor: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.1),
-                  thumbColor: Colors.white,
-                ),
-                child: Slider(
-                  value: volume,
-                  onChanged: (vol) =>
-                      ref.read(playbackProvider.notifier).setVolume(vol),
-                ),
-              ),
-            ),
-          ),
-        ],
+        colorMapper: repeatMode == RepeatMode.one
+            ? AccentColorMapper(colorScheme.primary)
+            : null,
       ),
+      tooltip: 'Repeat',
     );
   }
 
@@ -479,6 +470,254 @@ class _PremiumPlayerBar extends ConsumerWidget {
           tooltip: 'Queue',
         ),
       ],
+    );
+  }
+}
+
+/// Inline volume control used on wide windows: icon + 100px slider.
+class _VolumeInlineControl extends ConsumerWidget {
+  const _VolumeInlineControl();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final volume = ref.watch(playbackProvider.select((s) => s.volume));
+    final colorScheme = Theme.of(context).colorScheme;
+    return ClipRect(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => ref.read(playbackProvider.notifier).toggleMute(),
+            icon: SvgPicture.asset(
+              volume == 0
+                  ? 'assets/music_bar_Icons/mute.svg'
+                  : 'assets/music_bar_Icons/volume.svg',
+              width: 12,
+              height: 12,
+              colorFilter: ColorFilter.mode(
+                volume == 0 ? Colors.white38 : Colors.white,
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 100,
+            child: Listener(
+              onPointerSignal: (event) {
+                if (event is PointerScrollEvent) {
+                  final delta = event.scrollDelta.dy > 0 ? -0.05 : 0.05;
+                  ref.read(playbackProvider.notifier).adjustVolume(delta);
+                }
+              },
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: Platform.isLinux ? 4.0 : 6.0,
+                  trackShape: const EqualHeightTrackShape(),
+                  thumbShape: LineThumbShape(
+                    thumbHeight: Platform.isLinux ? 8 : 0,
+                    thumbWidth: 3,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 14,
+                  ),
+                  activeTrackColor: colorScheme.primary,
+                  inactiveTrackColor: colorScheme.primary.withValues(
+                    alpha: 0.1,
+                  ),
+                  thumbColor: Colors.white,
+                ),
+                child: Slider(
+                  value: volume,
+                  onChanged: (vol) =>
+                      ref.read(playbackProvider.notifier).setVolume(vol),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Volume icon that on hover shows a floating slider card ON TOP of the rest
+/// of the UI, so the slider takes up no space on the mini player itself.
+class _VolumeHoverControl extends ConsumerStatefulWidget {
+  const _VolumeHoverControl();
+
+  @override
+  ConsumerState<_VolumeHoverControl> createState() =>
+      _VolumeHoverControlState();
+}
+
+class _VolumeHoverControlState extends ConsumerState<_VolumeHoverControl> {
+  final GlobalKey _anchorKey = GlobalKey();
+  OverlayEntry? _overlay;
+  Timer? _hideTimer;
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _overlay?.remove();
+    super.dispose();
+  }
+
+  void _showOverlay() {
+    if (_overlay != null) return;
+    _hideTimer?.cancel();
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final offset = box.localToGlobal(Offset.zero);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    const double cardWidth = 132;
+    const double cardHeight = 44;
+    final left = (offset.dx + box.size.width / 2 - cardWidth / 2).clamp(
+      8.0,
+      screenWidth - cardWidth - 8,
+    );
+    final top = offset.dy - cardHeight - 10;
+    final overlay = Overlay.of(context);
+    _overlay = OverlayEntry(
+      builder: (ctx) => Positioned(
+        left: left,
+        top: top.clamp(8.0, screenHeight - cardHeight - 8),
+        child: _VolumeHoverPopup(
+          cardWidth: cardWidth,
+          cardHeight: cardHeight,
+          onHoverChanged: (v) {
+            if (v) {
+              _hideTimer?.cancel();
+            } else {
+              _scheduleHide();
+            }
+          },
+        ),
+      ),
+    );
+    overlay.insert(_overlay!);
+  }
+
+  void _scheduleHide() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(milliseconds: 250), () {
+      _overlay?.remove();
+      _overlay = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final volume = ref.watch(playbackProvider.select((s) => s.volume));
+    return MouseRegion(
+      key: _anchorKey,
+      onEnter: (_) => _showOverlay(),
+      onExit: (_) => _scheduleHide(),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        onPressed: () => ref.read(playbackProvider.notifier).toggleMute(),
+        icon: SvgPicture.asset(
+          volume == 0
+              ? 'assets/music_bar_Icons/mute.svg'
+              : 'assets/music_bar_Icons/volume.svg',
+          width: 12,
+          height: 12,
+          colorFilter: ColorFilter.mode(
+            volume == 0 ? Colors.white38 : Colors.white,
+            BlendMode.srcIn,
+          ),
+        ),
+        tooltip: 'Volume',
+      ),
+    );
+  }
+}
+
+class _VolumeHoverPopup extends ConsumerStatefulWidget {
+  const _VolumeHoverPopup({
+    required this.cardWidth,
+    required this.cardHeight,
+    required this.onHoverChanged,
+  });
+
+  final double cardWidth;
+  final double cardHeight;
+  final ValueChanged<bool> onHoverChanged;
+
+  @override
+  ConsumerState<_VolumeHoverPopup> createState() => _VolumeHoverPopupState();
+}
+
+class _VolumeHoverPopupState extends ConsumerState<_VolumeHoverPopup> {
+  @override
+  Widget build(BuildContext context) {
+    final volume = ref.watch(playbackProvider.select((s) => s.volume));
+    final colorScheme = Theme.of(context).colorScheme;
+    return MouseRegion(
+      onEnter: (_) => widget.onHoverChanged(true),
+      onExit: (_) => widget.onHoverChanged(false),
+      child: Material(
+        color: const Color(0xFF2A2A2A),
+        elevation: 12,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: widget.cardWidth,
+          height: widget.cardHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () =>
+                    ref.read(playbackProvider.notifier).toggleMute(),
+                icon: SvgPicture.asset(
+                  volume == 0
+                      ? 'assets/music_bar_Icons/mute.svg'
+                      : 'assets/music_bar_Icons/volume.svg',
+                  width: 12,
+                  height: 12,
+                  colorFilter: ColorFilter.mode(
+                    volume == 0 ? Colors.white38 : Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    trackShape: const EqualHeightTrackShape(),
+                    thumbShape: LineThumbShape(thumbHeight: 6, thumbWidth: 3),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 12,
+                    ),
+                    activeTrackColor: colorScheme.primary,
+                    inactiveTrackColor: colorScheme.primary.withValues(
+                      alpha: 0.15,
+                    ),
+                    thumbColor: Colors.white,
+                  ),
+                  child: Slider(
+                    value: volume,
+                    onChanged: (v) =>
+                        ref.read(playbackProvider.notifier).setVolume(v),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -227,6 +227,11 @@
   "systemTray": "System Tray",
   "minimizeToTray": "Minimize to tray",
   "minimizeToTrayDesc": "Keep running in the system tray when the window is closed.",
+  "nowPlayingFullscreen": "True fullscreen for Now Playing",
+  "nowPlayingFullscreenDesc": "Open the Now Playing view without window borders or the taskbar.",
+  "songOptions": "Song options",
+  "fullscreen": "Fullscreen",
+  "exitFullscreen": "Exit fullscreen",
   "right": "Right",
   "scanCompleteSongsDetected": "SCAN COMPLETE: {count} SONGS DETECTED!",
   "@scanCompleteSongsDetected": {

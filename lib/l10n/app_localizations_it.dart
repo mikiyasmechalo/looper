@@ -708,6 +708,22 @@ class AppLocalizationsIt extends AppLocalizations {
       'Continua a funzionare nell\'area di notifica quando la finestra viene chiusa.';
 
   @override
+  String get nowPlayingFullscreen => 'Schermo intero per In riproduzione';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Apre la vista di riproduzione senza bordi né barra delle applicazioni.';
+
+  @override
+  String get songOptions => 'Opzioni del brano';
+
+  @override
+  String get fullscreen => 'Schermo intero';
+
+  @override
+  String get exitFullscreen => 'Esci a schermo intero';
+
+  @override
   String get right => 'Destra';
 
   @override

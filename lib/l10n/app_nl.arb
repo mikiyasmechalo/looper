@@ -315,6 +315,12 @@
   "systemTray": "Systeemvak",
   "minimizeToTray": "Naar systeemvak minimaliseren",
   "minimizeToTrayDesc": "Blijft actief in het systeemvak wanneer het venster wordt gesloten.",
+  "nowPlayingFullscreen": "Volledig scherm voor Nu afspelen",
+  "nowPlayingFullscreenDesc": "Opent de Nu afspelen-weergave zonder vensterranden of taakbalk.",
+  "songOptions": "Nummeropties",
+  "fullscreen": "Volledig scherm",
+  "exitFullscreen": "Volledig scherm verlaten",
+
   "persistQueueTitle": "Laatste wachtrij behouden",
   "selectFontFamily": "Selecteer lettertypefamilie",
   "sortAlbumAsc": "Album (A-Z)",

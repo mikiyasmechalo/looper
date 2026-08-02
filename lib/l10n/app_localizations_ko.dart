@@ -668,6 +668,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get minimizeToTrayDesc => '창을 닫아도 시스템 트레이에서 계속 실행됩니다.';
 
   @override
+  String get nowPlayingFullscreen => '재생 중 진짜 전체 화면';
+
+  @override
+  String get nowPlayingFullscreenDesc => '창 테두리와 작업 표시줄 없이 재생 중 보기를 엽니다.';
+
+  @override
+  String get songOptions => '노래 옵션';
+
+  @override
+  String get fullscreen => '전체 화면';
+
+  @override
+  String get exitFullscreen => '전체 화면 종료';
+
+  @override
   String get right => '오른쪽';
 
   @override

@@ -708,6 +708,22 @@ class AppLocalizationsRu extends AppLocalizations {
       'Продолжать работу в системном трее после закрытия окна.';
 
   @override
+  String get nowPlayingFullscreen => 'Полноэкранный режим для Сейчас играет';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Открывает представление «Сейчас играет» без рамок окна и панели задач.';
+
+  @override
+  String get songOptions => 'Параметры песни';
+
+  @override
+  String get fullscreen => 'Полный экран';
+
+  @override
+  String get exitFullscreen => 'Выйти из полноэкранного режима';
+
+  @override
   String get right => 'Справа';
 
   @override

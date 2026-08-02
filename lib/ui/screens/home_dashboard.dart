@@ -216,26 +216,32 @@ class HomeDashboard extends ConsumerWidget {
                     ref: ref,
                     album: album,
                   ),
-                  child: InkWell(
-                    onTap: () async {
-                      final songs = await DbService.isar.songs
-                          .filter()
-                          .albumEqualTo(album.name)
-                          .findAll();
-                      ref
-                          .read(appNavigationProvider.notifier)
-                          .showCollection(
-                            title: album.name,
-                            subtitle: album.artist,
-                            art: album.artPath,
-                            songs: songs,
-                            highlightItem: NavItem.albums,
-                          );
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: isNarrow ? 120 : 140,
-                      padding: const EdgeInsets.all(8),
+                  child: Material(
+                    color: Colors.transparent,
+                    clipBehavior: Clip.hardEdge,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: InkWell(
+                      onTap: () async {
+                        final songs = await DbService.isar.songs
+                            .filter()
+                            .albumEqualTo(album.name)
+                            .findAll();
+                        ref
+                            .read(appNavigationProvider.notifier)
+                            .showCollection(
+                              title: album.name,
+                              subtitle: album.artist,
+                              art: album.artPath,
+                              songs: songs,
+                              highlightItem: NavItem.albums,
+                            );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: isNarrow ? 120 : 140,
+                        padding: const EdgeInsets.all(8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -281,6 +287,7 @@ class HomeDashboard extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  ),
                 ),
               );
             },
@@ -318,12 +325,19 @@ class HomeDashboard extends ConsumerWidget {
               final song = recentSongs[index];
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: InkWell(
-                  onTap: () => ref.read(playbackProvider.notifier).play(song),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: isNarrow ? 120 : 140,
-                    padding: const EdgeInsets.all(8),
+                child: Material(
+                  color: Colors.transparent,
+                  clipBehavior: Clip.hardEdge,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: InkWell(
+                    onTap: () =>
+                        ref.read(playbackProvider.notifier).play(song),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: isNarrow ? 120 : 140,
+                      padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -365,6 +379,7 @@ class HomeDashboard extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ),
                   ),
                 ),
               );
@@ -431,11 +446,17 @@ class HomeDashboard extends ConsumerWidget {
                     ref: ref,
                     song: song,
                   ),
-                  child: InkWell(
-                    onTap: () =>
-                        ref.read(playbackProvider.notifier).play(song),
-                    borderRadius: BorderRadius.circular(8),
-                    child: AnimatedContainer(
+                  child: Material(
+                    color: Colors.transparent,
+                    clipBehavior: Clip.hardEdge,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: InkWell(
+                      onTap: () =>
+                          ref.read(playbackProvider.notifier).play(song),
+                      borderRadius: BorderRadius.circular(8),
+                      child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -492,6 +513,7 @@ class HomeDashboard extends ConsumerWidget {
                           ),
                         ],
                       ),
+                    ),
                     ),
                   ),
                 );
@@ -556,28 +578,34 @@ class HomeDashboard extends ConsumerWidget {
                             ref: ref,
                             artist: artist,
                           ),
-                      child: InkWell(
-                        onTap: () async {
-                          final songs = await DbService.isar.songs
-                              .filter()
-                              .artistEqualTo(artist.name)
-                              .or()
-                              .albumArtistEqualTo(artist.name)
-                              .findAll();
-                          ref
-                              .read(appNavigationProvider.notifier)
-                              .showCollection(
-                                title: artist.name,
-                                subtitle: 'Artist',
-                                art: artist.artPath,
-                                imageUrl: artist.artistImageUrl,
-                                images: artist.artistImages,
-                                songs: songs,
-                                highlightItem: NavItem.artists,
-                              );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Column(
+                      child: Material(
+                        color: Colors.transparent,
+                        clipBehavior: Clip.hardEdge,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: InkWell(
+                          onTap: () async {
+                            final songs = await DbService.isar.songs
+                                .filter()
+                                .artistEqualTo(artist.name)
+                                .or()
+                                .albumArtistEqualTo(artist.name)
+                                .findAll();
+                            ref
+                                .read(appNavigationProvider.notifier)
+                                .showCollection(
+                                  title: artist.name,
+                                  subtitle: 'Artist',
+                                  art: artist.artPath,
+                                  imageUrl: artist.artistImageUrl,
+                                  images: artist.artistImages,
+                                  songs: songs,
+                                  highlightItem: NavItem.artists,
+                                );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             SizedBox(
@@ -619,6 +647,7 @@ class HomeDashboard extends ConsumerWidget {
                             ),
                           ],
                         ),
+                      ),
                       ),
                     ),
                   );
@@ -677,24 +706,30 @@ class HomeDashboard extends ConsumerWidget {
                         ref: ref,
                         album: album,
                       ),
-                      child: InkWell(
-                        onTap: () async {
-                          final songs = await DbService.isar.songs
-                              .filter()
-                              .albumEqualTo(album.name)
-                              .findAll();
-                          ref
-                              .read(appNavigationProvider.notifier)
-                              .showCollection(
-                                title: album.name,
-                                subtitle: album.artist,
-                                art: album.artPath,
-                                songs: songs,
-                                highlightItem: NavItem.albums,
-                              );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Column(
+                      child: Material(
+                        color: Colors.transparent,
+                        clipBehavior: Clip.hardEdge,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: InkWell(
+                          onTap: () async {
+                            final songs = await DbService.isar.songs
+                                .filter()
+                                .albumEqualTo(album.name)
+                                .findAll();
+                            ref
+                                .read(appNavigationProvider.notifier)
+                                .showCollection(
+                                  title: album.name,
+                                  subtitle: album.artist,
+                                  art: album.artPath,
+                                  songs: songs,
+                                  highlightItem: NavItem.albums,
+                                );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             ClipRRect(
@@ -745,6 +780,7 @@ class HomeDashboard extends ConsumerWidget {
                               ),
                             ),
                           ],
+                        ),
                         ),
                       ),
                     ),
@@ -844,17 +880,23 @@ class HomeDashboard extends ConsumerWidget {
           ref: ref,
           album: album,
         ),
-        child: InkWell(
-          onTap: () async {
-            final songs = await DbService.isar.songs
-                .filter()
-                .albumEqualTo(album.name)
-                .findAll();
-            ref
-                .read(appNavigationProvider.notifier)
-                .showCollection(
-                  title: album.name,
-                  subtitle: album.artist ?? l10n.unknownArtist,
+        child: Material(
+          color: Colors.transparent,
+          clipBehavior: Clip.hardEdge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: InkWell(
+            onTap: () async {
+              final songs = await DbService.isar.songs
+                  .filter()
+                  .albumEqualTo(album.name)
+                  .findAll();
+              ref
+                  .read(appNavigationProvider.notifier)
+                  .showCollection(
+                    title: album.name,
+                    subtitle: album.artist ?? l10n.unknownArtist,
                   art: album.artPath,
                   songs: songs,
                   highlightItem: NavItem.albums,
@@ -895,6 +937,7 @@ class HomeDashboard extends ConsumerWidget {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -908,18 +951,24 @@ class HomeDashboard extends ConsumerWidget {
     return Container(
       width: 140,
       margin: const EdgeInsets.only(right: 16),
-      child: InkWell(
-        onTap: () {
-          ref
-              .read(appNavigationProvider.notifier)
-              .showCollection(
-                title: genre,
-                subtitle: l10n.genre,
-                songs: genreSongs,
-              );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.hardEdge,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: InkWell(
+          onTap: () {
+            ref
+                .read(appNavigationProvider.notifier)
+                .showCollection(
+                  title: genre,
+                  subtitle: l10n.genre,
+                  songs: genreSongs,
+                );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(16),
@@ -949,6 +998,7 @@ class HomeDashboard extends ConsumerWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

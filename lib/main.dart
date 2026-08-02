@@ -78,6 +78,7 @@ void main(List<String> args) async {
           backgroundColor: Colors.transparent,
         );
         await windowManager.waitUntilReadyToShow(windowOptions, () async {
+          await windowManager.setMinimumSize(const Size(800, 800));
           await windowManager.show();
           await windowManager.focus();
         });

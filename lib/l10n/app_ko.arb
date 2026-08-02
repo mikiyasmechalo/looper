@@ -315,6 +315,12 @@
   "systemTray": "시스템 트레이",
   "minimizeToTray": "트레이로 최소화",
   "minimizeToTrayDesc": "창을 닫아도 시스템 트레이에서 계속 실행됩니다.",
+  "nowPlayingFullscreen": "재생 중 진짜 전체 화면",
+  "nowPlayingFullscreenDesc": "창 테두리와 작업 표시줄 없이 재생 중 보기를 엽니다.",
+  "songOptions": "노래 옵션",
+  "fullscreen": "전체 화면",
+  "exitFullscreen": "전체 화면 종료",
+
   "persistQueueTitle": "마지막 대기열 유지",
   "selectFontFamily": "글꼴 패밀리 선택",
   "sortAlbumAsc": "앨범 (A-Z)",

@@ -315,6 +315,12 @@
   "systemTray": "सिस्टम ट्रे",
   "minimizeToTray": "ट्रे में छोटा करें",
   "minimizeToTrayDesc": "विंडो बंद होने पर सिस्टम ट्रे में चालू रहें।",
+  "nowPlayingFullscreen": "अभी चल रहा है के लिए पूर्ण स्क्रीन",
+  "nowPlayingFullscreenDesc": "अभी चल रहा है दृश्य को बिना विंडो बॉर्डर और टास्कबार के खोलें।",
+  "songOptions": "गीत विकल्प",
+  "fullscreen": "फुलस्क्रीन",
+  "exitFullscreen": "फुलस्क्रीन बंद करें",
+
   "persistQueueTitle": "आखिरी कतार सहेजें",
   "selectFontFamily": "फ़ॉन्ट परिवार चुनें",
   "sortAlbumAsc": "एल्बम (A-Z)",

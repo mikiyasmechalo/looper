@@ -315,6 +315,12 @@
   "systemTray": "Bandeja del sistema",
   "minimizeToTray": "Minimizar a la bandeja",
   "minimizeToTrayDesc": "Seguir ejecutándose en la bandeja del sistema al cerrar la ventana.",
+  "nowPlayingFullscreen": "Pantalla completa real para Reproduciendo",
+  "nowPlayingFullscreenDesc": "Abre la vista de reproducción sin bordes ni barra de tareas.",
+  "songOptions": "Opciones de la canción",
+  "fullscreen": "Pantalla completa",
+  "exitFullscreen": "Salir de pantalla completa",
+
   "persistQueueTitle": "Persistir última cola",
   "selectFontFamily": "Seleccionar familia de fuentes",
   "sortAlbumAsc": "Álbum (A-Z)",

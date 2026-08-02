@@ -711,6 +711,22 @@ class AppLocalizationsFr extends AppLocalizations {
       'Continuer de fonctionner dans la barre des tâches lorsque la fenêtre est fermée.';
 
   @override
+  String get nowPlayingFullscreen => 'Plein écran réel pour la lecture';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Ouvre la vue de lecture sans bordures ni barre des tâches.';
+
+  @override
+  String get songOptions => 'Options de la chanson';
+
+  @override
+  String get fullscreen => 'Plein écran';
+
+  @override
+  String get exitFullscreen => 'Quitter le plein écran';
+
+  @override
   String get right => 'Droite';
 
   @override

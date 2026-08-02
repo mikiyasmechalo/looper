@@ -707,6 +707,22 @@ class AppLocalizationsPt extends AppLocalizations {
       'Continuar em execução na bandeja do sistema quando a janela for fechada.';
 
   @override
+  String get nowPlayingFullscreen => 'Tela cheia para Em reprodução';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Abre a visualização de reprodução sem bordas nem barra de tarefas.';
+
+  @override
+  String get songOptions => 'Opções da música';
+
+  @override
+  String get fullscreen => 'Tela cheia';
+
+  @override
+  String get exitFullscreen => 'Sair da tela cheia';
+
+  @override
   String get right => 'Direita';
 
   @override

@@ -315,6 +315,12 @@
   "systemTray": "Системный трей",
   "minimizeToTray": "Сворачивать в трей",
   "minimizeToTrayDesc": "Продолжать работу в системном трее после закрытия окна.",
+  "nowPlayingFullscreen": "Полноэкранный режим для Сейчас играет",
+  "nowPlayingFullscreenDesc": "Открывает представление «Сейчас играет» без рамок окна и панели задач.",
+  "songOptions": "Параметры песни",
+  "fullscreen": "Полный экран",
+  "exitFullscreen": "Выйти из полноэкранного режима",
+
   "persistQueueTitle": "Сохранять последнюю очередь",
   "selectFontFamily": "Выбрать семейство шрифтов",
   "sortAlbumAsc": "Альбом (А-Я)",

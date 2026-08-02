@@ -709,6 +709,22 @@ class AppLocalizationsNl extends AppLocalizations {
       'Blijft actief in het systeemvak wanneer het venster wordt gesloten.';
 
   @override
+  String get nowPlayingFullscreen => 'Volledig scherm voor Nu afspelen';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Opent de Nu afspelen-weergave zonder vensterranden of taakbalk.';
+
+  @override
+  String get songOptions => 'Nummeropties';
+
+  @override
+  String get fullscreen => 'Volledig scherm';
+
+  @override
+  String get exitFullscreen => 'Volledig scherm verlaten';
+
+  @override
   String get right => 'Rechts';
 
   @override

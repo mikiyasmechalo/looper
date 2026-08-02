@@ -661,6 +661,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get minimizeToTrayDesc => '关闭窗口后在系统托盘中继续运行。';
 
   @override
+  String get nowPlayingFullscreen => '现在播放全屏';
+
+  @override
+  String get nowPlayingFullscreenDesc => '以无窗口边框和任务栏的全屏模式打开现在播放视图。';
+
+  @override
+  String get songOptions => '歌曲选项';
+
+  @override
+  String get fullscreen => '全屏';
+
+  @override
+  String get exitFullscreen => '退出全屏';
+
+  @override
   String get right => '居右';
 
   @override

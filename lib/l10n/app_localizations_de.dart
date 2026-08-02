@@ -708,6 +708,22 @@ class AppLocalizationsDe extends AppLocalizations {
       'Im Hintergrund weiterlaufen, wenn das Fenster geschlossen wird.';
 
   @override
+  String get nowPlayingFullscreen => 'Jetzt läuft in echtem Vollbild';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Öffnet die Jetzt-wird-gespielt-Ansicht ohne Fensterrahmen und Taskleiste.';
+
+  @override
+  String get songOptions => 'Songoptionen';
+
+  @override
+  String get fullscreen => 'Vollbild';
+
+  @override
+  String get exitFullscreen => 'Vollbild beenden';
+
+  @override
   String get right => 'Rechts';
 
   @override

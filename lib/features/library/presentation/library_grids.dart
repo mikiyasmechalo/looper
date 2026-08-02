@@ -271,7 +271,7 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
         return Column(
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(24.s, 16.s, 24.s, 0),
+              padding: EdgeInsets.fromLTRB(24.s, 16.s, 24.s, 8.s),
               child: Row(
                 children: [
                   Text(
@@ -372,24 +372,30 @@ class _AlbumCard extends ConsumerWidget {
         ref: ref,
         album: album,
       ),
-      child: InkWell(
-        onTap: () async {
-          final songs = await DbService.isar.songs
-              .filter()
-              .albumEqualTo(album.name)
-              .findAll();
-          ref
-              .read(appNavigationProvider.notifier)
-              .showCollection(
-                title: album.name,
-                subtitle: album.artist,
-                art: album.artPath,
-                songs: songs,
-                highlightItem: NavItem.albums,
-              );
-        },
-        borderRadius: BorderRadius.circular(24),
-      child: AnimatedContainer(
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.hardEdge,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: InkWell(
+          onTap: () async {
+            final songs = await DbService.isar.songs
+                .filter()
+                .albumEqualTo(album.name)
+                .findAll();
+            ref
+                .read(appNavigationProvider.notifier)
+                .showCollection(
+                  title: album.name,
+                  subtitle: album.artist,
+                  art: album.artPath,
+                  songs: songs,
+                  highlightItem: NavItem.albums,
+                );
+          },
+          borderRadius: BorderRadius.circular(24),
+          child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(12.s),
         decoration: BoxDecoration(
@@ -482,7 +488,8 @@ class _AlbumCard extends ConsumerWidget {
             ),
           ],
         ),
-      ),
+        ),
+        ),
       ),
     );
   }
@@ -665,7 +672,7 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
         return Column(
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(24.s, 16.s, 24.s, 0),
+              padding: EdgeInsets.fromLTRB(24.s, 16.s, 24.s, 8.s),
               child: Row(
                 children: [
                   Text(
@@ -765,34 +772,40 @@ class _ArtistCard extends ConsumerWidget {
         ref: ref,
         artist: artist,
       ),
-      child: InkWell(
-        onTap: () async {
-          final songs = await DbService.isar.songs
-              .filter()
-              .artistEqualTo(artist.name)
-              .or()
-              .albumArtistEqualTo(artist.name)
-              .findAll();
-          final isLocalImage =
-              artist.artistImageUrl != null &&
-              !artist.artistImageUrl!.startsWith('http');
-          final isNetworkImage =
-              artist.artistImageUrl != null &&
-              artist.artistImageUrl!.startsWith('http');
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.hardEdge,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: InkWell(
+          onTap: () async {
+            final songs = await DbService.isar.songs
+                .filter()
+                .artistEqualTo(artist.name)
+                .or()
+                .albumArtistEqualTo(artist.name)
+                .findAll();
+            final isLocalImage =
+                artist.artistImageUrl != null &&
+                !artist.artistImageUrl!.startsWith('http');
+            final isNetworkImage =
+                artist.artistImageUrl != null &&
+                artist.artistImageUrl!.startsWith('http');
 
-          ref
-              .read(appNavigationProvider.notifier)
-              .showCollection(
-                title: artist.name,
-                art: isLocalImage ? artist.artistImageUrl : artist.artPath,
-                imageUrl: isNetworkImage ? artist.artistImageUrl : null,
-                images: artist.artistImages,
-                songs: songs,
-                highlightItem: NavItem.artists,
-              );
-        },
-        borderRadius: BorderRadius.circular(24),
-      child: AnimatedContainer(
+            ref
+                .read(appNavigationProvider.notifier)
+                .showCollection(
+                  title: artist.name,
+                  art: isLocalImage ? artist.artistImageUrl : artist.artPath,
+                  imageUrl: isNetworkImage ? artist.artistImageUrl : null,
+                  images: artist.artistImages,
+                  songs: songs,
+                  highlightItem: NavItem.artists,
+                );
+          },
+          borderRadius: BorderRadius.circular(24),
+          child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(12.s),
         decoration: BoxDecoration(
@@ -856,7 +869,8 @@ class _ArtistCard extends ConsumerWidget {
             ),
           ],
         ),
-      ),
+        ),
+        ),
       ),
     );
   }
@@ -984,43 +998,49 @@ class GenresGrid extends ConsumerWidget {
 
               final double artSize = (cardWidth * 0.40).clamp(90.0, 170.0);
 
-              return InkWell(
-                onTap: () {
-                  final firstWithArt = genreSongs.firstWhere(
-                    (s) => s.artPath != null,
-                    orElse: () => genreSongs.first,
-                  );
-                  ref
-                      .read(appNavigationProvider.notifier)
-                      .showCollection(
-                        title: genre,
-                        subtitle: l10n.genre,
-                        art: firstWithArt.artPath,
-                        songs: genreSongs,
-                      );
-                },
-                borderRadius: BorderRadius.circular(24),
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [startColor, endColor],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+              return Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [startColor, endColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Stack(
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  clipBehavior: Clip.hardEdge,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      final firstWithArt = genreSongs.firstWhere(
+                        (s) => s.artPath != null,
+                        orElse: () => genreSongs.first,
+                      );
+                      ref
+                          .read(appNavigationProvider.notifier)
+                          .showCollection(
+                            title: genre,
+                            subtitle: l10n.genre,
+                            art: firstWithArt.artPath,
+                            songs: genreSongs,
+                          );
+                    },
+                    borderRadius: BorderRadius.circular(24),
+                    child: Stack(
                     children: [
                       if (firstSongWithArt.artPath != null)
                         Positioned(
@@ -1104,6 +1124,7 @@ class GenresGrid extends ConsumerWidget {
                         ),
                       ),
                     ],
+                  ),
                   ),
                 ),
               );

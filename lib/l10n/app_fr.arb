@@ -315,6 +315,12 @@
   "systemTray": "Barre des tâches",
   "minimizeToTray": "Réduire dans la barre des tâches",
   "minimizeToTrayDesc": "Continuer de fonctionner dans la barre des tâches lorsque la fenêtre est fermée.",
+  "nowPlayingFullscreen": "Plein écran réel pour la lecture",
+  "nowPlayingFullscreenDesc": "Ouvre la vue de lecture sans bordures ni barre des tâches.",
+  "songOptions": "Options de la chanson",
+  "fullscreen": "Plein écran",
+  "exitFullscreen": "Quitter le plein écran",
+
   "persistQueueTitle": "Conserver la dernière file",
   "selectFontFamily": "Sélectionner la famille de polices",
   "sortAlbumAsc": "Album (A-Z)",

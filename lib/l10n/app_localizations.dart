@@ -1400,6 +1400,36 @@ abstract class AppLocalizations {
   /// **'Keep running in the system tray when the window is closed.'**
   String get minimizeToTrayDesc;
 
+  /// No description provided for @nowPlayingFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'True fullscreen for Now Playing'**
+  String get nowPlayingFullscreen;
+
+  /// No description provided for @nowPlayingFullscreenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Now Playing view without window borders or the taskbar.'**
+  String get nowPlayingFullscreenDesc;
+
+  /// No description provided for @songOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Song options'**
+  String get songOptions;
+
+  /// No description provided for @fullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get fullscreen;
+
+  /// No description provided for @exitFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit fullscreen'**
+  String get exitFullscreen;
+
   /// No description provided for @right.
   ///
   /// In en, this message translates to:

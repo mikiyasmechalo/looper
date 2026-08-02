@@ -315,6 +315,12 @@
   "systemTray": "Sistem tepsisi",
   "minimizeToTray": "Tepsiye küçült",
   "minimizeToTrayDesc": "Pencere kapatıldığında sistem tepsisinde çalışmaya devam eder.",
+  "nowPlayingFullscreen": "Şimdi çalınan için gerçek tam ekran",
+  "nowPlayingFullscreenDesc": "Şimdi çalınan görünümünü pencere kenarlıkları ve görev çubuğu olmadan açar.",
+  "songOptions": "Şarkı seçenekleri",
+  "fullscreen": "Tam ekran",
+  "exitFullscreen": "Tam ekrandan çık",
+
   "persistQueueTitle": "Son Sırayı Koru",
   "selectFontFamily": "Yazı Tipi Ailesi Seçin",
   "sortAlbumAsc": "Albüm (A-Z)",

@@ -667,6 +667,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get minimizeToTrayDesc => 'ウィンドウを閉じてもシステムトレイで実行し続けます。';
 
   @override
+  String get nowPlayingFullscreen => '再生中を真のフルスクリーンに';
+
+  @override
+  String get nowPlayingFullscreenDesc => 'ウィンドウ枠とタスクバーなしで再生中ビューを開きます。';
+
+  @override
+  String get songOptions => '曲のオプション';
+
+  @override
+  String get fullscreen => '全画面';
+
+  @override
+  String get exitFullscreen => '全画面を終了';
+
+  @override
   String get right => '右寄せ';
 
   @override

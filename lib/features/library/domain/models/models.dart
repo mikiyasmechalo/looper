@@ -201,6 +201,10 @@ class AppSettings {
 
   // Desktop: keep running in the system tray when the window is closed.
   bool minimizeToTray = false;
+
+  // Desktop: open the now-playing view in true fullscreen (hides the OS
+  // taskbar / title bar controls).
+  bool nowPlayingFullscreen = false;
 }
 
 enum PlaybackMode { hybrid, localOnly, onlineOnly }

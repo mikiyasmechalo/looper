@@ -699,6 +699,22 @@ class AppLocalizationsAr extends AppLocalizations {
       'الاستمرار في العمل في شريط النظام عند إغلاق النافذة.';
 
   @override
+  String get nowPlayingFullscreen => 'ملء الشاشة الحقيقي لـ الآن قيد التشغيل';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'افتح عرض التشغيل الحالي بدون حدود النافذة وشريط المهام.';
+
+  @override
+  String get songOptions => 'خيارات الأغنية';
+
+  @override
+  String get fullscreen => 'ملء الشاشة';
+
+  @override
+  String get exitFullscreen => 'إنهاء ملء الشاشة';
+
+  @override
   String get right => 'يمين';
 
   @override

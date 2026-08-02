@@ -704,6 +704,22 @@ class AppLocalizationsHi extends AppLocalizations {
       'विंडो बंद होने पर सिस्टम ट्रे में चालू रहें।';
 
   @override
+  String get nowPlayingFullscreen => 'अभी चल रहा है के लिए पूर्ण स्क्रीन';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'अभी चल रहा है दृश्य को बिना विंडो बॉर्डर और टास्कबार के खोलें।';
+
+  @override
+  String get songOptions => 'गीत विकल्प';
+
+  @override
+  String get fullscreen => 'फुलस्क्रीन';
+
+  @override
+  String get exitFullscreen => 'फुलस्क्रीन बंद करें';
+
+  @override
   String get right => 'दायें';
 
   @override

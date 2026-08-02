@@ -708,6 +708,22 @@ class AppLocalizationsTr extends AppLocalizations {
       'Pencere kapatıldığında sistem tepsisinde çalışmaya devam eder.';
 
   @override
+  String get nowPlayingFullscreen => 'Şimdi çalınan için gerçek tam ekran';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Şimdi çalınan görünümünü pencere kenarlıkları ve görev çubuğu olmadan açar.';
+
+  @override
+  String get songOptions => 'Şarkı seçenekleri';
+
+  @override
+  String get fullscreen => 'Tam ekran';
+
+  @override
+  String get exitFullscreen => 'Tam ekrandan çık';
+
+  @override
   String get right => 'Sağa Hizala';
 
   @override

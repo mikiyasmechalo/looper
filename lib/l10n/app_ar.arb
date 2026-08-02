@@ -315,6 +315,12 @@
   "systemTray": "شريط النظام",
   "minimizeToTray": "تصغير إلى شريط النظام",
   "minimizeToTrayDesc": "الاستمرار في العمل في شريط النظام عند إغلاق النافذة.",
+  "nowPlayingFullscreen": "ملء الشاشة الحقيقي لـ الآن قيد التشغيل",
+  "nowPlayingFullscreenDesc": "افتح عرض التشغيل الحالي بدون حدود النافذة وشريط المهام.",
+  "songOptions": "خيارات الأغنية",
+  "fullscreen": "ملء الشاشة",
+  "exitFullscreen": "إنهاء ملء الشاشة",
+
   "persistQueueTitle": "حفظ آخر قائمة تشغيل",
   "selectFontFamily": "اختر عائلة الخط",
   "sortAlbumAsc": "الألبوم (أ-ي)",

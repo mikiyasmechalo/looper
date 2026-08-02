@@ -315,6 +315,12 @@
   "systemTray": "Area di notifica",
   "minimizeToTray": "Riduci nell'area di notifica",
   "minimizeToTrayDesc": "Continua a funzionare nell'area di notifica quando la finestra viene chiusa.",
+  "nowPlayingFullscreen": "Schermo intero per In riproduzione",
+  "nowPlayingFullscreenDesc": "Apre la vista di riproduzione senza bordi né barra delle applicazioni.",
+  "songOptions": "Opzioni del brano",
+  "fullscreen": "Schermo intero",
+  "exitFullscreen": "Esci a schermo intero",
+
   "persistQueueTitle": "Mantieni ultima coda",
   "selectFontFamily": "Seleziona famiglia caratteri",
   "sortAlbumAsc": "Album (A-Z)",

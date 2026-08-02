@@ -701,6 +701,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Keep running in the system tray when the window is closed.';
 
   @override
+  String get nowPlayingFullscreen => 'True fullscreen for Now Playing';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Open the Now Playing view without window borders or the taskbar.';
+
+  @override
+  String get songOptions => 'Song options';
+
+  @override
+  String get fullscreen => 'Fullscreen';
+
+  @override
+  String get exitFullscreen => 'Exit fullscreen';
+
+  @override
   String get right => 'Right';
 
   @override

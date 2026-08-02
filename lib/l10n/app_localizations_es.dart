@@ -711,6 +711,23 @@ class AppLocalizationsEs extends AppLocalizations {
       'Seguir ejecutándose en la bandeja del sistema al cerrar la ventana.';
 
   @override
+  String get nowPlayingFullscreen =>
+      'Pantalla completa real para Reproduciendo';
+
+  @override
+  String get nowPlayingFullscreenDesc =>
+      'Abre la vista de reproducción sin bordes ni barra de tareas.';
+
+  @override
+  String get songOptions => 'Opciones de la canción';
+
+  @override
+  String get fullscreen => 'Pantalla completa';
+
+  @override
+  String get exitFullscreen => 'Salir de pantalla completa';
+
+  @override
   String get right => 'Derecha';
 
   @override

@@ -456,6 +456,19 @@ class SettingsView extends ConsumerWidget {
                               .read(settingsProvider.notifier)
                               .updateMinimizeToTray(value);
                         },
+                        isLast: false,
+                      ),
+                      _PremiumSwitchRow(
+                        icon: LucideIcons.maximize2,
+                        title: l10n.nowPlayingFullscreen,
+                        subtitle: l10n.nowPlayingFullscreenDesc,
+                        value: settings.nowPlayingFullscreen,
+                        onChanged: (value) {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateNowPlayingFullscreen(value);
+                        },
                         isLast: true,
                       ),
                     ],

@@ -181,12 +181,18 @@ class _PlaylistCard extends ConsumerWidget {
         playlist: playlist,
         songs: songs,
       ),
-      child: InkWell(
-        onTap: () async {
-          final loaded = await DbService.isar.songs
-              .filter()
-              .anyOf(playlist.songPaths, (q, path) => q.pathEqualTo(path))
-              .findAll();
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.hardEdge,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: InkWell(
+          onTap: () async {
+            final loaded = await DbService.isar.songs
+                .filter()
+                .anyOf(playlist.songPaths, (q, path) => q.pathEqualTo(path))
+                .findAll();
 
         final songMap = {for (var s in loaded) s.path: s};
         final orderedSongs = playlist.songPaths
@@ -284,8 +290,9 @@ class _PlaylistCard extends ConsumerWidget {
           ],
         ),
       ),
-      ),
-    );
+    ),
+  ),
+);
   }
 }
 

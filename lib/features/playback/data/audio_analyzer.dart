@@ -1,8 +1,13 @@
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_full/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit_config.dart';
 import 'package:ffmpeg_kit_flutter_new_full/level.dart';
+import 'package:ffmpeg_kit_flutter_new_full/return_code.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AudioAnalysis {
   final String codec;
@@ -149,5 +154,107 @@ class AudioAnalyzer {
       await FFmpegKitConfig.setLogLevel(Level.avLogError);
     }
     return null;
+  }
+}
+
+/// Decodes the actual audio content of a song (via ffmpeg) into a per-bucket
+/// energy waveform, so UI can render a visualizer that reflects the song
+/// instead of a synthetic pattern.
+class WaveformAnalyzer {
+  static const int _decodeSampleRate = 8000;
+
+  static final Map<String, List<double>> _cache = {};
+
+  static List<double>? getCached(String filePath) => _cache[filePath];
+
+  /// Decodes the song and returns a fine-grained energy timeline (one RMS
+  /// value per ~50 ms of audio, normalized to 0..1) so a seekbar can both
+  /// render a real waveform profile and react to the energy at the current
+  /// playback position.
+  static Future<List<double>?> analyze(String filePath) async {
+    final cached = _cache[filePath];
+    if (cached != null) return cached;
+
+    String? pcmPath;
+    try {
+      pcmPath = '${(await getTemporaryDirectory()).path}'
+          '${Platform.pathSeparator}looper_waveform_'
+          '${DateTime.now().microsecondsSinceEpoch}.pcm';
+
+      final session = await FFmpegKit.executeWithArguments([
+        '-hide_banner',
+        '-nostats',
+        '-loglevel', 'error',
+        '-y',
+        '-i', filePath,
+        '-ac', '1',
+        '-ar', '$_decodeSampleRate',
+        '-f', 's16le',
+        pcmPath,
+      ]);
+
+      final rc = await session.getReturnCode();
+      if (!ReturnCode.isSuccess(rc)) {
+        _deleteFile(pcmPath);
+        return null;
+      }
+
+      final file = File(pcmPath);
+      if (!await file.exists()) return null;
+      final bytes = await file.readAsBytes();
+      await file.delete();
+
+      final wave = await Isolate.run(() => _computeWaveform(bytes));
+      _cache[filePath] = wave;
+      return wave;
+    } catch (_) {
+      _deleteFile(pcmPath);
+      return null;
+    }
+  }
+
+  static void _deleteFile(String? path) {
+    if (path != null) {
+      try {
+        final f = File(path);
+        if (f.existsSync()) f.deleteSync();
+      } catch (_) {}
+    }
+  }
+
+  /// Turns interleaved s16le mono samples into an energy timeline with one
+  /// RMS value per ~50 ms, normalized to the 0..1 range. Runs inside a
+  /// background isolate.
+  static List<double> _computeWaveform(Uint8List bytes) {
+    final sampleCount = bytes.length ~/ 2;
+    final buckets = max(1, (sampleCount / 400).round());
+    final out = List<double>.filled(buckets, 0);
+    if (sampleCount < 400) return out;
+
+    final view = ByteData.sublistView(bytes);
+    double sumSquares = 0;
+    for (int b = 0; b < buckets; b++) {
+      final start = (b * sampleCount) ~/ buckets;
+      final end = ((b + 1) * sampleCount) ~/ buckets;
+      for (int i = start; i < end; i++) {
+        final s = view.getInt16(i * 2, Endian.little) / 32768.0;
+        sumSquares += s * s;
+      }
+      out[b] = sqrt(sumSquares / (end - start));
+      sumSquares = 0;
+    }
+
+    double maxValue = 0;
+    for (final v in out) {
+      if (v > maxValue) maxValue = v;
+    }
+    if (maxValue < 1e-6) return out;
+
+    // Lift quiet content so the profile keeps visible dynamics instead of a
+    // flat envelope, then normalize.
+    for (int i = 0; i < buckets; i++) {
+      out[i] = pow(out[i] / maxValue, 0.6).toDouble().clamp(0.0, 1.0);
+    }
+    return out;
   }
 }
