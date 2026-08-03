@@ -134,6 +134,8 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   bool _isTogglePlaying = false;
   Timer? _silenceTimer;
   Timer? _songCompletionTimer;
+  Timer? _playCountTimer;
+  String? _playCountedPath;
   int _lastWidgetPositionUpdate = 0;
   int _manualQueueCount = 0;
   DateTime _lastSeekTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -548,6 +550,38 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     _updateNotification();
   }
 
+  /// Shuffles the album/artist order but keeps each group's songs together as a
+  /// contiguous block, so e.g. "shuffle albums" plays whole albums at once.
+  Future<void> playShuffledGrouped(List<List<Song>> groups) async {
+    final nonEmpty = groups.where((g) => g.isNotEmpty).toList();
+    if (nonEmpty.isEmpty) return;
+
+    final shuffledGroups = List<List<Song>>.from(nonEmpty)..shuffle();
+    final queue = <Song>[];
+    final seen = <String>{};
+    for (final group in shuffledGroups) {
+      for (final s in group) {
+        if (seen.add(s.path)) queue.add(s);
+      }
+    }
+    if (queue.isEmpty) return;
+
+    _originalPlaylist = List.from(queue);
+    _playlist = List<Song>.from(queue);
+    _currentIndex = 0;
+    _manualQueueCount = 0;
+
+    if (!state.isShuffle) {
+      state = state.copyWith(isShuffle: true);
+      await ref.read(settingsProvider.notifier).updateShuffle(true);
+    }
+
+    state = state.copyWith(queue: List.from(_playlist));
+    play(_playlist[_currentIndex]);
+    await _saveQueueState();
+    _updateNotification();
+  }
+
   Future<void> play(Song song, {bool forceDisableCrossfade = false, bool play = true, Duration? initialPosition}) async {
     if (song.isOnlineStream) {
       if (song.streamUrl == null || _isStreamUrlExpired(song.streamUrl)) {
@@ -582,6 +616,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     _silenceTimer?.cancel();
     _songCompletionTimer?.cancel();
+    _playCountTimer?.cancel();
     final settings = ref.read(settingsProvider);
     if (play && settings.audioFocus) {
       final onCall = await ref.read(audioServiceProvider).isOnCall();
@@ -750,10 +785,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         songToUpdate.streamUrl = song.streamUrl;
         songToUpdate.path = song.path;
       }
-      if (play) {
-        songToUpdate.lastPlayed = DateTime.now();
-        songToUpdate.playCount++;
-      }
 
       if (dbSong != null) {
         song.id = dbSong.id;
@@ -766,6 +797,10 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
       await DbService.isar.songs.put(songToUpdate);
     });
+
+    if (play) {
+      _armPlayCount(song);
+    }
 
     if (settings.persistQueue) {
       await ref.read(settingsProvider.notifier).updateLastPlayedSong(song.id);
@@ -807,6 +842,42 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       }
       await seek(initialPosition);
     }
+  }
+
+  /// Schedules the lastPlayed/playCount stamp ~10s after a play starts, so
+  /// quick skips (short previews) don't churn Recently Played or inflate
+  /// Most Played. Cancelled by pause/skip/stop/new play; only fires if the
+  /// same song is still the current song and still playing.
+  void _armPlayCount(Song song) {
+    _playCountTimer?.cancel();
+    _playCountedPath = null;
+    _playCountTimer = Timer(const Duration(seconds: 10), () {
+      _commitPlayCount(song);
+    });
+  }
+
+  void _commitPlayCount(Song song) {
+    final current = state.currentSong;
+    if (current == null || !state.isPlaying) return;
+    if (current.id != song.id && current.path != song.path) return;
+    if (_playCountedPath == song.path) return;
+    _playCountedPath = song.path;
+
+    DbService.isar.writeTxn(() async {
+      final dbSong = (song.isOnlineStream && song.youtubeId != null && song.youtubeId!.isNotEmpty)
+          ? await DbService.isar.songs
+              .filter()
+              .youtubeIdEqualTo(song.youtubeId)
+              .findFirst()
+          : await DbService.isar.songs
+              .filter()
+              .pathEqualTo(song.path)
+              .findFirst();
+      if (dbSong == null) return;
+      dbSong.lastPlayed = DateTime.now();
+      dbSong.playCount++;
+      await DbService.isar.songs.put(dbSong);
+    });
   }
 
   void addToQueue(Song song) {
@@ -1054,6 +1125,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
         if (!targetPlaying) {
           _songCompletionTimer?.cancel();
+          _playCountTimer?.cancel();
         }
 
         final audioSvc = ref.read(audioServiceProvider);
@@ -1132,6 +1204,10 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
               player.setVolume(state.volume * 100);
               await audioSvc.resume();
             }
+            final resumed = state.currentSong;
+            if (resumed != null && _playCountedPath != resumed.path) {
+              _armPlayCount(resumed);
+            }
           }
         }
 
@@ -1160,6 +1236,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   Future<void> skipNext({bool isManual = true}) async {
     if (_playlist.isEmpty) return;
     _isLastPlayManual = isManual;
+    _playCountTimer?.cancel();
 
     final nextIndex = _currentIndex + 1;
     if (nextIndex >= _playlist.length) {
@@ -1416,6 +1493,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     _playlist = [];
     _originalPlaylist = [];
     _currentIndex = -1;
+    _playCountTimer?.cancel();
     _manualQueueCount = 0;
     state = PlaybackState(
       volume: state.volume,
@@ -2121,6 +2199,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     _silenceTimer?.cancel();
     _songCompletionTimer?.cancel();
+    _playCountTimer?.cancel();
     ref.read(audioServiceProvider).pause();
     state = state.copyWith(isPlaying: false);
     _updateNotification();
@@ -2140,6 +2219,10 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     _lastPlayTime = DateTime.now();
     ref.read(audioServiceProvider).resume();
     state = state.copyWith(isPlaying: true);
+    final resumed = state.currentSong;
+    if (resumed != null && _playCountedPath != resumed.path) {
+      _armPlayCount(resumed);
+    }
     _updateNotification();
   }
 
@@ -2158,6 +2241,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     _silenceTimer?.cancel();
     _songCompletionTimer?.cancel();
+    _playCountTimer?.cancel();
     ref.read(audioServiceProvider).pause();
     state = state.copyWith(isPlaying: false);
     _updateNotification();
@@ -2174,6 +2258,10 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       _lastPlayTime = DateTime.now();
       ref.read(audioServiceProvider).resume();
       state = state.copyWith(isPlaying: true);
+      final resumed = state.currentSong;
+      if (resumed != null && _playCountedPath != resumed.path) {
+        _armPlayCount(resumed);
+      }
       _updateNotification();
     }
   }
@@ -2196,6 +2284,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   @override
   void dispose() {
     _silenceTimer?.cancel();
+    _playCountTimer?.cancel();
     _sleepTimer?.cancel();
     _fadeVolumeTimer?.cancel();
     if (Platform.isAndroid) {

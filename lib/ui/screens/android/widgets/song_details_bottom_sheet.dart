@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/core/navigation_provider.dart';
+import 'package:looper_player/core/player_expand_provider.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 
@@ -111,6 +113,16 @@ class SongDetailsBottomSheet extends ConsumerWidget {
     if (artistName == null) return;
     Navigator.pop(context);
 
+    // Trigger sliding player collapse
+    ref.read(playerCollapseTriggerProvider.notifier).update((state) => state + 1);
+    ref.read(appNavigationProvider.notifier).setPlayerExpansion(false);
+
+    // Pop non-sliding expanded player route if present on top
+    final settings = ref.read(settingsProvider);
+    if (!settings.enableSlideGesture && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+
     final artistSongs = await DbService.isar.songs
         .filter()
         .artistEqualTo(artistName)
@@ -144,6 +156,16 @@ class SongDetailsBottomSheet extends ConsumerWidget {
     final albumName = song.album;
     if (albumName == null) return;
     Navigator.pop(context);
+
+    // Trigger sliding player collapse
+    ref.read(playerCollapseTriggerProvider.notifier).update((state) => state + 1);
+    ref.read(appNavigationProvider.notifier).setPlayerExpansion(false);
+
+    // Pop non-sliding expanded player route if present on top
+    final settings = ref.read(settingsProvider);
+    if (!settings.enableSlideGesture && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
 
     final album = await DbService.isar.albums
         .filter()

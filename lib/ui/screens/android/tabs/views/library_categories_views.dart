@@ -648,6 +648,7 @@ class ArtistsGridView extends ConsumerWidget {
                   imageUrl: isNetworkImage ? imageUrl : null,
                   images: artist.artistImages,
                   songs: songs,
+                  highlightItem: NavItem.artists,
                 );
           },
           child: Column(

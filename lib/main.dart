@@ -201,6 +201,7 @@ class MyApp extends ConsumerWidget {
 
     Widget buildMaterialApp(ColorScheme colorScheme) {
       return MaterialApp(
+        navigatorKey: rootNavigatorKey,
         scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         title: 'Looper Player',

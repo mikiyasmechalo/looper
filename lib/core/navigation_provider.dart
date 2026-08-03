@@ -123,6 +123,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
   }) {
     if (state.activeItem == NavItem.collectionDetail &&
         state.collectionTitle == title) {
+      state = state.copyWith(isPlayerExpanded: false);
       return;
     }
 
@@ -141,7 +142,7 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
       collectionSongs: songs,
       activePlaylist: playlist,
       history: newHistory,
-      isPlayerExpanded: state.isPlayerExpanded,
+      isPlayerExpanded: false,
     );
   }
 

@@ -15,6 +15,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
+import 'package:looper_player/ui/widgets/playlist_selector.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Shows the context menu (Play / Shuffle / Play Next / Add to Queue / Add to
@@ -124,6 +125,10 @@ Future<void> _changeArtistImage(
 }
 
 /// Generic context menu for a collection of [songs].
+///
+/// When [shuffleGroups] is provided, the Shuffle action shuffles the group
+/// order and plays each group's songs together (e.g. shuffle all albums keeps
+/// each album's tracks contiguous). Otherwise it falls back to a flat shuffle.
 void showCollectionOptionsBottomSheet({
   required BuildContext context,
   required WidgetRef ref,
@@ -133,6 +138,7 @@ void showCollectionOptionsBottomSheet({
   String? imageUrl,
   List<String>? images,
   required List<Song> songs,
+  List<List<Song>>? shuffleGroups,
   String? imageActionLabel,
   Future<void> Function()? onImageAction,
 }) {
@@ -149,6 +155,7 @@ void showCollectionOptionsBottomSheet({
       imageUrl: imageUrl,
       images: images,
       songs: songs,
+      shuffleGroups: shuffleGroups,
       imageActionLabel: imageActionLabel,
       onImageAction: onImageAction,
     ),
@@ -162,6 +169,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   final String? imageUrl;
   final List<String>? images;
   final List<Song> songs;
+  final List<List<Song>>? shuffleGroups;
   final String? imageActionLabel;
   final Future<void> Function()? onImageAction;
 
@@ -172,6 +180,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
     this.imageUrl,
     this.images,
     required this.songs,
+    this.shuffleGroups,
     this.imageActionLabel,
     this.onImageAction,
   });
@@ -188,46 +197,72 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: Theme.of(dialogContext).colorScheme.surfaceContainer,
         title: Text('${l10n.addToFavorites.split(' ')[0]} ${l10n.playlists}'),
-        content: playlists.isEmpty
-            ? Text(l10n.noPlaylistsCreated)
-            : SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: playlists.length,
-                  itemBuilder: (dialogContext, index) {
-                    final p = playlists[index];
-                    return ListTile(
-                      leading: const Icon(LucideIcons.listMusic),
-                      title: Text(p.name),
-                      onTap: () async {
-                        final newPaths = <String>[
-                          ...p.songPaths,
-                          for (final s in songs)
-                            if (!p.songPaths.contains(s.path)) s.path,
-                        ];
-                        if (newPaths.length != p.songPaths.length) {
-                          p.songPaths = newPaths;
-                          p.dateModified = DateTime.now();
-                          await DbService.isar.writeTxn(
-                            () => DbService.isar.playlists.put(p),
-                          );
-                        }
-                        if (dialogContext.mounted) {
-                          Navigator.pop(dialogContext);
-                          scaffoldMessengerKey.currentState?.clearSnackBars();
-                          scaffoldMessengerKey.currentState?.showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.addedTo(p.name)),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
+        content: SizedBox(
+          width: 360,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: playlists.isEmpty ? 2 : playlists.length + 1,
+            itemBuilder: (dialogContext, index) {
+              if (index == 0) {
+                return ListTile(
+                  leading: const Icon(LucideIcons.plus, color: Colors.white70),
+                  title: Text(
+                    l10n.createPlaylist,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  onTap: () {
+                    Navigator.pop(dialogContext);
+                    showCreatePlaylistWithSongs(
+                      context,
+                      ref,
+                      songPaths: [
+                        for (final s in songs) s.path,
+                      ],
                     );
                   },
-                ),
-              ),
+                );
+              }
+              if (playlists.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    l10n.noPlaylistsCreated,
+                    style: const TextStyle(color: Colors.white38, fontSize: 13),
+                  ),
+                );
+              }
+              final p = playlists[index - 1];
+              return ListTile(
+                leading: const Icon(LucideIcons.listMusic),
+                title: Text(p.name),
+                onTap: () async {
+                  final newPaths = <String>[
+                    ...p.songPaths,
+                    for (final s in songs)
+                      if (!p.songPaths.contains(s.path)) s.path,
+                  ];
+                  if (newPaths.length != p.songPaths.length) {
+                    p.songPaths = newPaths;
+                    p.dateModified = DateTime.now();
+                    await DbService.isar.writeTxn(
+                      () => DbService.isar.playlists.put(p),
+                    );
+                  }
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                    scaffoldMessengerKey.currentState?.clearSnackBars();
+                    scaffoldMessengerKey.currentState?.showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.addedTo(p.name)),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -342,9 +377,14 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                       iconColor: accentColor,
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        ref
-                            .read(playbackProvider.notifier)
-                            .playShuffled(songs);
+                        final notifier =
+                            ref.read(playbackProvider.notifier);
+                        if (shuffleGroups != null &&
+                            shuffleGroups!.isNotEmpty) {
+                          notifier.playShuffledGrouped(shuffleGroups!);
+                        } else {
+                          notifier.playShuffled(songs);
+                        }
                         Navigator.pop(context);
                       },
                     ),

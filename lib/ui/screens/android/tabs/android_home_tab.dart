@@ -265,12 +265,11 @@ class _AndroidHomeTabState extends ConsumerState<AndroidHomeTab> {
               .showCollection(
                 title: artist.name,
                 subtitle: l10n.artist,
-
-            art: isLocalImage ? imageUrl : artist.artPath,
-            imageUrl: isNetworkImage ? imageUrl : null,
-            images: artist.artistImages,
-
+                art: isLocalImage ? imageUrl : artist.artPath,
+                imageUrl: isNetworkImage ? imageUrl : null,
+                images: artist.artistImages,
                 songs: songs,
+                highlightItem: NavItem.artists,
               );
         },
         borderRadius: BorderRadius.circular(16),

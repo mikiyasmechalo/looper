@@ -154,7 +154,9 @@ class QueueView extends ConsumerWidget {
                                 ],
                                 Expanded(
                                   child: Text(
-                                    song.artist ?? 'Unknown Artist',
+                                    song.album != null && song.album!.isNotEmpty
+                                        ? '${song.artist ?? 'Unknown Artist'} · ${song.album}'
+                                        : (song.artist ?? 'Unknown Artist'),
                                     style: AppFonts.jostStyle(fontSize: 12),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

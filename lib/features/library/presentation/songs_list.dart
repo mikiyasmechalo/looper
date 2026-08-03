@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -70,8 +71,7 @@ class SongsList extends ConsumerWidget {
                       icon: const Icon(LucideIcons.shuffle, size: 18),
                       tooltip: l10n.shuffleTitle,
                       style: IconButton.styleFrom(
-                        foregroundColor:
-                            Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ],
@@ -188,6 +188,7 @@ class SongTile extends ConsumerWidget {
   final AppLocalizations l10n;
   final String? searchQuery;
   final Playlist? playlist;
+  final bool showAlbum;
 
   const SongTile({
     required this.song,
@@ -195,8 +196,46 @@ class SongTile extends ConsumerWidget {
     required this.l10n,
     this.searchQuery,
     this.playlist,
+    this.showAlbum = true,
     super.key,
   });
+
+  /// "Artist Name · Album Name" subtitle where the artist navigates to the
+  /// artist and the album navigates to the album. Falls back to just the artist
+  /// when the album is hidden (e.g. on the album details page) or missing.
+  Widget _buildSubtitle(BuildContext context, WidgetRef ref) {
+    final artist = song.artist ?? l10n.unknownArtist;
+    final album = song.album;
+    final hasAlbum = showAlbum && album != null && album.isNotEmpty;
+
+    final style = AppFonts.jostStyle(
+      color: Colors.white.withValues(alpha: 0.5),
+      fontSize: 13,
+    );
+
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          TextSpan(
+            text: artist,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => _navigateToArtist(context, ref, song, l10n),
+          ),
+          if (hasAlbum) ...[
+            const TextSpan(text: ' · '),
+            TextSpan(
+              text: album,
+              recognizer: TapGestureRecognizer()
+                ..onTap = () => _navigateToAlbum(context, ref, song),
+            ),
+          ],
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 
   Widget _buildHighlightedText({
     required BuildContext context,
@@ -293,7 +332,7 @@ class SongTile extends ConsumerWidget {
             bottom: 0,
           ),
           leading: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(5),
             child: isCurrent
                 ? Stack(
                     children: [
@@ -301,7 +340,8 @@ class SongTile extends ConsumerWidget {
                         imagePath: song.artPath,
                         width: 52,
                         height: 52,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       Positioned.fill(
                         child: AnimatedOpacity(
@@ -326,7 +366,8 @@ class SongTile extends ConsumerWidget {
                     imagePath: song.artPath,
                     width: 52,
                     height: 52,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
+                    borderRadius: BorderRadius.circular(2),
                   ),
           ),
           title: Text(
@@ -344,22 +385,10 @@ class SongTile extends ConsumerWidget {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Align keeps the InkWell bounded to the text width
+                    // Align keeps the subtitle bounded to the text width
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: InkWell(
-                        onTap: () async =>
-                            _navigateToArtist(context, ref, song, l10n),
-                        child: Text(
-                          song.artist ?? l10n.unknownArtist,
-                          style: AppFonts.jostStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 13,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      child: _buildSubtitle(context, ref),
                     ),
                     const SizedBox(height: 6),
                     Container(
@@ -412,19 +441,7 @@ class SongTile extends ConsumerWidget {
                 )
               : Align(
                   alignment: Alignment.centerLeft,
-                  child: InkWell(
-                    onTap: () async =>
-                        _navigateToArtist(context, ref, song, l10n),
-                    child: Text(
-                      song.artist ?? l10n.unknownArtist,
-                      style: AppFonts.jostStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 13,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                  child: _buildSubtitle(context, ref),
                 ),
           trailing: IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.grey),
@@ -864,5 +881,34 @@ Future<void> _navigateToArtist(
         images: artist?.artistImages ?? const [],
         songs: artistSongs,
         highlightItem: NavItem.artists,
+      );
+}
+
+Future<void> _navigateToAlbum(
+  BuildContext context,
+  WidgetRef ref,
+  Song song,
+) async {
+  final albumName = song.album;
+  if (albumName == null || albumName.isEmpty) return;
+
+  final albumSongs = await DbService.isar.songs
+      .filter()
+      .albumEqualTo(albumName)
+      .findAll();
+
+  final album = await DbService.isar.albums
+      .filter()
+      .nameEqualTo(albumName)
+      .findFirst();
+
+  ref
+      .read(appNavigationProvider.notifier)
+      .showCollection(
+        title: albumName,
+        subtitle: song.artist,
+        art: album?.artPath ?? song.artPath,
+        songs: albumSongs,
+        highlightItem: NavItem.albums,
       );
 }

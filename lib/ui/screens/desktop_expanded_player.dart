@@ -2181,7 +2181,9 @@ class _QueueListState extends ConsumerState<_QueueList> {
                           ),
                         ),
                         Text(
-                          song.artist ?? l10n.unknownArtist,
+                          song.album != null && song.album!.isNotEmpty
+                              ? '${song.artist ?? l10n.unknownArtist} · ${song.album}'
+                              : (song.artist ?? l10n.unknownArtist),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.jostStyle(

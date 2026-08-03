@@ -504,6 +504,13 @@ class _AndroidExpandedPlayerState extends ConsumerState<AndroidExpandedPlayer>
                                       child: InkWell(
                                         onTap: () async {
                                           if (song.artist != null) {
+                                            if (enableSlide) {
+                                              ref.read(playerCollapseTriggerProvider.notifier).update((state) => state + 1);
+                                            } else if (Navigator.canPop(context)) {
+                                              Navigator.pop(context);
+                                            }
+                                            ref.read(appNavigationProvider.notifier).setPlayerExpansion(false);
+
                                             final artistSongs = await DbService.isar.songs
                                                 .filter()
                                                 .artistEqualTo(song.artist!)
@@ -512,10 +519,6 @@ class _AndroidExpandedPlayerState extends ConsumerState<AndroidExpandedPlayer>
                                                 .filter()
                                                 .nameEqualTo(song.artist!)
                                                 .findFirst();
-                                            
-                                            if (enableSlide) {
-                                              ref.read(playerCollapseTriggerProvider.notifier).update((state) => state + 1);
-                                            }
                                             
                                             ref
                                                 .read(appNavigationProvider.notifier)
@@ -526,10 +529,8 @@ class _AndroidExpandedPlayerState extends ConsumerState<AndroidExpandedPlayer>
                                               imageUrl: artist?.artistImageUrl,
                                               images: artist?.artistImages ?? const [],
                                               songs: artistSongs,
+                                              highlightItem: NavItem.artists,
                                             );
-                                          }
-                                          if (!enableSlide) {
-                                            Navigator.pop(context);
                                           }
                                         },
                                         child: ScrollingText(
@@ -1099,7 +1100,7 @@ class _GestureArtworkWithFeedbackState
             alignment: Alignment.center,
             children: <Widget>[
               ...previousChildren,
-              if (currentChild != null) currentChild,
+              ?currentChild,
             ],
           );
         },

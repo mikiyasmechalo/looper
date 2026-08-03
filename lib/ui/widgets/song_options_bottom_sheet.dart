@@ -24,6 +24,7 @@ import 'package:looper_player/ui/screens/android/player/android_equalizer_screen
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/ui/widgets/edit_song_sheet.dart';
 import 'package:looper_player/ui/widgets/sleep_timer_sheet_content.dart';
+import 'package:looper_player/ui/widgets/playlist_selector.dart';
 
 void showSongOptionsBottomSheet({
   required BuildContext context,
@@ -163,41 +164,65 @@ class _SongOptionsSheetContent extends ConsumerWidget {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: Theme.of(dialogContext).colorScheme.surfaceContainer,
         title: Text('${l10n.addToFavorites.split(' ')[0]} ${l10n.playlists}'),
-        content: playlists.isEmpty
-            ? Text(l10n.noPlaylistsCreated)
-            : SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: playlists.length,
-                  itemBuilder: (dialogContext, index) {
-                    final p = playlists[index];
-                    return ListTile(
-                      leading: const Icon(LucideIcons.listMusic),
-                      title: Text(p.name),
-                      onTap: () async {
-                        if (!p.songPaths.contains(song.path)) {
-                          p.songPaths = [...p.songPaths, song.path];
-                          p.dateModified = DateTime.now();
-                          await DbService.isar.writeTxn(
-                            () => DbService.isar.playlists.put(p),
-                          );
-                        }
-                        if (dialogContext.mounted) {
-                          Navigator.pop(dialogContext);
-                          scaffoldMessengerKey.currentState?.clearSnackBars();
-                          scaffoldMessengerKey.currentState?.showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.addedTo(p.name)),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
+        content: SizedBox(
+          width: 360,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: playlists.isEmpty ? 2 : playlists.length + 1,
+            itemBuilder: (dialogContext, index) {
+              if (index == 0) {
+                return ListTile(
+                  leading: const Icon(LucideIcons.plus, color: Colors.white70),
+                  title: Text(
+                    l10n.createPlaylist,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  onTap: () {
+                    Navigator.pop(dialogContext);
+                    showCreatePlaylistWithSongs(
+                      context,
+                      ref,
+                      songPaths: [song.path],
                     );
                   },
-                ),
-              ),
+                );
+              }
+              if (playlists.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    l10n.noPlaylistsCreated,
+                    style: const TextStyle(color: Colors.white38, fontSize: 13),
+                  ),
+                );
+              }
+              final p = playlists[index - 1];
+              return ListTile(
+                leading: const Icon(LucideIcons.listMusic),
+                title: Text(p.name),
+                onTap: () async {
+                  if (!p.songPaths.contains(song.path)) {
+                    p.songPaths = [...p.songPaths, song.path];
+                    p.dateModified = DateTime.now();
+                    await DbService.isar.writeTxn(
+                      () => DbService.isar.playlists.put(p),
+                    );
+                  }
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                    scaffoldMessengerKey.currentState?.clearSnackBars();
+                    scaffoldMessengerKey.currentState?.showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.addedTo(p.name)),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),

@@ -281,6 +281,22 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
                       fontSize: 13.ts,
                     ),
                   ),
+                  IconButton(
+                    onPressed: albums.isEmpty
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                            ref
+                                .read(playbackProvider.notifier)
+                                .playShuffledGrouped(_allAlbumsGroups(ref, albums));
+                          },
+                    icon: const Icon(LucideIcons.shuffle, size: 18),
+                    tooltip: l10n.shuffleTitle,
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: () => _showSortMenu(l10n),
@@ -330,23 +346,43 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
     );
   }
 
-  Future<void> _showAllAlbumsOptions(
+  void _showAllAlbumsOptions(
     BuildContext context,
     WidgetRef ref,
     List<Album> albums,
     AppLocalizations l10n,
-  ) async {
-    final albumNames = albums.map((a) => a.name).toSet();
-    final allSongs = await DbService.isar.songs.where().findAll();
-    final songs = allSongs.where((s) => albumNames.contains(s.album)).toList();
-    if (!context.mounted) return;
+  ) {
+    final groups = _allAlbumsGroups(ref, albums);
+    final songs = groups.expand((g) => g).toList();
     showCollectionOptionsBottomSheet(
       context: context,
       ref: ref,
       title: '${albums.length} ${l10n.albums}',
       subtitle: '${songs.length} ${l10n.songs}',
       songs: songs,
+      shuffleGroups: groups,
     );
+  }
+
+  /// Groups every library song by album in a single pass. Songs with a track
+  /// number are sorted by it, so the Shuffle action plays whole albums in order.
+  List<List<Song>> _allAlbumsGroups(WidgetRef ref, List<Album> albums) {
+    // Use the already-loaded in-memory library instead of a blocking DB query,
+    // so the menu opens instantly.
+    final allSongs = ref.read(libraryProvider).songs;
+    final byAlbum = <String, List<Song>>{};
+    for (final s in allSongs) {
+      final albumName = s.album;
+      if (albumName == null || albumName.isEmpty) continue;
+      (byAlbum[albumName] ??= []).add(s);
+    }
+    for (final group in byAlbum.values) {
+      group.sort((a, b) => (a.trackNumber ?? 0).compareTo(b.trackNumber ?? 0));
+    }
+    return [
+      for (final album in albums)
+        if (byAlbum[album.name] case final g? when g.isNotEmpty) g,
+    ];
   }
 }
 
@@ -682,6 +718,22 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
                       fontSize: 13.ts,
                     ),
                   ),
+                  IconButton(
+                    onPressed: artists.isEmpty
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                            ref
+                                .read(playbackProvider.notifier)
+                                .playShuffledGrouped(_allArtistsGroups(ref, artists));
+                          },
+                    icon: const Icon(LucideIcons.shuffle, size: 18),
+                    tooltip: l10n.shuffleTitle,
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: () => _showSortMenu(l10n),
@@ -730,27 +782,47 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
     );
   }
 
-  Future<void> _showAllArtistsOptions(
+  void _showAllArtistsOptions(
     BuildContext context,
     WidgetRef ref,
     List<Artist> artists,
     AppLocalizations l10n,
-  ) async {
-    final artistNames = artists.map((a) => a.name).toSet();
-    final allSongs = await DbService.isar.songs.where().findAll();
-    final songs = allSongs
-        .where((s) =>
-            artistNames.contains(s.artist) ||
-            artistNames.contains(s.albumArtist))
-        .toList();
-    if (!context.mounted) return;
+  ) {
+    final groups = _allArtistsGroups(ref, artists);
+    final songs = groups.expand((g) => g).toList();
     showCollectionOptionsBottomSheet(
       context: context,
       ref: ref,
       title: '${artists.length} ${l10n.artists}',
       subtitle: '${songs.length} ${l10n.songs}',
       songs: songs,
+      shuffleGroups: groups,
     );
+  }
+
+  /// Groups every library song per artist in a single pass. A song goes into
+  /// exactly one group (its track artist, falling back to the album artist) so
+  /// the Shuffle action plays each artist together with nothing duplicated.
+  List<List<Song>> _allArtistsGroups(WidgetRef ref, List<Artist> artists) {
+    // Use the already-loaded in-memory library instead of a blocking DB query,
+    // so the menu opens instantly.
+    final allSongs = ref.read(libraryProvider).songs;
+    final byArtist = <String, List<Song>>{};
+    for (final s in allSongs) {
+      final artist = s.artist;
+      if (artist != null && artist.isNotEmpty) {
+        (byArtist[artist] ??= []).add(s);
+        continue;
+      }
+      final albumArtist = s.albumArtist;
+      if (albumArtist != null && albumArtist.isNotEmpty) {
+        (byArtist[albumArtist] ??= []).add(s);
+      }
+    }
+    return [
+      for (final artist in artists)
+        if (byArtist[artist.name] case final g? when g.isNotEmpty) g,
+    ];
   }
 }
 
@@ -797,6 +869,7 @@ class _ArtistCard extends ConsumerWidget {
                 .read(appNavigationProvider.notifier)
                 .showCollection(
                   title: artist.name,
+                  subtitle: AppLocalizations.of(context)!.artists,
                   art: isLocalImage ? artist.artistImageUrl : artist.artPath,
                   imageUrl: isNetworkImage ? artist.artistImageUrl : null,
                   images: artist.artistImages,

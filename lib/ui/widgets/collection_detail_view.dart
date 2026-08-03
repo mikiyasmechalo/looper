@@ -55,6 +55,19 @@ class CollectionDetailView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeSong = ref.watch(playbackProvider.select((s) => s.currentSong));
+    final l10n = AppLocalizations.of(context)!;
+
+    // Album detail pages list tracks from a single album, so the album name
+    // next to each artist would be redundant there. Other collections (artist,
+    // genre, playlist, search, etc.) show it.
+    final bool isAlbumCollection = playlist == null &&
+        subtitle != null &&
+        subtitle != l10n.artist &&
+        subtitle?.toLowerCase() != 'artist' &&
+        subtitle != l10n.artists &&
+        subtitle != 'Playlist' &&
+        subtitle != l10n.genre &&
+        subtitle?.toLowerCase() != 'genre';
 
     // Reactively watch the playlist object if it is passed, so the title updates when renamed
     final reactivePlaylist = playlist != null
@@ -187,6 +200,7 @@ class CollectionDetailView extends ConsumerWidget {
                           l10n: l10n,
                           songs: sortedSongs,
                           playlist: reactivePlaylist,
+                          showAlbum: !isAlbumCollection,
                         );
                       },
                       childCount: sortedSongs.length,
@@ -205,6 +219,31 @@ class CollectionDetailView extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Subtitle line for the detail header. For album collections it includes the
+  /// artist name and number of songs (e.g. "Artist Name · 12 Songs"). For artist
+  /// collections it shows just the number of songs (e.g. "12 Songs"). Playlist
+  /// and genre collections keep their plain type label.
+  String _subtitleWithCount(BuildContext context, WidgetRef ref, List<Song> collectionSongs) {
+    final l10n = AppLocalizations.of(context)!;
+    final nav = ref.read(appNavigationProvider);
+    final isArtistCollection = nav.highlightItem == NavItem.artists ||
+        subtitle == l10n.artists ||
+        subtitle == l10n.artist ||
+        subtitle?.toLowerCase() == 'artist' ||
+        subtitle?.toLowerCase() == 'artists';
+
+    if (isArtistCollection) {
+      return '${collectionSongs.length} ${l10n.songs}';
+    }
+
+    final isTypeLabel = playlist != null ||
+        subtitle == 'Playlist' ||
+        subtitle == l10n.genre ||
+        subtitle?.toLowerCase() == 'genre';
+    if (isTypeLabel || subtitle == null) return subtitle ?? '';
+    return '${subtitle!} · ${collectionSongs.length} ${l10n.songs}';
   }
 
   Widget _buildArt(BuildContext context, List<Song>? playlistSongs) {
@@ -247,6 +286,14 @@ class CollectionDetailView extends ConsumerWidget {
   }
 
   Widget _buildInfo(BuildContext context, WidgetRef ref, bool isNarrow, String? activeArtworkPath, Playlist? reactivePlaylist, String titleToRender, List<Song> songsToRender) {
+    final l10n = AppLocalizations.of(context)!;
+    final nav = ref.watch(appNavigationProvider);
+    final isArtistCollection = nav.highlightItem == NavItem.artists ||
+        subtitle == l10n.artists ||
+        subtitle == l10n.artist ||
+        subtitle?.toLowerCase() == 'artist' ||
+        subtitle?.toLowerCase() == 'artists';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -260,10 +307,10 @@ class CollectionDetailView extends ConsumerWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        if (subtitle != null) ...[
+        if (subtitle != null || isArtistCollection) ...[
           const SizedBox(height: 4),
           Text(
-            subtitle!,
+            _subtitleWithCount(context, ref, songsToRender),
             style: AppFonts.jostStyle(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.5),
@@ -379,9 +426,13 @@ class CollectionDetailView extends ConsumerWidget {
         final accentColor = Color(settings.accentColor);
         final sortIdx = settings.collectionSortOptionIndex;
         final isAscending = settings.collectionSortAscending;
-        final bool isArtistCollection = (subtitle != null && (subtitle!.toLowerCase() == 'artist' || subtitle == l10n.artist)) ||
-            (songs.isNotEmpty && songs.every((s) => s.artist?.toLowerCase() == title.toLowerCase()));
-        final bool isAlbumCollection = !isArtistCollection;
+        // Reliable collection type from the nav highlight, instead of guessing
+        // from song contents (which breaks when a song is only matched via
+        // albumArtist or has differently-cased names). Artist views get the
+        // Album sort option and album views get the Artist sort option.
+        final nav = ref.read(appNavigationProvider);
+        final bool isArtistCollection = nav.highlightItem == NavItem.artists;
+        final bool isAlbumCollection = nav.highlightItem == NavItem.albums;
 
         return AppBottomSheetContainer(
           padding: const EdgeInsets.symmetric(horizontal: 12),

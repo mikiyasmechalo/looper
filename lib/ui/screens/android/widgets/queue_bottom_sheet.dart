@@ -116,7 +116,9 @@ class _QueueBottomSheetState extends ConsumerState<QueueBottomSheet> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      song.artist ?? 'Unknown Artist',
+                      song.album != null && song.album!.isNotEmpty
+                          ? '${song.artist ?? 'Unknown Artist'} · ${song.album}'
+                          : (song.artist ?? 'Unknown Artist'),
                       style: AppFonts.jostStyle(color: Colors.grey),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

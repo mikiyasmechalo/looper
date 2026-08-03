@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
@@ -17,6 +18,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
+import 'package:looper_player/features/streaming/data/recommendations_service.dart';
 import 'package:isar/isar.dart';
 
 class DashboardGenresData {
@@ -52,6 +54,39 @@ final topAlbumsProvider = Provider<List<Album>>((ref) {
   final sorted = List<Album>.from(albums)
     ..sort((a, b) => (counts[b.name] ?? 0).compareTo(counts[a.name] ?? 0));
   return sorted;
+});
+
+/// Stable per-app-run seed so the random slice of the quick picks stays fixed
+/// for the whole session. Without this, any provider recompute reshuffles the
+/// random pool and the section visibly changes every time the library emits.
+final int _quickPicksSessionSeed = math.Random().nextInt(0x7fffffff);
+
+List<Song>? _cachedQuickPicks;
+int _quickPicksFingerprint = -1;
+const int _quickPicksCount = 12;
+
+/// Mixed quick picks for the home dashboard: most played, recently added,
+/// favorites, and a random selection, deduplicated. Computed once per app run
+/// (or when the library song set changes) so it does not reshuffle on rebuilds.
+final homeQuickPicksMixProvider = Provider<List<Song>>((ref) {
+  final allSongs = ref.watch(libraryProvider.select((l) => l.songs));
+  var fingerprint = allSongs.length;
+  for (final s in allSongs) {
+    fingerprint = (fingerprint * 31 + s.path.hashCode) & 0x7fffffff;
+  }
+  // Rebuild if the library changed OR the cached list no longer matches the
+  // requested count (e.g. a stale cache left over from a hot-reloaded build).
+  if (_cachedQuickPicks == null ||
+      _cachedQuickPicks!.length != _quickPicksCount ||
+      fingerprint != _quickPicksFingerprint) {
+    _quickPicksFingerprint = fingerprint;
+    _cachedQuickPicks = RecommendationsService.buildQuickPicksQueue(
+      allSongs,
+      count: _quickPicksCount,
+      random: math.Random(_quickPicksSessionSeed),
+    );
+  }
+  return _cachedQuickPicks!;
 });
 
 class HomeDashboard extends ConsumerWidget {
@@ -128,7 +163,7 @@ class HomeDashboard extends ConsumerWidget {
               orderedChildren.add(
                 _buildDesktopHorizontalSection(
                   context,
-                  title: 'Albums',
+                  title: 'Top Album',
                   onViewAll: () => ref
                       .read(appNavigationProvider.notifier)
                       .setItem(NavItem.albums),
@@ -369,7 +404,9 @@ class HomeDashboard extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          song.artist ?? 'Unknown',
+                          song.album != null && song.album!.isNotEmpty
+                              ? '${song.artist ?? 'Unknown'} · ${song.album}'
+                              : (song.artist ?? 'Unknown'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -397,28 +434,35 @@ class HomeDashboard extends ConsumerWidget {
     bool isMedium,
     bool isDynamic,
   ) {
-    final topSongsAsync = ref.watch(topSongsProvider);
+    final songs = ref.watch(homeQuickPicksMixProvider);
 
-    return topSongsAsync.when(
-      data: (songs) {
-        if (songs.isEmpty) return const SizedBox.shrink();
+    if (songs.isEmpty) return const SizedBox.shrink();
 
-        int crossAxisCount = 4;
-        if (isNarrow) {
-          crossAxisCount = 2;
-        } else if (isMedium) {
-          crossAxisCount = 3;
-        }
+    int crossAxisCount = 4;
+    if (isNarrow) {
+      crossAxisCount = 2;
+    } else if (isMedium) {
+      crossAxisCount = 3;
+    }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(
-              context,
-              title: 'Quick Picks',
-              isNarrow: isNarrow,
-            ),
-            const SizedBox(height: 16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          context,
+          title: 'Quick Picks',
+          isNarrow: isNarrow,
+          onShuffle: () {
+            final notifier = ref.read(playbackProvider.notifier);
+            notifier.playShuffled(
+              RecommendationsService.buildQuickPicksQueue(
+                ref.read(libraryProvider.select((l) => l.songs)),
+                count: 100,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -500,7 +544,9 @@ class HomeDashboard extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  song.artist ?? 'Unknown',
+                                  song.album != null && song.album!.isNotEmpty
+                                      ? '${song.artist ?? 'Unknown'} · ${song.album}'
+                                      : (song.artist ?? 'Unknown'),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -521,10 +567,6 @@ class HomeDashboard extends ConsumerWidget {
             ),
           ],
         );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-    );
   }
 
   Widget _buildTopArtists(BuildContext context, WidgetRef ref, bool isNarrow) {
@@ -554,7 +596,7 @@ class HomeDashboard extends ConsumerWidget {
           children: [
             _buildSectionHeader(
               context,
-              title: 'Artists',
+              title: 'Top Artist',
               isNarrow: isNarrow,
               onViewAll: () => ref
                   .read(appNavigationProvider.notifier)
@@ -683,7 +725,7 @@ class HomeDashboard extends ConsumerWidget {
           children: [
             _buildSectionHeader(
               context,
-              title: l10n.albums,
+              title: "Top Albumsope",
               isNarrow: isNarrow,
               onViewAll: () => ref
                   .read(appNavigationProvider.notifier)
@@ -801,15 +843,25 @@ class HomeDashboard extends ConsumerWidget {
     required String title,
     required bool isNarrow,
     VoidCallback? onViewAll,
+    VoidCallback? onShuffle,
   }) {
     final accentColor = Theme.of(context).colorScheme.primary;
-    final header = Text(
-      title,
-      style: TextStyle(
-        fontSize: (isNarrow ? 18 : 24).ts,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
+    final header = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: (isNarrow ? 18 : 24).ts,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        if (onShuffle != null) ...[
+          const SizedBox(width: 8),
+          _SectionShuffleButton(color: accentColor, onPressed: onShuffle),
+        ],
+      ],
     );
     if (onViewAll == null) return header;
     return Row(
@@ -999,6 +1051,29 @@ class HomeDashboard extends ConsumerWidget {
             ],
           ),
         ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionShuffleButton extends StatelessWidget {
+  const _SectionShuffleButton({required this.color, required this.onPressed});
+
+  final Color color;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(LucideIcons.shuffle, size: 16, color: color),
         ),
       ),
     );
