@@ -98,6 +98,21 @@ class Playlist {
 }
 
 @collection
+class SavedQueue {
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true)
+  late String name;
+
+  late List<int> songIds;
+  int currentIndex = 0;
+  int positionMs = 0;
+  bool isShuffle = false;
+  late DateTime lastPlayed;
+  bool isPermanent = false;
+}
+
+@collection
 class AppSettings {
   Id id = 0; // Always use ID 0 for single settings object
 
@@ -105,6 +120,7 @@ class AppSettings {
   int? lastPlayedSongId;
   List<int> lastQueueSongIds = [];
   int lastQueueIndex = -1;
+  String activeQueueName = '';
   double volume = 1.0;
   int lastPositionMs = 0;
   bool shuffle = false;

@@ -18,6 +18,7 @@ import 'package:isar/isar.dart';
 import '../widgets/premium_section.dart';
 import '../widgets/empty_library_view.dart';
 import '../widgets/premium_loading_view.dart';
+import 'package:looper_player/features/streaming/data/recommendations_service.dart';
 import 'views/library_categories_views.dart';
 import 'package:looper_player/ui/widgets/playback_mode_selector.dart';
 
@@ -675,7 +676,7 @@ class _AndroidHomeTabState extends ConsumerState<AndroidHomeTab> {
                           ..shuffle();
                         ref
                             .read(playbackProvider.notifier)
-                            .setPlaylist(shuffledPicks, initialIndex: 0);
+                            .setPlaylist(shuffledPicks, initialIndex: 0, queueName: 'Quick Picks');
                       }
                     },
                     child: Row(
@@ -771,11 +772,18 @@ class _AndroidHomeTabState extends ConsumerState<AndroidHomeTab> {
 
                                     return GestureDetector(
                                       onTap: () {
+                                        final allSongs = ref.read(libraryProvider).songs;
+                                        final fullQuickPicks = RecommendationsService.buildQuickPicksQueue(
+                                          allSongs,
+                                          count: 100,
+                                        );
+                                        final targetIndex = fullQuickPicks.indexWhere((s) => s.path == song.path);
                                         ref
                                             .read(playbackProvider.notifier)
                                             .setPlaylist(
-                                              allQuickPicks,
-                                              initialIndex: startIndex + index,
+                                              fullQuickPicks,
+                                              initialIndex: targetIndex != -1 ? targetIndex : 0,
+                                              queueName: 'Quick Picks',
                                             );
                                       },
                                       onLongPress: () {

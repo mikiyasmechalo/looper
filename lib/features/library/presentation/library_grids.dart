@@ -901,29 +901,34 @@ class _ArtistCard extends ConsumerWidget {
         child: Column(
           children: [
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                      color: Colors.white.withValues(alpha: 0.05),
                     ),
-                  ],
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-                child: ClipOval(
-                  child: ArtistImage(
-                    images: artist.artistImages,
-                    imageUrl: artist.artistImageUrl,
-                    imagePath: artist.artPath,
-                    fit: BoxFit.cover,
-                    placeholder: const Center(
-                      child: Icon(
-                        LucideIcons.user,
-                        size: 48,
-                        color: Colors.grey,
+                    child: ClipOval(
+                      child: ArtistImage(
+                        images: artist.artistImages,
+                        imageUrl: artist.artistImageUrl,
+                        imagePath: artist.artPath,
+                        fit: BoxFit.cover,
+                        placeholder: const Center(
+                          child: Icon(
+                            LucideIcons.user,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ),
                     ),
                   ),

@@ -206,7 +206,7 @@ class _AndroidSongsTabState extends ConsumerState<AndroidSongsTab> {
                             final songs = library.songs;
                             if (songs.isNotEmpty) {
                               final randomSongList = List<Song>.from(songs)..shuffle();
-                              ref.read(playbackProvider.notifier).setPlaylist(randomSongList, initialIndex: 0);
+                              ref.read(playbackProvider.notifier).setPlaylist(randomSongList, initialIndex: 0, queueName: 'Quick Picks');
                             }
                           },
                           child: const Icon(LucideIcons.shuffle, color: Colors.white, size: 18),

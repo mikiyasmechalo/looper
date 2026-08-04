@@ -9,6 +9,8 @@ import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/core/app_fonts.dart';
 
+import 'package:looper_player/ui/widgets/queue_selector_dropdown.dart';
+
 class QueueView extends ConsumerWidget {
   const QueueView({super.key});
 
@@ -39,11 +41,14 @@ class QueueView extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              if (!Platform.isAndroid)
+              if (!Platform.isAndroid) ...[
                 Text(
                   l10n.playQueue,
                   style: AppFonts.jostStyle(fontSize: 32, fontWeight: FontWeight.normal),
                 ),
+                const SizedBox(width: 16),
+                const QueueSelectorDropdown(),
+              ],
               const Spacer(),
               if (queue.isNotEmpty)
                 TextButton.icon(

@@ -114,7 +114,7 @@ Future<void> showPlaylistOptionsBottomSheet({
                         iconColor: accentColor,
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          ref.read(playbackProvider.notifier).setPlaylist(songs);
+                          ref.read(playbackProvider.notifier).setPlaylist(songs, queueName: playlist.name);
                           Navigator.pop(context);
                         },
                       ),

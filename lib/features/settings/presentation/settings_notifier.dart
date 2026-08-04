@@ -221,6 +221,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..lastPlayedSongId = s.lastPlayedSongId
       ..lastQueueSongIds = List.from(s.lastQueueSongIds)
       ..lastQueueIndex = s.lastQueueIndex
+      ..activeQueueName = s.activeQueueName
       ..volume = s.volume
       ..lastPositionMs = s.lastPositionMs
       ..shuffle = s.shuffle
@@ -648,12 +649,22 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     int index,
     int? lastSongId, {
     int? positionMs,
+    String? activeQueueName,
   }) async {
     final newState = _clone(state)
       ..lastQueueSongIds = queueIds
       ..lastQueueIndex = index
       ..lastPlayedSongId = lastSongId
       ..lastPositionMs = positionMs ?? 0;
+    if (activeQueueName != null) {
+      newState.activeQueueName = activeQueueName;
+    }
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateActiveQueueName(String name) async {
+    final newState = _clone(state)..activeQueueName = name;
     await _save(newState);
     state = newState;
   }

@@ -109,6 +109,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     _watchArtists();
     _watchAlbums();
     _watchPlaylists();
+    _fetchMissingArtistImages();
   }
 
   void setSortStrategy(SongSortStrategy strategy) {
@@ -196,7 +197,6 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
         .watch(fireImmediately: true)
         .listen((artists) {
       state = state.copyWith(artists: artists);
-      _fetchMissingArtistImages();
     });
   }
 
@@ -235,6 +235,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
       // after a Reset & Rescan and also cleans up any generic avatars that
       // were previously stored. No network calls, no rate-limit delay.
       final needsDownload = <Artist>[];
+      final toPut = <Artist>[];
       for (final artist in allArtists) {
         if (state.isScanning) break;
         if (artist.name == 'Unknown Artist') continue;
@@ -248,26 +249,28 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
               artist.artistImages.join('|') != cached.join('|') ||
               artist.artistImageUrl == null;
           if (changed) {
-            await DbService.isar.writeTxn(() async {
-              artist.artistImages = cached;
-              artist.artistImageUrl ??= cached.first;
-              await DbService.isar.artists.put(artist);
-            });
+            artist.artistImages = cached;
+            artist.artistImageUrl ??= cached.first;
+            toPut.add(artist);
           }
         } else {
           // No real images on disk. Clear any stale generic avatars that were
           // stored in the collage list so they don't keep showing as a collage
           // of placeholders.
           if (artist.artistImages.isNotEmpty) {
-            await DbService.isar.writeTxn(() async {
-              artist.artistImages = [];
-              await DbService.isar.artists.put(artist);
-            });
+            artist.artistImages = [];
+            toPut.add(artist);
           }
           if (artist.artistImageUrl == null) {
             needsDownload.add(artist);
           }
         }
+      }
+
+      if (toPut.isNotEmpty) {
+        await DbService.isar.writeTxn(() async {
+          await DbService.isar.artists.putAll(toPut);
+        });
       }
 
       // Second pass: download genuinely missing artist images.

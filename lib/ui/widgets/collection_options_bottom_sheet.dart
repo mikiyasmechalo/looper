@@ -367,7 +367,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                       iconColor: accentColor,
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        ref.read(playbackProvider.notifier).setPlaylist(songs);
+                        ref.read(playbackProvider.notifier).setPlaylist(songs, queueName: title);
                         Navigator.pop(context);
                       },
                     ),

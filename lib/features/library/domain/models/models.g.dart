@@ -7864,6 +7864,1120 @@ extension PlaylistQueryProperty
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
+extension GetSavedQueueCollection on Isar {
+  IsarCollection<SavedQueue> get savedQueues => this.collection();
+}
+
+const SavedQueueSchema = CollectionSchema(
+  name: r'SavedQueue',
+  id: -6242105563991824807,
+  properties: {
+    r'currentIndex': PropertySchema(
+      id: 0,
+      name: r'currentIndex',
+      type: IsarType.long,
+    ),
+    r'isPermanent': PropertySchema(
+      id: 1,
+      name: r'isPermanent',
+      type: IsarType.bool,
+    ),
+    r'isShuffle': PropertySchema(
+      id: 2,
+      name: r'isShuffle',
+      type: IsarType.bool,
+    ),
+    r'lastPlayed': PropertySchema(
+      id: 3,
+      name: r'lastPlayed',
+      type: IsarType.dateTime,
+    ),
+    r'name': PropertySchema(
+      id: 4,
+      name: r'name',
+      type: IsarType.string,
+    ),
+    r'positionMs': PropertySchema(
+      id: 5,
+      name: r'positionMs',
+      type: IsarType.long,
+    ),
+    r'songIds': PropertySchema(
+      id: 6,
+      name: r'songIds',
+      type: IsarType.longList,
+    )
+  },
+  estimateSize: _savedQueueEstimateSize,
+  serialize: _savedQueueSerialize,
+  deserialize: _savedQueueDeserialize,
+  deserializeProp: _savedQueueDeserializeProp,
+  idName: r'id',
+  indexes: {
+    r'name': IndexSchema(
+      id: 879695947855722453,
+      name: r'name',
+      unique: true,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'name',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
+  links: {},
+  embeddedSchemas: {},
+  getId: _savedQueueGetId,
+  getLinks: _savedQueueGetLinks,
+  attach: _savedQueueAttach,
+  version: '3.1.0+1',
+);
+
+int _savedQueueEstimateSize(
+  SavedQueue object,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  var bytesCount = offsets.last;
+  bytesCount += 3 + object.name.length * 3;
+  bytesCount += 3 + object.songIds.length * 8;
+  return bytesCount;
+}
+
+void _savedQueueSerialize(
+  SavedQueue object,
+  IsarWriter writer,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  writer.writeLong(offsets[0], object.currentIndex);
+  writer.writeBool(offsets[1], object.isPermanent);
+  writer.writeBool(offsets[2], object.isShuffle);
+  writer.writeDateTime(offsets[3], object.lastPlayed);
+  writer.writeString(offsets[4], object.name);
+  writer.writeLong(offsets[5], object.positionMs);
+  writer.writeLongList(offsets[6], object.songIds);
+}
+
+SavedQueue _savedQueueDeserialize(
+  Id id,
+  IsarReader reader,
+  List<int> offsets,
+  Map<Type, List<int>> allOffsets,
+) {
+  final object = SavedQueue();
+  object.currentIndex = reader.readLong(offsets[0]);
+  object.id = id;
+  object.isPermanent = reader.readBool(offsets[1]);
+  object.isShuffle = reader.readBool(offsets[2]);
+  object.lastPlayed = reader.readDateTime(offsets[3]);
+  object.name = reader.readString(offsets[4]);
+  object.positionMs = reader.readLong(offsets[5]);
+  object.songIds = reader.readLongList(offsets[6]) ?? [];
+  return object;
+}
+
+P _savedQueueDeserializeProp<P>(
+  IsarReader reader,
+  int propertyId,
+  int offset,
+  Map<Type, List<int>> allOffsets,
+) {
+  switch (propertyId) {
+    case 0:
+      return (reader.readLong(offset)) as P;
+    case 1:
+      return (reader.readBool(offset)) as P;
+    case 2:
+      return (reader.readBool(offset)) as P;
+    case 3:
+      return (reader.readDateTime(offset)) as P;
+    case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readLong(offset)) as P;
+    case 6:
+      return (reader.readLongList(offset) ?? []) as P;
+    default:
+      throw IsarError('Unknown property with id $propertyId');
+  }
+}
+
+Id _savedQueueGetId(SavedQueue object) {
+  return object.id;
+}
+
+List<IsarLinkBase<dynamic>> _savedQueueGetLinks(SavedQueue object) {
+  return [];
+}
+
+void _savedQueueAttach(IsarCollection<dynamic> col, Id id, SavedQueue object) {
+  object.id = id;
+}
+
+extension SavedQueueByIndex on IsarCollection<SavedQueue> {
+  Future<SavedQueue?> getByName(String name) {
+    return getByIndex(r'name', [name]);
+  }
+
+  SavedQueue? getByNameSync(String name) {
+    return getByIndexSync(r'name', [name]);
+  }
+
+  Future<bool> deleteByName(String name) {
+    return deleteByIndex(r'name', [name]);
+  }
+
+  bool deleteByNameSync(String name) {
+    return deleteByIndexSync(r'name', [name]);
+  }
+
+  Future<List<SavedQueue?>> getAllByName(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return getAllByIndex(r'name', values);
+  }
+
+  List<SavedQueue?> getAllByNameSync(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'name', values);
+  }
+
+  Future<int> deleteAllByName(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'name', values);
+  }
+
+  int deleteAllByNameSync(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'name', values);
+  }
+
+  Future<Id> putByName(SavedQueue object) {
+    return putByIndex(r'name', object);
+  }
+
+  Id putByNameSync(SavedQueue object, {bool saveLinks = true}) {
+    return putByIndexSync(r'name', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByName(List<SavedQueue> objects) {
+    return putAllByIndex(r'name', objects);
+  }
+
+  List<Id> putAllByNameSync(List<SavedQueue> objects, {bool saveLinks = true}) {
+    return putAllByIndexSync(r'name', objects, saveLinks: saveLinks);
+  }
+}
+
+extension SavedQueueQueryWhereSort
+    on QueryBuilder<SavedQueue, SavedQueue, QWhere> {
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhere> anyId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+}
+
+extension SavedQueueQueryWhere
+    on QueryBuilder<SavedQueue, SavedQueue, QWhereClause> {
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhereClause> idEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(
+        lower: id,
+        upper: id,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhereClause> idNotEqualTo(Id id) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            )
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            );
+      } else {
+        return query
+            .addWhereClause(
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
+            )
+            .addWhereClause(
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
+            );
+      }
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhereClause> idGreaterThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
+      );
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhereClause> idLessThan(Id id,
+      {bool include = false}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
+      );
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhereClause> idBetween(
+    Id lowerId,
+    Id upperId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IdWhereClause.between(
+        lower: lowerId,
+        includeLower: includeLower,
+        upper: upperId,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhereClause> nameEqualTo(
+      String name) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'name',
+        value: [name],
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterWhereClause> nameNotEqualTo(
+      String name) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [],
+              upper: [name],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [name],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [name],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [],
+              upper: [name],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+}
+
+extension SavedQueueQueryFilter
+    on QueryBuilder<SavedQueue, SavedQueue, QFilterCondition> {
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      currentIndexEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      currentIndexGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'currentIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      currentIndexLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'currentIndex',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      currentIndexBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'currentIndex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> idEqualTo(
+      Id value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> idGreaterThan(
+    Id value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> idLessThan(
+    Id value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'id',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> idBetween(
+    Id lower,
+    Id upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      isPermanentEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isPermanent',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> isShuffleEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isShuffle',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> lastPlayedEqualTo(
+      DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastPlayed',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      lastPlayedGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastPlayed',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      lastPlayedLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastPlayed',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> lastPlayedBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastPlayed',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'name',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'name',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'name',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'name',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> nameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'name',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> positionMsEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'positionMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      positionMsGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'positionMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      positionMsLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'positionMs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> positionMsBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'positionMs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsElementEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'songIds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsElementGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'songIds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsElementLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'songIds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsElementBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'songIds',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'songIds',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition> songIdsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'songIds',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'songIds',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'songIds',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'songIds',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterFilterCondition>
+      songIdsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'songIds',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+}
+
+extension SavedQueueQueryObject
+    on QueryBuilder<SavedQueue, SavedQueue, QFilterCondition> {}
+
+extension SavedQueueQueryLinks
+    on QueryBuilder<SavedQueue, SavedQueue, QFilterCondition> {}
+
+extension SavedQueueQuerySortBy
+    on QueryBuilder<SavedQueue, SavedQueue, QSortBy> {
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByCurrentIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByCurrentIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentIndex', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByIsPermanent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPermanent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByIsPermanentDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPermanent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByIsShuffle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isShuffle', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByIsShuffleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isShuffle', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByLastPlayed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastPlayed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByLastPlayedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastPlayed', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByPositionMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'positionMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> sortByPositionMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'positionMs', Sort.desc);
+    });
+  }
+}
+
+extension SavedQueueQuerySortThenBy
+    on QueryBuilder<SavedQueue, SavedQueue, QSortThenBy> {
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByCurrentIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByCurrentIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentIndex', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenById() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByIsPermanent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPermanent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByIsPermanentDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPermanent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByIsShuffle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isShuffle', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByIsShuffleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isShuffle', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByLastPlayed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastPlayed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByLastPlayedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastPlayed', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByPositionMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'positionMs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QAfterSortBy> thenByPositionMsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'positionMs', Sort.desc);
+    });
+  }
+}
+
+extension SavedQueueQueryWhereDistinct
+    on QueryBuilder<SavedQueue, SavedQueue, QDistinct> {
+  QueryBuilder<SavedQueue, SavedQueue, QDistinct> distinctByCurrentIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currentIndex');
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QDistinct> distinctByIsPermanent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isPermanent');
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QDistinct> distinctByIsShuffle() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isShuffle');
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QDistinct> distinctByLastPlayed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastPlayed');
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QDistinct> distinctByName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QDistinct> distinctByPositionMs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'positionMs');
+    });
+  }
+
+  QueryBuilder<SavedQueue, SavedQueue, QDistinct> distinctBySongIds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'songIds');
+    });
+  }
+}
+
+extension SavedQueueQueryProperty
+    on QueryBuilder<SavedQueue, SavedQueue, QQueryProperty> {
+  QueryBuilder<SavedQueue, int, QQueryOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<SavedQueue, int, QQueryOperations> currentIndexProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currentIndex');
+    });
+  }
+
+  QueryBuilder<SavedQueue, bool, QQueryOperations> isPermanentProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isPermanent');
+    });
+  }
+
+  QueryBuilder<SavedQueue, bool, QQueryOperations> isShuffleProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isShuffle');
+    });
+  }
+
+  QueryBuilder<SavedQueue, DateTime, QQueryOperations> lastPlayedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastPlayed');
+    });
+  }
+
+  QueryBuilder<SavedQueue, String, QQueryOperations> nameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<SavedQueue, int, QQueryOperations> positionMsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'positionMs');
+    });
+  }
+
+  QueryBuilder<SavedQueue, List<int>, QQueryOperations> songIdsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'songIds');
+    });
+  }
+}
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
+
 extension GetAppSettingsCollection on Isar {
   IsarCollection<AppSettings> get appSettings => this.collection();
 }
@@ -7882,438 +8996,443 @@ const AppSettingsSchema = CollectionSchema(
       name: r'activeLyricsFontWeightDelta',
       type: IsarType.long,
     ),
-    r'albumSortOptionIndex': PropertySchema(
+    r'activeQueueName': PropertySchema(
       id: 2,
+      name: r'activeQueueName',
+      type: IsarType.string,
+    ),
+    r'albumSortOptionIndex': PropertySchema(
+      id: 3,
       name: r'albumSortOptionIndex',
       type: IsarType.long,
     ),
     r'artistSortOptionIndex': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'artistSortOptionIndex',
       type: IsarType.long,
     ),
     r'audioBackCacheSizeMB': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'audioBackCacheSizeMB',
       type: IsarType.long,
     ),
     r'audioCacheSecs': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'audioCacheSecs',
       type: IsarType.long,
     ),
     r'audioCacheSizeMB': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'audioCacheSizeMB',
       type: IsarType.long,
     ),
     r'audioFocus': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'audioFocus',
       type: IsarType.bool,
     ),
     r'audioFocusReleaseOnPause': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'audioFocusReleaseOnPause',
       type: IsarType.bool,
     ),
     r'audioFocusRequestOnPlay': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'audioFocusRequestOnPlay',
       type: IsarType.bool,
     ),
     r'audioFocusRestartOnGain': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'audioFocusRestartOnGain',
       type: IsarType.bool,
     ),
     r'audioFocusStopOnOtherSession': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'audioFocusStopOnOtherSession',
       type: IsarType.bool,
     ),
     r'bgBrightness': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'bgBrightness',
       type: IsarType.double,
     ),
     r'bgOpacity': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'bgOpacity',
       type: IsarType.double,
     ),
     r'blurredArtworkForLyrics': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'blurredArtworkForLyrics',
       type: IsarType.bool,
     ),
     r'cacheOnlineStreams': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'cacheOnlineStreams',
       type: IsarType.bool,
     ),
     r'collectionSortAscending': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'collectionSortAscending',
       type: IsarType.bool,
     ),
     r'collectionSortOptionIndex': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'collectionSortOptionIndex',
       type: IsarType.long,
     ),
     r'customBackgroundImagePath': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'customBackgroundImagePath',
       type: IsarType.string,
     ),
     r'customFontFamily': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'customFontFamily',
       type: IsarType.string,
     ),
     r'customFontFamilyLyrics': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'customFontFamilyLyrics',
       type: IsarType.string,
     ),
     r'customFontWeight': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'customFontWeight',
       type: IsarType.long,
     ),
     r'customFontWeightDelta': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'customFontWeightDelta',
       type: IsarType.long,
     ),
     r'customFontWeightLyrics': PropertySchema(
-      id: 23,
+      id: 24,
       name: r'customFontWeightLyrics',
       type: IsarType.string,
     ),
     r'customFontWeightLyricsDelta': PropertySchema(
-      id: 24,
+      id: 25,
       name: r'customFontWeightLyricsDelta',
       type: IsarType.long,
     ),
     r'darkTheme': PropertySchema(
-      id: 25,
+      id: 26,
       name: r'darkTheme',
       type: IsarType.bool,
     ),
     r'disableAnimatedDuration': PropertySchema(
-      id: 26,
+      id: 27,
       name: r'disableAnimatedDuration',
       type: IsarType.bool,
     ),
     r'disableBlur': PropertySchema(
-      id: 27,
+      id: 28,
       name: r'disableBlur',
       type: IsarType.bool,
     ),
     r'disableSquiggle': PropertySchema(
-      id: 28,
+      id: 29,
       name: r'disableSquiggle',
       type: IsarType.bool,
     ),
     r'downloadArtwork': PropertySchema(
-      id: 29,
+      id: 30,
       name: r'downloadArtwork',
       type: IsarType.bool,
     ),
     r'dynamicAccentColor': PropertySchema(
-      id: 30,
+      id: 31,
       name: r'dynamicAccentColor',
       type: IsarType.bool,
     ),
     r'dynamicColorActiveLyrics': PropertySchema(
-      id: 31,
+      id: 32,
       name: r'dynamicColorActiveLyrics',
       type: IsarType.bool,
     ),
     r'dynamicLyrics': PropertySchema(
-      id: 32,
+      id: 33,
       name: r'dynamicLyrics',
       type: IsarType.bool,
     ),
     r'enableAudioCache': PropertySchema(
-      id: 33,
+      id: 34,
       name: r'enableAudioCache',
       type: IsarType.bool,
     ),
     r'enableDynamicTheming': PropertySchema(
-      id: 34,
+      id: 35,
       name: r'enableDynamicTheming',
       type: IsarType.bool,
     ),
     r'enableInternet': PropertySchema(
-      id: 35,
+      id: 36,
       name: r'enableInternet',
       type: IsarType.bool,
     ),
     r'enablePlayerGradient': PropertySchema(
-      id: 36,
+      id: 37,
       name: r'enablePlayerGradient',
       type: IsarType.bool,
     ),
     r'enableSlideGesture': PropertySchema(
-      id: 37,
+      id: 38,
       name: r'enableSlideGesture',
       type: IsarType.bool,
     ),
     r'equalizerEnabled': PropertySchema(
-      id: 38,
+      id: 39,
       name: r'equalizerEnabled',
       type: IsarType.bool,
     ),
     r'equalizerGlobalMode': PropertySchema(
-      id: 39,
+      id: 40,
       name: r'equalizerGlobalMode',
       type: IsarType.bool,
     ),
     r'exclusiveHardwareMode': PropertySchema(
-      id: 40,
+      id: 41,
       name: r'exclusiveHardwareMode',
       type: IsarType.bool,
     ),
     r'fadePlayPauseStop': PropertySchema(
-      id: 41,
+      id: 42,
       name: r'fadePlayPauseStop',
       type: IsarType.bool,
     ),
     r'firstTimeEqualizer': PropertySchema(
-      id: 42,
+      id: 43,
       name: r'firstTimeEqualizer',
       type: IsarType.bool,
     ),
     r'genreSortOptionIndex': PropertySchema(
-      id: 43,
+      id: 44,
       name: r'genreSortOptionIndex',
       type: IsarType.long,
     ),
     r'globalEqualizerGains': PropertySchema(
-      id: 44,
+      id: 45,
       name: r'globalEqualizerGains',
       type: IsarType.doubleList,
     ),
     r'homeDarkness': PropertySchema(
-      id: 45,
+      id: 46,
       name: r'homeDarkness',
       type: IsarType.double,
     ),
     r'homeSectionOrder': PropertySchema(
-      id: 46,
+      id: 47,
       name: r'homeSectionOrder',
       type: IsarType.stringList,
     ),
     r'keepBackgroundGradient': PropertySchema(
-      id: 47,
+      id: 48,
       name: r'keepBackgroundGradient',
       type: IsarType.bool,
     ),
     r'language': PropertySchema(
-      id: 48,
+      id: 49,
       name: r'language',
       type: IsarType.string,
     ),
     r'lastPlayedSongId': PropertySchema(
-      id: 49,
+      id: 50,
       name: r'lastPlayedSongId',
       type: IsarType.long,
     ),
     r'lastPositionMs': PropertySchema(
-      id: 50,
+      id: 51,
       name: r'lastPositionMs',
       type: IsarType.long,
     ),
     r'lastQueueIndex': PropertySchema(
-      id: 51,
+      id: 52,
       name: r'lastQueueIndex',
       type: IsarType.long,
     ),
     r'lastQueueSongIds': PropertySchema(
-      id: 52,
+      id: 53,
       name: r'lastQueueSongIds',
       type: IsarType.longList,
     ),
     r'libraryDarkness': PropertySchema(
-      id: 53,
+      id: 54,
       name: r'libraryDarkness',
       type: IsarType.double,
     ),
     r'libraryFolders': PropertySchema(
-      id: 54,
+      id: 55,
       name: r'libraryFolders',
       type: IsarType.stringList,
     ),
     r'lyricsAlignment': PropertySchema(
-      id: 55,
+      id: 56,
       name: r'lyricsAlignment',
       type: IsarType.string,
     ),
     r'lyricsDarkness': PropertySchema(
-      id: 56,
+      id: 57,
       name: r'lyricsDarkness',
       type: IsarType.double,
     ),
     r'lyricsProvider': PropertySchema(
-      id: 57,
+      id: 58,
       name: r'lyricsProvider',
       type: IsarType.string,
     ),
     r'minimizeToTray': PropertySchema(
-      id: 58,
+      id: 59,
       name: r'minimizeToTray',
       type: IsarType.bool,
     ),
     r'musicDarkness': PropertySchema(
-      id: 59,
+      id: 60,
       name: r'musicDarkness',
       type: IsarType.double,
     ),
     r'nowPlayingFullscreen': PropertySchema(
-      id: 60,
+      id: 61,
       name: r'nowPlayingFullscreen',
       type: IsarType.bool,
     ),
     r'pauseOnDuck': PropertySchema(
-      id: 61,
+      id: 62,
       name: r'pauseOnDuck',
       type: IsarType.bool,
     ),
     r'permanentAudioFocusChange': PropertySchema(
-      id: 62,
+      id: 63,
       name: r'permanentAudioFocusChange',
       type: IsarType.bool,
     ),
     r'persistQueue': PropertySchema(
-      id: 63,
+      id: 64,
       name: r'persistQueue',
       type: IsarType.bool,
     ),
     r'playPauseStopFadeLength': PropertySchema(
-      id: 64,
+      id: 65,
       name: r'playPauseStopFadeLength',
       type: IsarType.long,
     ),
     r'playbackModeIndex': PropertySchema(
-      id: 65,
+      id: 66,
       name: r'playbackModeIndex',
       type: IsarType.long,
     ),
     r'repeatMode': PropertySchema(
-      id: 66,
+      id: 67,
       name: r'repeatMode',
       type: IsarType.long,
     ),
     r'resumeAfterCall': PropertySchema(
-      id: 67,
+      id: 68,
       name: r'resumeAfterCall',
       type: IsarType.bool,
     ),
     r'resumeOnBluetoothConnect': PropertySchema(
-      id: 68,
+      id: 69,
       name: r'resumeOnBluetoothConnect',
       type: IsarType.bool,
     ),
     r'resumeOnStart': PropertySchema(
-      id: 69,
+      id: 70,
       name: r'resumeOnStart',
       type: IsarType.bool,
     ),
     r'saveDynamicColor': PropertySchema(
-      id: 70,
+      id: 71,
       name: r'saveDynamicColor',
       type: IsarType.bool,
     ),
     r'seekBarStyleIndex': PropertySchema(
-      id: 71,
+      id: 72,
       name: r'seekBarStyleIndex',
       type: IsarType.long,
     ),
     r'settingsV2': PropertySchema(
-      id: 72,
+      id: 73,
       name: r'settingsV2',
       type: IsarType.bool,
     ),
     r'settingsV3': PropertySchema(
-      id: 73,
+      id: 74,
       name: r'settingsV3',
       type: IsarType.bool,
     ),
     r'showHomeAlbums': PropertySchema(
-      id: 74,
+      id: 75,
       name: r'showHomeAlbums',
       type: IsarType.bool,
     ),
     r'showHomeArtists': PropertySchema(
-      id: 75,
+      id: 76,
       name: r'showHomeArtists',
       type: IsarType.bool,
     ),
     r'showHomeGenres': PropertySchema(
-      id: 76,
+      id: 77,
       name: r'showHomeGenres',
       type: IsarType.bool,
     ),
     r'showPerformanceOptimizer': PropertySchema(
-      id: 77,
+      id: 78,
       name: r'showPerformanceOptimizer',
       type: IsarType.bool,
     ),
     r'showQualityBadge': PropertySchema(
-      id: 78,
+      id: 79,
       name: r'showQualityBadge',
       type: IsarType.bool,
     ),
     r'shuffle': PropertySchema(
-      id: 79,
+      id: 80,
       name: r'shuffle',
       type: IsarType.bool,
     ),
     r'songsDarkness': PropertySchema(
-      id: 80,
+      id: 81,
       name: r'songsDarkness',
       type: IsarType.double,
     ),
     r'sortAscending': PropertySchema(
-      id: 81,
+      id: 82,
       name: r'sortAscending',
       type: IsarType.bool,
     ),
     r'sortStrategyIndex': PropertySchema(
-      id: 82,
+      id: 83,
       name: r'sortStrategyIndex',
       type: IsarType.long,
     ),
     r'stopOnTaskRemoved': PropertySchema(
-      id: 83,
+      id: 84,
       name: r'stopOnTaskRemoved',
       type: IsarType.bool,
     ),
     r'streamingQuality': PropertySchema(
-      id: 84,
+      id: 85,
       name: r'streamingQuality',
       type: IsarType.long,
     ),
     r'useAlbumArtistForArtists': PropertySchema(
-      id: 85,
+      id: 86,
       name: r'useAlbumArtistForArtists',
       type: IsarType.bool,
     ),
     r'useNewFont': PropertySchema(
-      id: 86,
+      id: 87,
       name: r'useNewFont',
       type: IsarType.bool,
     ),
     r'useNewFontLyrics': PropertySchema(
-      id: 87,
+      id: 88,
       name: r'useNewFontLyrics',
       type: IsarType.bool,
     ),
     r'volume': PropertySchema(
-      id: 88,
+      id: 89,
       name: r'volume',
       type: IsarType.double,
     )
@@ -8338,6 +9457,7 @@ int _appSettingsEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.activeQueueName.length * 3;
   {
     final value = object.customBackgroundImagePath;
     if (value != null) {
@@ -8377,93 +9497,94 @@ void _appSettingsSerialize(
 ) {
   writer.writeLong(offsets[0], object.accentColor);
   writer.writeLong(offsets[1], object.activeLyricsFontWeightDelta);
-  writer.writeLong(offsets[2], object.albumSortOptionIndex);
-  writer.writeLong(offsets[3], object.artistSortOptionIndex);
-  writer.writeLong(offsets[4], object.audioBackCacheSizeMB);
-  writer.writeLong(offsets[5], object.audioCacheSecs);
-  writer.writeLong(offsets[6], object.audioCacheSizeMB);
-  writer.writeBool(offsets[7], object.audioFocus);
-  writer.writeBool(offsets[8], object.audioFocusReleaseOnPause);
-  writer.writeBool(offsets[9], object.audioFocusRequestOnPlay);
-  writer.writeBool(offsets[10], object.audioFocusRestartOnGain);
-  writer.writeBool(offsets[11], object.audioFocusStopOnOtherSession);
-  writer.writeDouble(offsets[12], object.bgBrightness);
-  writer.writeDouble(offsets[13], object.bgOpacity);
-  writer.writeBool(offsets[14], object.blurredArtworkForLyrics);
-  writer.writeBool(offsets[15], object.cacheOnlineStreams);
-  writer.writeBool(offsets[16], object.collectionSortAscending);
-  writer.writeLong(offsets[17], object.collectionSortOptionIndex);
-  writer.writeString(offsets[18], object.customBackgroundImagePath);
-  writer.writeString(offsets[19], object.customFontFamily);
-  writer.writeString(offsets[20], object.customFontFamilyLyrics);
-  writer.writeLong(offsets[21], object.customFontWeight);
-  writer.writeLong(offsets[22], object.customFontWeightDelta);
-  writer.writeString(offsets[23], object.customFontWeightLyrics);
-  writer.writeLong(offsets[24], object.customFontWeightLyricsDelta);
-  writer.writeBool(offsets[25], object.darkTheme);
-  writer.writeBool(offsets[26], object.disableAnimatedDuration);
-  writer.writeBool(offsets[27], object.disableBlur);
-  writer.writeBool(offsets[28], object.disableSquiggle);
-  writer.writeBool(offsets[29], object.downloadArtwork);
-  writer.writeBool(offsets[30], object.dynamicAccentColor);
-  writer.writeBool(offsets[31], object.dynamicColorActiveLyrics);
-  writer.writeBool(offsets[32], object.dynamicLyrics);
-  writer.writeBool(offsets[33], object.enableAudioCache);
-  writer.writeBool(offsets[34], object.enableDynamicTheming);
-  writer.writeBool(offsets[35], object.enableInternet);
-  writer.writeBool(offsets[36], object.enablePlayerGradient);
-  writer.writeBool(offsets[37], object.enableSlideGesture);
-  writer.writeBool(offsets[38], object.equalizerEnabled);
-  writer.writeBool(offsets[39], object.equalizerGlobalMode);
-  writer.writeBool(offsets[40], object.exclusiveHardwareMode);
-  writer.writeBool(offsets[41], object.fadePlayPauseStop);
-  writer.writeBool(offsets[42], object.firstTimeEqualizer);
-  writer.writeLong(offsets[43], object.genreSortOptionIndex);
-  writer.writeDoubleList(offsets[44], object.globalEqualizerGains);
-  writer.writeDouble(offsets[45], object.homeDarkness);
-  writer.writeStringList(offsets[46], object.homeSectionOrder);
-  writer.writeBool(offsets[47], object.keepBackgroundGradient);
-  writer.writeString(offsets[48], object.language);
-  writer.writeLong(offsets[49], object.lastPlayedSongId);
-  writer.writeLong(offsets[50], object.lastPositionMs);
-  writer.writeLong(offsets[51], object.lastQueueIndex);
-  writer.writeLongList(offsets[52], object.lastQueueSongIds);
-  writer.writeDouble(offsets[53], object.libraryDarkness);
-  writer.writeStringList(offsets[54], object.libraryFolders);
-  writer.writeString(offsets[55], object.lyricsAlignment);
-  writer.writeDouble(offsets[56], object.lyricsDarkness);
-  writer.writeString(offsets[57], object.lyricsProvider);
-  writer.writeBool(offsets[58], object.minimizeToTray);
-  writer.writeDouble(offsets[59], object.musicDarkness);
-  writer.writeBool(offsets[60], object.nowPlayingFullscreen);
-  writer.writeBool(offsets[61], object.pauseOnDuck);
-  writer.writeBool(offsets[62], object.permanentAudioFocusChange);
-  writer.writeBool(offsets[63], object.persistQueue);
-  writer.writeLong(offsets[64], object.playPauseStopFadeLength);
-  writer.writeLong(offsets[65], object.playbackModeIndex);
-  writer.writeLong(offsets[66], object.repeatMode);
-  writer.writeBool(offsets[67], object.resumeAfterCall);
-  writer.writeBool(offsets[68], object.resumeOnBluetoothConnect);
-  writer.writeBool(offsets[69], object.resumeOnStart);
-  writer.writeBool(offsets[70], object.saveDynamicColor);
-  writer.writeLong(offsets[71], object.seekBarStyleIndex);
-  writer.writeBool(offsets[72], object.settingsV2);
-  writer.writeBool(offsets[73], object.settingsV3);
-  writer.writeBool(offsets[74], object.showHomeAlbums);
-  writer.writeBool(offsets[75], object.showHomeArtists);
-  writer.writeBool(offsets[76], object.showHomeGenres);
-  writer.writeBool(offsets[77], object.showPerformanceOptimizer);
-  writer.writeBool(offsets[78], object.showQualityBadge);
-  writer.writeBool(offsets[79], object.shuffle);
-  writer.writeDouble(offsets[80], object.songsDarkness);
-  writer.writeBool(offsets[81], object.sortAscending);
-  writer.writeLong(offsets[82], object.sortStrategyIndex);
-  writer.writeBool(offsets[83], object.stopOnTaskRemoved);
-  writer.writeLong(offsets[84], object.streamingQuality);
-  writer.writeBool(offsets[85], object.useAlbumArtistForArtists);
-  writer.writeBool(offsets[86], object.useNewFont);
-  writer.writeBool(offsets[87], object.useNewFontLyrics);
-  writer.writeDouble(offsets[88], object.volume);
+  writer.writeString(offsets[2], object.activeQueueName);
+  writer.writeLong(offsets[3], object.albumSortOptionIndex);
+  writer.writeLong(offsets[4], object.artistSortOptionIndex);
+  writer.writeLong(offsets[5], object.audioBackCacheSizeMB);
+  writer.writeLong(offsets[6], object.audioCacheSecs);
+  writer.writeLong(offsets[7], object.audioCacheSizeMB);
+  writer.writeBool(offsets[8], object.audioFocus);
+  writer.writeBool(offsets[9], object.audioFocusReleaseOnPause);
+  writer.writeBool(offsets[10], object.audioFocusRequestOnPlay);
+  writer.writeBool(offsets[11], object.audioFocusRestartOnGain);
+  writer.writeBool(offsets[12], object.audioFocusStopOnOtherSession);
+  writer.writeDouble(offsets[13], object.bgBrightness);
+  writer.writeDouble(offsets[14], object.bgOpacity);
+  writer.writeBool(offsets[15], object.blurredArtworkForLyrics);
+  writer.writeBool(offsets[16], object.cacheOnlineStreams);
+  writer.writeBool(offsets[17], object.collectionSortAscending);
+  writer.writeLong(offsets[18], object.collectionSortOptionIndex);
+  writer.writeString(offsets[19], object.customBackgroundImagePath);
+  writer.writeString(offsets[20], object.customFontFamily);
+  writer.writeString(offsets[21], object.customFontFamilyLyrics);
+  writer.writeLong(offsets[22], object.customFontWeight);
+  writer.writeLong(offsets[23], object.customFontWeightDelta);
+  writer.writeString(offsets[24], object.customFontWeightLyrics);
+  writer.writeLong(offsets[25], object.customFontWeightLyricsDelta);
+  writer.writeBool(offsets[26], object.darkTheme);
+  writer.writeBool(offsets[27], object.disableAnimatedDuration);
+  writer.writeBool(offsets[28], object.disableBlur);
+  writer.writeBool(offsets[29], object.disableSquiggle);
+  writer.writeBool(offsets[30], object.downloadArtwork);
+  writer.writeBool(offsets[31], object.dynamicAccentColor);
+  writer.writeBool(offsets[32], object.dynamicColorActiveLyrics);
+  writer.writeBool(offsets[33], object.dynamicLyrics);
+  writer.writeBool(offsets[34], object.enableAudioCache);
+  writer.writeBool(offsets[35], object.enableDynamicTheming);
+  writer.writeBool(offsets[36], object.enableInternet);
+  writer.writeBool(offsets[37], object.enablePlayerGradient);
+  writer.writeBool(offsets[38], object.enableSlideGesture);
+  writer.writeBool(offsets[39], object.equalizerEnabled);
+  writer.writeBool(offsets[40], object.equalizerGlobalMode);
+  writer.writeBool(offsets[41], object.exclusiveHardwareMode);
+  writer.writeBool(offsets[42], object.fadePlayPauseStop);
+  writer.writeBool(offsets[43], object.firstTimeEqualizer);
+  writer.writeLong(offsets[44], object.genreSortOptionIndex);
+  writer.writeDoubleList(offsets[45], object.globalEqualizerGains);
+  writer.writeDouble(offsets[46], object.homeDarkness);
+  writer.writeStringList(offsets[47], object.homeSectionOrder);
+  writer.writeBool(offsets[48], object.keepBackgroundGradient);
+  writer.writeString(offsets[49], object.language);
+  writer.writeLong(offsets[50], object.lastPlayedSongId);
+  writer.writeLong(offsets[51], object.lastPositionMs);
+  writer.writeLong(offsets[52], object.lastQueueIndex);
+  writer.writeLongList(offsets[53], object.lastQueueSongIds);
+  writer.writeDouble(offsets[54], object.libraryDarkness);
+  writer.writeStringList(offsets[55], object.libraryFolders);
+  writer.writeString(offsets[56], object.lyricsAlignment);
+  writer.writeDouble(offsets[57], object.lyricsDarkness);
+  writer.writeString(offsets[58], object.lyricsProvider);
+  writer.writeBool(offsets[59], object.minimizeToTray);
+  writer.writeDouble(offsets[60], object.musicDarkness);
+  writer.writeBool(offsets[61], object.nowPlayingFullscreen);
+  writer.writeBool(offsets[62], object.pauseOnDuck);
+  writer.writeBool(offsets[63], object.permanentAudioFocusChange);
+  writer.writeBool(offsets[64], object.persistQueue);
+  writer.writeLong(offsets[65], object.playPauseStopFadeLength);
+  writer.writeLong(offsets[66], object.playbackModeIndex);
+  writer.writeLong(offsets[67], object.repeatMode);
+  writer.writeBool(offsets[68], object.resumeAfterCall);
+  writer.writeBool(offsets[69], object.resumeOnBluetoothConnect);
+  writer.writeBool(offsets[70], object.resumeOnStart);
+  writer.writeBool(offsets[71], object.saveDynamicColor);
+  writer.writeLong(offsets[72], object.seekBarStyleIndex);
+  writer.writeBool(offsets[73], object.settingsV2);
+  writer.writeBool(offsets[74], object.settingsV3);
+  writer.writeBool(offsets[75], object.showHomeAlbums);
+  writer.writeBool(offsets[76], object.showHomeArtists);
+  writer.writeBool(offsets[77], object.showHomeGenres);
+  writer.writeBool(offsets[78], object.showPerformanceOptimizer);
+  writer.writeBool(offsets[79], object.showQualityBadge);
+  writer.writeBool(offsets[80], object.shuffle);
+  writer.writeDouble(offsets[81], object.songsDarkness);
+  writer.writeBool(offsets[82], object.sortAscending);
+  writer.writeLong(offsets[83], object.sortStrategyIndex);
+  writer.writeBool(offsets[84], object.stopOnTaskRemoved);
+  writer.writeLong(offsets[85], object.streamingQuality);
+  writer.writeBool(offsets[86], object.useAlbumArtistForArtists);
+  writer.writeBool(offsets[87], object.useNewFont);
+  writer.writeBool(offsets[88], object.useNewFontLyrics);
+  writer.writeDouble(offsets[89], object.volume);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -8475,94 +9596,95 @@ AppSettings _appSettingsDeserialize(
   final object = AppSettings();
   object.accentColor = reader.readLong(offsets[0]);
   object.activeLyricsFontWeightDelta = reader.readLong(offsets[1]);
-  object.albumSortOptionIndex = reader.readLong(offsets[2]);
-  object.artistSortOptionIndex = reader.readLong(offsets[3]);
-  object.audioBackCacheSizeMB = reader.readLong(offsets[4]);
-  object.audioCacheSecs = reader.readLong(offsets[5]);
-  object.audioCacheSizeMB = reader.readLong(offsets[6]);
-  object.audioFocus = reader.readBool(offsets[7]);
-  object.audioFocusReleaseOnPause = reader.readBool(offsets[8]);
-  object.audioFocusRequestOnPlay = reader.readBool(offsets[9]);
-  object.audioFocusRestartOnGain = reader.readBool(offsets[10]);
-  object.audioFocusStopOnOtherSession = reader.readBool(offsets[11]);
-  object.bgBrightness = reader.readDouble(offsets[12]);
-  object.bgOpacity = reader.readDouble(offsets[13]);
-  object.blurredArtworkForLyrics = reader.readBool(offsets[14]);
-  object.cacheOnlineStreams = reader.readBool(offsets[15]);
-  object.collectionSortAscending = reader.readBool(offsets[16]);
-  object.collectionSortOptionIndex = reader.readLong(offsets[17]);
-  object.customBackgroundImagePath = reader.readStringOrNull(offsets[18]);
-  object.customFontFamily = reader.readString(offsets[19]);
-  object.customFontFamilyLyrics = reader.readString(offsets[20]);
-  object.customFontWeight = reader.readLong(offsets[21]);
-  object.customFontWeightDelta = reader.readLong(offsets[22]);
-  object.customFontWeightLyrics = reader.readString(offsets[23]);
-  object.customFontWeightLyricsDelta = reader.readLong(offsets[24]);
-  object.darkTheme = reader.readBool(offsets[25]);
-  object.disableAnimatedDuration = reader.readBool(offsets[26]);
-  object.disableBlur = reader.readBool(offsets[27]);
-  object.disableSquiggle = reader.readBool(offsets[28]);
-  object.downloadArtwork = reader.readBool(offsets[29]);
-  object.dynamicAccentColor = reader.readBool(offsets[30]);
-  object.dynamicColorActiveLyrics = reader.readBool(offsets[31]);
-  object.dynamicLyrics = reader.readBool(offsets[32]);
-  object.enableAudioCache = reader.readBool(offsets[33]);
-  object.enableDynamicTheming = reader.readBool(offsets[34]);
-  object.enableInternet = reader.readBool(offsets[35]);
-  object.enablePlayerGradient = reader.readBool(offsets[36]);
-  object.enableSlideGesture = reader.readBool(offsets[37]);
-  object.equalizerEnabled = reader.readBool(offsets[38]);
-  object.equalizerGlobalMode = reader.readBool(offsets[39]);
-  object.exclusiveHardwareMode = reader.readBool(offsets[40]);
-  object.fadePlayPauseStop = reader.readBool(offsets[41]);
-  object.firstTimeEqualizer = reader.readBool(offsets[42]);
-  object.genreSortOptionIndex = reader.readLong(offsets[43]);
-  object.globalEqualizerGains = reader.readDoubleList(offsets[44]) ?? [];
-  object.homeDarkness = reader.readDouble(offsets[45]);
-  object.homeSectionOrder = reader.readStringList(offsets[46]) ?? [];
+  object.activeQueueName = reader.readString(offsets[2]);
+  object.albumSortOptionIndex = reader.readLong(offsets[3]);
+  object.artistSortOptionIndex = reader.readLong(offsets[4]);
+  object.audioBackCacheSizeMB = reader.readLong(offsets[5]);
+  object.audioCacheSecs = reader.readLong(offsets[6]);
+  object.audioCacheSizeMB = reader.readLong(offsets[7]);
+  object.audioFocus = reader.readBool(offsets[8]);
+  object.audioFocusReleaseOnPause = reader.readBool(offsets[9]);
+  object.audioFocusRequestOnPlay = reader.readBool(offsets[10]);
+  object.audioFocusRestartOnGain = reader.readBool(offsets[11]);
+  object.audioFocusStopOnOtherSession = reader.readBool(offsets[12]);
+  object.bgBrightness = reader.readDouble(offsets[13]);
+  object.bgOpacity = reader.readDouble(offsets[14]);
+  object.blurredArtworkForLyrics = reader.readBool(offsets[15]);
+  object.cacheOnlineStreams = reader.readBool(offsets[16]);
+  object.collectionSortAscending = reader.readBool(offsets[17]);
+  object.collectionSortOptionIndex = reader.readLong(offsets[18]);
+  object.customBackgroundImagePath = reader.readStringOrNull(offsets[19]);
+  object.customFontFamily = reader.readString(offsets[20]);
+  object.customFontFamilyLyrics = reader.readString(offsets[21]);
+  object.customFontWeight = reader.readLong(offsets[22]);
+  object.customFontWeightDelta = reader.readLong(offsets[23]);
+  object.customFontWeightLyrics = reader.readString(offsets[24]);
+  object.customFontWeightLyricsDelta = reader.readLong(offsets[25]);
+  object.darkTheme = reader.readBool(offsets[26]);
+  object.disableAnimatedDuration = reader.readBool(offsets[27]);
+  object.disableBlur = reader.readBool(offsets[28]);
+  object.disableSquiggle = reader.readBool(offsets[29]);
+  object.downloadArtwork = reader.readBool(offsets[30]);
+  object.dynamicAccentColor = reader.readBool(offsets[31]);
+  object.dynamicColorActiveLyrics = reader.readBool(offsets[32]);
+  object.dynamicLyrics = reader.readBool(offsets[33]);
+  object.enableAudioCache = reader.readBool(offsets[34]);
+  object.enableDynamicTheming = reader.readBool(offsets[35]);
+  object.enableInternet = reader.readBool(offsets[36]);
+  object.enablePlayerGradient = reader.readBool(offsets[37]);
+  object.enableSlideGesture = reader.readBool(offsets[38]);
+  object.equalizerEnabled = reader.readBool(offsets[39]);
+  object.equalizerGlobalMode = reader.readBool(offsets[40]);
+  object.exclusiveHardwareMode = reader.readBool(offsets[41]);
+  object.fadePlayPauseStop = reader.readBool(offsets[42]);
+  object.firstTimeEqualizer = reader.readBool(offsets[43]);
+  object.genreSortOptionIndex = reader.readLong(offsets[44]);
+  object.globalEqualizerGains = reader.readDoubleList(offsets[45]) ?? [];
+  object.homeDarkness = reader.readDouble(offsets[46]);
+  object.homeSectionOrder = reader.readStringList(offsets[47]) ?? [];
   object.id = id;
-  object.keepBackgroundGradient = reader.readBool(offsets[47]);
-  object.language = reader.readString(offsets[48]);
-  object.lastPlayedSongId = reader.readLongOrNull(offsets[49]);
-  object.lastPositionMs = reader.readLong(offsets[50]);
-  object.lastQueueIndex = reader.readLong(offsets[51]);
-  object.lastQueueSongIds = reader.readLongList(offsets[52]) ?? [];
-  object.libraryDarkness = reader.readDouble(offsets[53]);
-  object.libraryFolders = reader.readStringList(offsets[54]) ?? [];
-  object.lyricsAlignment = reader.readString(offsets[55]);
-  object.lyricsDarkness = reader.readDouble(offsets[56]);
-  object.lyricsProvider = reader.readString(offsets[57]);
-  object.minimizeToTray = reader.readBool(offsets[58]);
-  object.musicDarkness = reader.readDouble(offsets[59]);
-  object.nowPlayingFullscreen = reader.readBool(offsets[60]);
-  object.pauseOnDuck = reader.readBool(offsets[61]);
-  object.permanentAudioFocusChange = reader.readBool(offsets[62]);
-  object.persistQueue = reader.readBool(offsets[63]);
-  object.playPauseStopFadeLength = reader.readLong(offsets[64]);
-  object.playbackModeIndex = reader.readLong(offsets[65]);
-  object.repeatMode = reader.readLong(offsets[66]);
-  object.resumeAfterCall = reader.readBool(offsets[67]);
-  object.resumeOnBluetoothConnect = reader.readBool(offsets[68]);
-  object.resumeOnStart = reader.readBool(offsets[69]);
-  object.saveDynamicColor = reader.readBool(offsets[70]);
-  object.seekBarStyleIndex = reader.readLong(offsets[71]);
-  object.settingsV2 = reader.readBool(offsets[72]);
-  object.settingsV3 = reader.readBool(offsets[73]);
-  object.showHomeAlbums = reader.readBool(offsets[74]);
-  object.showHomeArtists = reader.readBool(offsets[75]);
-  object.showHomeGenres = reader.readBool(offsets[76]);
-  object.showPerformanceOptimizer = reader.readBool(offsets[77]);
-  object.showQualityBadge = reader.readBool(offsets[78]);
-  object.shuffle = reader.readBool(offsets[79]);
-  object.songsDarkness = reader.readDouble(offsets[80]);
-  object.sortAscending = reader.readBool(offsets[81]);
-  object.sortStrategyIndex = reader.readLong(offsets[82]);
-  object.stopOnTaskRemoved = reader.readBool(offsets[83]);
-  object.streamingQuality = reader.readLong(offsets[84]);
-  object.useAlbumArtistForArtists = reader.readBool(offsets[85]);
-  object.useNewFont = reader.readBool(offsets[86]);
-  object.useNewFontLyrics = reader.readBool(offsets[87]);
-  object.volume = reader.readDouble(offsets[88]);
+  object.keepBackgroundGradient = reader.readBool(offsets[48]);
+  object.language = reader.readString(offsets[49]);
+  object.lastPlayedSongId = reader.readLongOrNull(offsets[50]);
+  object.lastPositionMs = reader.readLong(offsets[51]);
+  object.lastQueueIndex = reader.readLong(offsets[52]);
+  object.lastQueueSongIds = reader.readLongList(offsets[53]) ?? [];
+  object.libraryDarkness = reader.readDouble(offsets[54]);
+  object.libraryFolders = reader.readStringList(offsets[55]) ?? [];
+  object.lyricsAlignment = reader.readString(offsets[56]);
+  object.lyricsDarkness = reader.readDouble(offsets[57]);
+  object.lyricsProvider = reader.readString(offsets[58]);
+  object.minimizeToTray = reader.readBool(offsets[59]);
+  object.musicDarkness = reader.readDouble(offsets[60]);
+  object.nowPlayingFullscreen = reader.readBool(offsets[61]);
+  object.pauseOnDuck = reader.readBool(offsets[62]);
+  object.permanentAudioFocusChange = reader.readBool(offsets[63]);
+  object.persistQueue = reader.readBool(offsets[64]);
+  object.playPauseStopFadeLength = reader.readLong(offsets[65]);
+  object.playbackModeIndex = reader.readLong(offsets[66]);
+  object.repeatMode = reader.readLong(offsets[67]);
+  object.resumeAfterCall = reader.readBool(offsets[68]);
+  object.resumeOnBluetoothConnect = reader.readBool(offsets[69]);
+  object.resumeOnStart = reader.readBool(offsets[70]);
+  object.saveDynamicColor = reader.readBool(offsets[71]);
+  object.seekBarStyleIndex = reader.readLong(offsets[72]);
+  object.settingsV2 = reader.readBool(offsets[73]);
+  object.settingsV3 = reader.readBool(offsets[74]);
+  object.showHomeAlbums = reader.readBool(offsets[75]);
+  object.showHomeArtists = reader.readBool(offsets[76]);
+  object.showHomeGenres = reader.readBool(offsets[77]);
+  object.showPerformanceOptimizer = reader.readBool(offsets[78]);
+  object.showQualityBadge = reader.readBool(offsets[79]);
+  object.shuffle = reader.readBool(offsets[80]);
+  object.songsDarkness = reader.readDouble(offsets[81]);
+  object.sortAscending = reader.readBool(offsets[82]);
+  object.sortStrategyIndex = reader.readLong(offsets[83]);
+  object.stopOnTaskRemoved = reader.readBool(offsets[84]);
+  object.streamingQuality = reader.readLong(offsets[85]);
+  object.useAlbumArtistForArtists = reader.readBool(offsets[86]);
+  object.useNewFont = reader.readBool(offsets[87]);
+  object.useNewFontLyrics = reader.readBool(offsets[88]);
+  object.volume = reader.readDouble(offsets[89]);
   return object;
 }
 
@@ -8578,7 +9700,7 @@ P _appSettingsDeserializeProp<P>(
     case 1:
       return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 3:
       return (reader.readLong(offset)) as P;
     case 4:
@@ -8588,7 +9710,7 @@ P _appSettingsDeserializeProp<P>(
     case 6:
       return (reader.readLong(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 8:
       return (reader.readBool(offset)) as P;
     case 9:
@@ -8598,33 +9720,33 @@ P _appSettingsDeserializeProp<P>(
     case 11:
       return (reader.readBool(offset)) as P;
     case 12:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 13:
       return (reader.readDouble(offset)) as P;
     case 14:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 15:
       return (reader.readBool(offset)) as P;
     case 16:
       return (reader.readBool(offset)) as P;
     case 17:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 18:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 19:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 20:
       return (reader.readString(offset)) as P;
     case 21:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 22:
       return (reader.readLong(offset)) as P;
     case 23:
-      return (reader.readString(offset)) as P;
-    case 24:
       return (reader.readLong(offset)) as P;
+    case 24:
+      return (reader.readString(offset)) as P;
     case 25:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 26:
       return (reader.readBool(offset)) as P;
     case 27:
@@ -8660,41 +9782,41 @@ P _appSettingsDeserializeProp<P>(
     case 42:
       return (reader.readBool(offset)) as P;
     case 43:
-      return (reader.readLong(offset)) as P;
-    case 44:
-      return (reader.readDoubleList(offset) ?? []) as P;
-    case 45:
-      return (reader.readDouble(offset)) as P;
-    case 46:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 47:
       return (reader.readBool(offset)) as P;
-    case 48:
-      return (reader.readString(offset)) as P;
-    case 49:
-      return (reader.readLongOrNull(offset)) as P;
-    case 50:
+    case 44:
       return (reader.readLong(offset)) as P;
+    case 45:
+      return (reader.readDoubleList(offset) ?? []) as P;
+    case 46:
+      return (reader.readDouble(offset)) as P;
+    case 47:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 48:
+      return (reader.readBool(offset)) as P;
+    case 49:
+      return (reader.readString(offset)) as P;
+    case 50:
+      return (reader.readLongOrNull(offset)) as P;
     case 51:
       return (reader.readLong(offset)) as P;
     case 52:
-      return (reader.readLongList(offset) ?? []) as P;
+      return (reader.readLong(offset)) as P;
     case 53:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLongList(offset) ?? []) as P;
     case 54:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readDouble(offset)) as P;
     case 55:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     case 56:
-      return (reader.readDouble(offset)) as P;
-    case 57:
       return (reader.readString(offset)) as P;
-    case 58:
-      return (reader.readBool(offset)) as P;
-    case 59:
+    case 57:
       return (reader.readDouble(offset)) as P;
-    case 60:
+    case 58:
+      return (reader.readString(offset)) as P;
+    case 59:
       return (reader.readBool(offset)) as P;
+    case 60:
+      return (reader.readDouble(offset)) as P;
     case 61:
       return (reader.readBool(offset)) as P;
     case 62:
@@ -8702,13 +9824,13 @@ P _appSettingsDeserializeProp<P>(
     case 63:
       return (reader.readBool(offset)) as P;
     case 64:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 65:
       return (reader.readLong(offset)) as P;
     case 66:
       return (reader.readLong(offset)) as P;
     case 67:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 68:
       return (reader.readBool(offset)) as P;
     case 69:
@@ -8716,9 +9838,9 @@ P _appSettingsDeserializeProp<P>(
     case 70:
       return (reader.readBool(offset)) as P;
     case 71:
-      return (reader.readLong(offset)) as P;
-    case 72:
       return (reader.readBool(offset)) as P;
+    case 72:
+      return (reader.readLong(offset)) as P;
     case 73:
       return (reader.readBool(offset)) as P;
     case 74:
@@ -8734,22 +9856,24 @@ P _appSettingsDeserializeProp<P>(
     case 79:
       return (reader.readBool(offset)) as P;
     case 80:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 81:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 82:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 83:
-      return (reader.readBool(offset)) as P;
-    case 84:
       return (reader.readLong(offset)) as P;
-    case 85:
+    case 84:
       return (reader.readBool(offset)) as P;
+    case 85:
+      return (reader.readLong(offset)) as P;
     case 86:
       return (reader.readBool(offset)) as P;
     case 87:
       return (reader.readBool(offset)) as P;
     case 88:
+      return (reader.readBool(offset)) as P;
+    case 89:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -8957,6 +10081,142 @@ extension AppSettingsQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'activeQueueName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'activeQueueName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'activeQueueName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'activeQueueName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'activeQueueName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'activeQueueName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'activeQueueName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'activeQueueName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'activeQueueName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      activeQueueNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'activeQueueName',
+        value: '',
       ));
     });
   }
@@ -12874,6 +14134,19 @@ extension AppSettingsQuerySortBy
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> sortByActiveQueueName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activeQueueName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByActiveQueueNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activeQueueName', Sort.desc);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       sortByAlbumSortOptionIndex() {
     return QueryBuilder.apply(this, (query) {
@@ -14015,6 +15288,19 @@ extension AppSettingsQuerySortThenBy
       thenByActiveLyricsFontWeightDeltaDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'activeLyricsFontWeightDelta', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy> thenByActiveQueueName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activeQueueName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByActiveQueueNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activeQueueName', Sort.desc);
     });
   }
 
@@ -15161,6 +16447,14 @@ extension AppSettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByActiveQueueName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'activeQueueName',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppSettings, AppSettings, QDistinct>
       distinctByAlbumSortOptionIndex() {
     return QueryBuilder.apply(this, (query) {
@@ -15767,6 +17061,13 @@ extension AppSettingsQueryProperty
       activeLyricsFontWeightDeltaProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'activeLyricsFontWeightDelta');
+    });
+  }
+
+  QueryBuilder<AppSettings, String, QQueryOperations>
+      activeQueueNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'activeQueueName');
     });
   }
 

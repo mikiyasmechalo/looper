@@ -201,6 +201,7 @@ class CollectionDetailView extends ConsumerWidget {
                           songs: sortedSongs,
                           playlist: reactivePlaylist,
                           showAlbum: !isAlbumCollection,
+                          queueName: titleToRender,
                         );
                       },
                       childCount: sortedSongs.length,
@@ -243,6 +244,11 @@ class CollectionDetailView extends ConsumerWidget {
         subtitle == l10n.genre ||
         subtitle?.toLowerCase() == 'genre';
     if (isTypeLabel || subtitle == null) return subtitle ?? '';
+    // Artist detail: the subtitle is just the word "Artists", so show only the
+    // song count instead of "Artists · N Songs".
+    if (subtitle == l10n.artists) {
+      return '${collectionSongs.length} ${l10n.songs}';
+    }
     return '${subtitle!} · ${collectionSongs.length} ${l10n.songs}';
   }
 
@@ -330,7 +336,7 @@ class CollectionDetailView extends ConsumerWidget {
               useExpanded: false,
               onTap: () {
                 HapticFeedback.mediumImpact();
-                ref.read(playbackProvider.notifier).setPlaylist(songsToRender);
+                ref.read(playbackProvider.notifier).setPlaylist(songsToRender, queueName: title);
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -358,7 +364,7 @@ class CollectionDetailView extends ConsumerWidget {
                 HapticFeedback.lightImpact();
                 ref
                     .read(playbackProvider.notifier)
-                    .playShuffled(songsToRender);
+                    .playShuffled(songsToRender, queueName: titleToRender);
               },
               child: const Icon(LucideIcons.shuffle, size: 16, color: Colors.white),
             ),

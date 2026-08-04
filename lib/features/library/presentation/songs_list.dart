@@ -9,6 +9,7 @@ import 'package:looper_player/features/settings/presentation/settings_notifier.d
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
+import 'package:looper_player/features/playback/data/queue_repository.dart';
 import 'package:looper_player/features/library/presentation/library_notifier.dart';
 import 'package:looper_player/ui/widgets/app_refresh_indicator.dart';
 import 'package:looper_player/ui/widgets/app_bottom_sheet.dart';
@@ -29,6 +30,7 @@ class SongsList extends ConsumerWidget {
   final Playlist? playlist;
   final ScrollController? controller;
   final bool showShuffleButton;
+  final String? queueName;
 
   const SongsList({
     super.key,
@@ -39,6 +41,7 @@ class SongsList extends ConsumerWidget {
     this.playlist,
     this.controller,
     this.showShuffleButton = false,
+    this.queueName,
   });
 
   @override
@@ -66,7 +69,7 @@ class SongsList extends ConsumerWidget {
                               HapticFeedback.lightImpact();
                               ref
                                   .read(playbackProvider.notifier)
-                                  .playShuffled(songs);
+                                  .playShuffled(songs, queueName: queueName ?? QueueRepository.allSongsQueueName);
                             },
                       icon: const Icon(LucideIcons.shuffle, size: 18),
                       tooltip: l10n.shuffleTitle,
@@ -146,6 +149,7 @@ class SongsList extends ConsumerWidget {
                 songs: songs,
                 searchQuery: searchQuery,
                 playlist: playlist,
+                queueName: queueName,
               );
             },
           )
@@ -172,6 +176,7 @@ class SongsList extends ConsumerWidget {
                     songs: songs,
                     searchQuery: searchQuery,
                     playlist: playlist,
+                    queueName: queueName,
                   );
                 },
               ),
@@ -189,6 +194,7 @@ class SongTile extends ConsumerWidget {
   final String? searchQuery;
   final Playlist? playlist;
   final bool showAlbum;
+  final String? queueName;
 
   const SongTile({
     required this.song,
@@ -197,6 +203,7 @@ class SongTile extends ConsumerWidget {
     this.searchQuery,
     this.playlist,
     this.showAlbum = true,
+    this.queueName,
     super.key,
   });
 
@@ -313,7 +320,7 @@ class SongTile extends ConsumerWidget {
           if (index != -1) {
             ref
                 .read(playbackProvider.notifier)
-                .setPlaylist(songs, initialIndex: index);
+                .setPlaylist(songs, initialIndex: index, queueName: queueName ?? QueueRepository.allSongsQueueName);
           } else {
             ref.read(playbackProvider.notifier).play(song);
           }

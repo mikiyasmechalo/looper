@@ -24,6 +24,7 @@ import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:looper_player/features/streaming/data/youtube_stream_service.dart';
+import 'package:looper_player/features/playback/data/queue_repository.dart';
 
 enum RepeatMode { off, all, one }
 
@@ -141,6 +142,8 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   DateTime _lastSeekTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastPlayTime = DateTime.fromMillisecondsSinceEpoch(0);
   bool _isDucked = false;
+  final QueueRepository _queueRepo = QueueRepository();
+  String _activeQueueName = '';
 
   PlaybackNotifier(this.ref) : super(PlaybackState()) {
     if (Platform.isAndroid) {
@@ -379,6 +382,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     // Load last settings
     final settings = ref.read(settingsProvider);
+    _activeQueueName = settings.activeQueueName;
     state = state.copyWith(
       volume: settings.volume,
       isShuffle: settings.shuffle,
@@ -419,13 +423,8 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     final savedIndex = settings.lastQueueIndex;
     
     if (settings.persistQueue && savedSongIds.isNotEmpty) {
-      final List<Song> loadedSongs = [];
-      for (final id in savedSongIds) {
-        final song = await DbService.isar.songs.get(id);
-        if (song != null) {
-          loadedSongs.add(song);
-        }
-      }
+      final rawSongs = await DbService.isar.songs.getAll(savedSongIds);
+      final List<Song> loadedSongs = rawSongs.whereType<Song>().toList();
       if (loadedSongs.isNotEmpty) {
         _playlist = loadedSongs;
         _originalPlaylist = List.from(loadedSongs);
@@ -484,7 +483,15 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
-  void setPlaylist(List<Song> songs, {int initialIndex = 0}) {
+  void setPlaylist(List<Song> songs, {int initialIndex = 0, String? queueName}) {
+    if (queueName != null && queueName != _activeQueueName) {
+      if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
+        _persistNamedQueue(_activeQueueName);
+      }
+      _activeQueueName = queueName;
+      ref.read(settingsProvider.notifier).updateActiveQueueName(queueName);
+    }
+
     // Extract manual queue songs before replacing the playlist
     final start = _currentIndex + 1;
     final end = (start + _manualQueueCount).clamp(0, _playlist.length);
@@ -527,12 +534,70 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     if (_playlist.isNotEmpty && _currentIndex != -1) {
       play(_playlist[_currentIndex]);
     }
+    _saveQueueState();
+  }
+
+  Future<void> switchToSavedQueue(SavedQueue savedQueue) async {
+    if (savedQueue.name == _activeQueueName) return;
+    final wasPlaying = state.isPlaying;
+
+    if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
+      await _persistNamedQueue(_activeQueueName);
+    }
+
+    final rawSongs = await DbService.isar.songs.getAll(savedQueue.songIds);
+    final songs = rawSongs.whereType<Song>().toList();
+
+    if (songs.isEmpty && savedQueue.name == QueueRepository.allSongsQueueName) {
+      final all = await DbService.isar.songs.where().findAll();
+      songs.addAll(all);
+    }
+    if (songs.isEmpty) return;
+
+    _activeQueueName = savedQueue.name;
+    _playlist = songs;
+    _originalPlaylist = List.from(songs);
+    _currentIndex = (savedQueue.currentIndex >= 0 && savedQueue.currentIndex < songs.length)
+        ? savedQueue.currentIndex
+        : 0;
+    _manualQueueCount = 0;
+
+    state = state.copyWith(
+      queue: List.from(_playlist),
+      isShuffle: savedQueue.isShuffle,
+    );
+
+    await ref.read(settingsProvider.notifier).updateActiveQueueName(savedQueue.name);
+
+    final targetSong = _playlist[_currentIndex];
+    final targetPos = Duration(milliseconds: savedQueue.positionMs);
+
+    await play(
+      targetSong,
+      forceDisableCrossfade: true,
+      play: wasPlaying,
+      initialPosition: targetPos,
+    );
+
+    await _saveQueueState();
+  }
+
+  Future<void> deleteQueue(String name) async {
+    await _queueRepo.delete(name);
   }
 
   /// Starts playback of [songs] in a fully shuffled order, including a
   /// random first song, and turns shuffle mode on.
-  Future<void> playShuffled(List<Song> songs) async {
+  Future<void> playShuffled(List<Song> songs, {String? queueName}) async {
     if (songs.isEmpty) return;
+
+    if (queueName != null && queueName != _activeQueueName) {
+      if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
+        await _persistNamedQueue(_activeQueueName);
+      }
+      _activeQueueName = queueName;
+      await ref.read(settingsProvider.notifier).updateActiveQueueName(queueName);
+    }
 
     _originalPlaylist = List.from(songs);
     _playlist = List<Song>.from(songs)..shuffle();
@@ -552,9 +617,17 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
   /// Shuffles the album/artist order but keeps each group's songs together as a
   /// contiguous block, so e.g. "shuffle albums" plays whole albums at once.
-  Future<void> playShuffledGrouped(List<List<Song>> groups) async {
+  Future<void> playShuffledGrouped(List<List<Song>> groups, {String? queueName}) async {
     final nonEmpty = groups.where((g) => g.isNotEmpty).toList();
     if (nonEmpty.isEmpty) return;
+
+    if (queueName != null && queueName != _activeQueueName) {
+      if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
+        await _persistNamedQueue(_activeQueueName);
+      }
+      _activeQueueName = queueName;
+      await ref.read(settingsProvider.notifier).updateActiveQueueName(queueName);
+    }
 
     final shuffledGroups = List<List<Song>>.from(nonEmpty)..shuffle();
     final queue = <Song>[];
@@ -2106,10 +2179,32 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       _currentIndex,
       state.currentSong?.id,
       positionMs: state.position.inMilliseconds,
+      activeQueueName: _activeQueueName,
     );
+    if (_activeQueueName.isNotEmpty) {
+      await _persistNamedQueue(_activeQueueName);
+    }
+  }
+
+  Future<void> _persistNamedQueue(String name) async {
+    final q = SavedQueue()
+      ..name = name
+      ..songIds = _playlist.map((s) => s.id).toList()
+      ..currentIndex = _currentIndex
+      ..positionMs = state.position.inMilliseconds
+      ..isShuffle = state.isShuffle
+      ..lastPlayed = DateTime.now()
+      ..isPermanent = (name == QueueRepository.allSongsQueueName);
+    await _queueRepo.save(q);
   }
 
   Future<void> _ensureDynamicQueue() async {
+    // Only auto-fill random songs for the "All Songs" queue or an un-named fallback queue.
+    // Specific playlists, albums, artists, Quick Picks, Recently Played, etc., preserve their exact song lists.
+    final bool isAllSongsQueue =
+        _activeQueueName.isEmpty || _activeQueueName == QueueRepository.allSongsQueueName;
+    if (!isAllSongsQueue) return;
+
     final allSongs = await DbService.isar.songs.where().findAll();
     if (allSongs.isEmpty) return;
 

@@ -382,7 +382,7 @@ class AndroidLibraryTab extends ConsumerWidget {
         useExpanded: false,
         onTap: () {
           HapticFeedback.lightImpact();
-          ref.read(playbackProvider.notifier).setPlaylist(recentSongs, initialIndex: index);
+          ref.read(playbackProvider.notifier).setPlaylist(recentSongs, initialIndex: index, queueName: 'Recently Played');
         },
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
