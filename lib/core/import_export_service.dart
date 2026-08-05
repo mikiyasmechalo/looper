@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:isar/isar.dart';
 import 'db_service.dart';
 import 'logger_helper.dart';
+import 'app_fonts.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/library/presentation/library_notifier.dart';
 
@@ -107,7 +108,7 @@ class ImportExportService {
         // Try to match song by path first
         var song = await DbService.isar.songs.filter().pathEqualTo(path).findFirst();
 
-        // Fallback: match by title and artist if path fails (path drift/drive change)
+        // Fallback: match by title and artist if path fails
         if (song == null && title != null && artist != null) {
           song = await DbService.isar.songs.filter()
               .titleEqualTo(title)
@@ -181,5 +182,298 @@ class ImportExportService {
         behavior: SnackBarBehavior.floating,
       ));
     }
+  }
+
+  static Future<void> exportSinglePlaylist(
+    BuildContext context,
+    Playlist playlist,
+    List<Song> songs,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Format Selection Dialog
+    final String? chosenFormat = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Theme.of(dialogContext).colorScheme.surfaceContainer,
+          title: Text(
+            'Export Playlist',
+            style: AppFonts.jostStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          content: Text(
+            'Choose format for "${playlist.name}":',
+            style: AppFonts.jostStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'm3u8'),
+              child: Text('M3U8 (Universal)', style: AppFonts.jostStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'json'),
+              child: Text('JSON (Full Metadata)', style: AppFonts.jostStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, null),
+              child: Text('Cancel', style: AppFonts.jostStyle(color: Colors.white54)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (chosenFormat == null) return;
+
+    final sanitizedName = playlist.name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+    final String defaultFileName = '$sanitizedName.$chosenFormat';
+
+    String? savePath;
+    try {
+      savePath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Export Playlist "${playlist.name}"',
+        fileName: defaultFileName,
+        type: FileType.custom,
+        allowedExtensions: [chosenFormat],
+      );
+    } catch (e) {
+      LoggerHelper.write('ImportExportService: FilePicker.saveFile fallback required: $e');
+    }
+
+    String content;
+    if (chosenFormat == 'json') {
+      final jsonMap = {
+        'type': 'looper_playlist',
+        'version': 1,
+        'name': playlist.name,
+        'dateCreated': playlist.dateCreated.toIso8601String(),
+        'dateModified': playlist.dateModified.toIso8601String(),
+        'songs': songs.map((s) => {
+          'path': s.path,
+          'title': s.title,
+          'artist': s.artist,
+          'album': s.album,
+          'duration': s.duration,
+        }).toList(),
+      };
+      content = const JsonEncoder.withIndent('  ').convert(jsonMap);
+    } else {
+      // M3U8 format
+      final buffer = StringBuffer();
+      buffer.writeln('#EXTM3U');
+      buffer.writeln('#PLAYLIST:${playlist.name}');
+      for (final s in songs) {
+        final durationSec = s.duration != null ? (s.duration! / 1000).round() : -1;
+        final artistStr = s.artist ?? 'Unknown Artist';
+        buffer.writeln('#EXTINF:$durationSec,$artistStr - ${s.title}');
+        buffer.writeln(s.path);
+      }
+      content = buffer.toString();
+    }
+
+    if (savePath != null && savePath.isNotEmpty) {
+      final file = File(savePath);
+      await file.writeAsString(content);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Exported playlist "${playlist.name}"'),
+          backgroundColor: Colors.green.shade800,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  static Future<void> importPlaylistFiles(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['m3u', 'm3u8', 'json'],
+        allowMultiple: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      // Pre-load all songs in library for fast matching
+      final allLibrarySongs = await DbService.isar.songs.where().findAll();
+      final exactPathMap = <String, String>{};
+      final filenameMap = <String, String>{};
+      final titleArtistMap = <String, String>{};
+
+      for (final song in allLibrarySongs) {
+        exactPathMap[song.path.toLowerCase()] = song.path;
+        final fname = song.path.split(RegExp(r'[/\\]')).last.toLowerCase();
+        filenameMap[fname] = song.path;
+        if (song.artist != null && song.artist!.isNotEmpty) {
+          final key = '${song.artist!.toLowerCase()} - ${song.title.toLowerCase()}';
+          titleArtistMap[key] = song.path;
+        }
+      }
+
+      int playlistsImported = 0;
+      int totalTracksMatched = 0;
+
+      for (final fileObj in result.files) {
+        if (fileObj.path == null) continue;
+        final file = File(fileObj.path!);
+        final content = await file.readAsString();
+        final ext = fileObj.extension?.toLowerCase();
+
+        String playlistName = fileObj.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+        final matchedSongPaths = <String>[];
+
+        if (ext == 'json') {
+          try {
+            final Map<String, dynamic> data = jsonDecode(content);
+            if (data.containsKey('name')) {
+              playlistName = data['name'] as String;
+            }
+            final songList = data['songs'] as List<dynamic>? ?? [];
+            for (final item in songList) {
+              if (item is Map<String, dynamic>) {
+                final path = item['path'] as String?;
+                final title = item['title'] as String?;
+                final artist = item['artist'] as String?;
+
+                final matched = _matchTrackPath(
+                  path: path,
+                  title: title,
+                  artist: artist,
+                  exactPathMap: exactPathMap,
+                  filenameMap: filenameMap,
+                  titleArtistMap: titleArtistMap,
+                );
+                if (matched != null && !matchedSongPaths.contains(matched)) {
+                  matchedSongPaths.add(matched);
+                }
+              }
+            }
+          } catch (_) {}
+        } else {
+          // M3U or M3U8
+          final lines = LineSplitter.split(content).map((l) => l.trim()).toList();
+          String? currentTitle;
+          String? currentArtist;
+
+          for (final line in lines) {
+            if (line.isEmpty) continue;
+            if (line.startsWith('#PLAYLIST:')) {
+              playlistName = line.substring(10).trim();
+            } else if (line.startsWith('#EXTINF:')) {
+              final commaIdx = line.indexOf(',');
+              if (commaIdx != -1) {
+                final meta = line.substring(commaIdx + 1).trim();
+                final parts = meta.split(' - ');
+                if (parts.length >= 2) {
+                  currentArtist = parts[0].trim();
+                  currentTitle = parts.sublist(1).join(' - ').trim();
+                } else {
+                  currentTitle = meta;
+                }
+              }
+            } else if (!line.startsWith('#')) {
+              // Track path line
+              final matched = _matchTrackPath(
+                path: line,
+                title: currentTitle,
+                artist: currentArtist,
+                exactPathMap: exactPathMap,
+                filenameMap: filenameMap,
+                titleArtistMap: titleArtistMap,
+              );
+              if (matched != null && !matchedSongPaths.contains(matched)) {
+                matchedSongPaths.add(matched);
+              }
+              currentTitle = null;
+              currentArtist = null;
+            }
+          }
+        }
+
+        if (matchedSongPaths.isNotEmpty) {
+          var existing = await DbService.isar.playlists
+              .filter()
+              .nameEqualTo(playlistName)
+              .findFirst();
+
+          if (existing != null) {
+            final merged = Set<String>.from(existing.songPaths)..addAll(matchedSongPaths);
+            existing.songPaths = merged.toList();
+            existing.dateModified = DateTime.now();
+            await DbService.isar.writeTxn(() => DbService.isar.playlists.put(existing));
+          } else {
+            final newPl = Playlist()
+              ..name = playlistName
+              ..songPaths = matchedSongPaths
+              ..dateCreated = DateTime.now()
+              ..dateModified = DateTime.now();
+            await DbService.isar.writeTxn(() => DbService.isar.playlists.put(newPl));
+          }
+          playlistsImported++;
+          totalTracksMatched += matchedSongPaths.length;
+        }
+      }
+
+      if (playlistsImported > 0) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Imported $playlistsImported playlist(s) ($totalTracksMatched tracks matched)'),
+            backgroundColor: Colors.green.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('No matching tracks found in library for imported playlist(s)'),
+            backgroundColor: Colors.orange.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e, stack) {
+      LoggerHelper.write('ImportExportService: Failed to import playlist file', e, stack);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to import playlist: $e'),
+          backgroundColor: Colors.red.shade800,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  static String? _matchTrackPath({
+    String? path,
+    String? title,
+    String? artist,
+    required Map<String, String> exactPathMap,
+    required Map<String, String> filenameMap,
+    required Map<String, String> titleArtistMap,
+  }) {
+    // 1. Exact path match
+    if (path != null && path.isNotEmpty) {
+      final normPath = path.toLowerCase();
+      if (exactPathMap.containsKey(normPath)) {
+        return exactPathMap[normPath];
+      }
+      // 2. Filename match
+      final fname = path.split(RegExp(r'[/\\]')).last.toLowerCase();
+      if (filenameMap.containsKey(fname)) {
+        return filenameMap[fname];
+      }
+    }
+    // 3. Artist - Title match
+    if (artist != null && title != null && artist.isNotEmpty && title.isNotEmpty) {
+      final key = '${artist.toLowerCase()} - ${title.toLowerCase()}';
+      if (titleArtistMap.containsKey(key)) {
+        return titleArtistMap[key];
+      }
+    }
+    return null;
   }
 }

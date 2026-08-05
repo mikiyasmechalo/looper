@@ -10,6 +10,7 @@ import 'package:isar/isar.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/widgets/app_input_dialog.dart';
+import 'package:looper_player/core/import_export_service.dart';
 import 'package:looper_player/ui/widgets/playlist_artwork.dart';
 import 'package:looper_player/ui/widgets/playlist_options_bottom_sheet.dart';
 
@@ -92,6 +93,18 @@ class PlaylistView extends ConsumerWidget {
                     ),
                   ),
                   const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => ImportExportService.importPlaylistFiles(context, ref),
+                    icon: const Icon(LucideIcons.upload, size: 16),
+                    label: Text(
+                      'Import',
+                      style: AppFonts.jostStyle(fontSize: 13),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () => _showCreateDialog(context, ref),
                     icon: const Icon(LucideIcons.plus, size: 16),
@@ -194,105 +207,68 @@ class _PlaylistCard extends ConsumerWidget {
                 .anyOf(playlist.songPaths, (q, path) => q.pathEqualTo(path))
                 .findAll();
 
-        final songMap = {for (var s in loaded) s.path: s};
-        final orderedSongs = playlist.songPaths
-            .map((path) => songMap[path])
-            .whereType<Song>()
-            .toList();
+            final songMap = {for (var s in loaded) s.path: s};
+            final orderedSongs = playlist.songPaths
+                .map((path) => songMap[path])
+                .whereType<Song>()
+                .toList();
 
-        ref
-            .read(appNavigationProvider.notifier)
-            .showCollection(
-              title: playlist.name,
-              subtitle: 'Playlist',
-              songs: orderedSongs,
-              playlist: playlist,
-              highlightItem: NavItem.playlists,
-            );
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
+            ref
+                .read(appNavigationProvider.notifier)
+                .showCollection(
+                  title: playlist.name,
+                  subtitle: 'Playlist',
+                  songs: orderedSongs,
+                  playlist: playlist,
+                  highlightItem: NavItem.playlists,
+                );
+          },
           borderRadius: BorderRadius.circular(20),
-          color: isSelected
-              ? const Color.fromARGB(
-                  255,
-                  53,
-                  53,
-                  53,
-                ).withValues(alpha: isDynamic ? 0.3 : 0.1)
-              : Colors.transparent,
-          border: isSelected
-              ? Border.all(
-                  color: Colors.white10.withValues(alpha: 0.1),
-                  width: 1,
-                )
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: PlaylistArtwork(
-                    songs: songs,
-                    fallbackBackground: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer.withValues(
-                      alpha: isDynamic ? 0.8 : 0.3,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: isSelected
+                  ? const Color.fromARGB(255, 53, 53, 53)
+                  : Colors.transparent,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Center(
+                    child: PlaylistArtwork(
+                      songs: songs,
+                      fallbackBackground: Colors.white10,
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    playlist.name,
-                    style: AppFonts.jostStyle(
-                      fontWeight: FontWeight.normal,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 12),
+                Text(
+                  playlist.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.jostStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
                   ),
-                  Text(
-                    '${playlist.songPaths.length} songs',
-                    style: AppFonts.jostStyle(
-                      color: Colors.grey[400],
-                      fontSize: 12,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${songs.length} songs',
+                  style: AppFonts.jostStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 }
-

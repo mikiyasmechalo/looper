@@ -16,6 +16,7 @@ import 'package:looper_player/ui/widgets/artist_image.dart';
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/ui/widgets/playlist_selector.dart';
+import 'package:looper_player/core/import_export_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Shows the context menu (Play / Shuffle / Play Next / Add to Queue / Add to
@@ -138,6 +139,7 @@ void showCollectionOptionsBottomSheet({
   String? imageUrl,
   List<String>? images,
   required List<Song> songs,
+  Playlist? playlist,
   List<List<Song>>? shuffleGroups,
   String? imageActionLabel,
   Future<void> Function()? onImageAction,
@@ -155,6 +157,7 @@ void showCollectionOptionsBottomSheet({
       imageUrl: imageUrl,
       images: images,
       songs: songs,
+      playlist: playlist,
       shuffleGroups: shuffleGroups,
       imageActionLabel: imageActionLabel,
       onImageAction: onImageAction,
@@ -169,6 +172,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   final String? imageUrl;
   final List<String>? images;
   final List<Song> songs;
+  final Playlist? playlist;
   final List<List<Song>>? shuffleGroups;
   final String? imageActionLabel;
   final Future<void> Function()? onImageAction;
@@ -180,6 +184,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
     this.imageUrl,
     this.images,
     required this.songs,
+    this.playlist,
     this.shuffleGroups,
     this.imageActionLabel,
     this.onImageAction,
@@ -434,6 +439,17 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                         _showPlaylistSelector(context, ref);
                       },
                     ),
+                    if (playlist != null)
+                      MenuOptionTile(
+                        label: 'Export Playlist',
+                        icon: LucideIcons.download,
+                        iconColor: accentColor,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                          ImportExportService.exportSinglePlaylist(context, playlist!, songs);
+                        },
+                      ),
                     if (imageActionLabel != null && onImageAction != null)
                       MenuOptionTile(
                         label: imageActionLabel!,

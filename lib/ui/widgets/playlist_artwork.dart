@@ -11,27 +11,36 @@ import 'package:looper_player/ui/widgets/optimized_image.dart';
 class PlaylistArtwork extends StatelessWidget {
   final List<Song> songs;
   final Color fallbackBackground;
+  final BorderRadius? borderRadius;
 
   const PlaylistArtwork({
     super.key,
     required this.songs,
     required this.fallbackBackground,
+    this.borderRadius,
   });
 
   @override
   Widget build(BuildContext context) {
     final distinct = _distinctArtworks();
+    final effectiveRadius = borderRadius ?? BorderRadius.circular(16);
 
+    Widget content;
     if (distinct.isEmpty) {
-      return Container(
+      content = Container(
         color: fallbackBackground,
         child: const Center(
           child: Icon(LucideIcons.listMusic, size: 48, color: Colors.grey),
         ),
       );
+    } else {
+      content = _buildCollage(distinct);
     }
 
-    return _buildCollage(distinct);
+    return ClipRRect(
+      borderRadius: effectiveRadius,
+      child: content,
+    );
   }
 
   List<String> _distinctArtworks() {

@@ -11,6 +11,7 @@ import 'package:looper_player/features/playlists/presentation/playlist_view.dart
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/widgets/app_input_dialog.dart';
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
+import 'package:looper_player/core/import_export_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Shows the context menu for a playlist: playback actions, rename and delete.
@@ -152,6 +153,15 @@ Future<void> showPlaylistOptionsBottomSheet({
                               .read(playbackProvider.notifier)
                               .addToQueueMany(songs);
                           Navigator.pop(context);
+                        },
+                      ),
+                      MenuOptionTile(
+                        label: 'Export Playlist',
+                        icon: LucideIcons.download,
+                        iconColor: accentColor,
+                        onTap: () {
+                          Navigator.pop(context);
+                          ImportExportService.exportSinglePlaylist(context, playlist, songs);
                         },
                       ),
                       MenuOptionTile(
