@@ -69,7 +69,12 @@ class SongsList extends ConsumerWidget {
                               HapticFeedback.lightImpact();
                               ref
                                   .read(playbackProvider.notifier)
-                                  .playShuffled(songs, queueName: queueName ?? QueueRepository.allSongsQueueName);
+                                  .playShuffled(
+                                    songs,
+                                    queueName:
+                                        queueName ??
+                                        QueueRepository.allSongsQueueName,
+                                  );
                             },
                       icon: const Icon(LucideIcons.shuffle, size: 18),
                       tooltip: l10n.shuffleTitle,
@@ -320,7 +325,11 @@ class SongTile extends ConsumerWidget {
           if (index != -1) {
             ref
                 .read(playbackProvider.notifier)
-                .setPlaylist(songs, initialIndex: index, queueName: queueName ?? QueueRepository.allSongsQueueName);
+                .setPlaylist(
+                  songs,
+                  initialIndex: index,
+                  queueName: queueName ?? QueueRepository.allSongsQueueName,
+                );
           } else {
             ref.read(playbackProvider.notifier).play(song);
           }
@@ -820,6 +829,7 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -842,16 +852,31 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _controller.reverse(),
-      onSecondaryTap: widget.onSecondaryTap,
-      behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: _isHovered ? 80 : 220),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          color: _isHovered
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: GestureDetector(
+          onTapDown: (_) => _controller.forward(),
+          onTapUp: (_) {
+            _controller.reverse();
+            widget.onTap();
+          },
+          onTapCancel: () => _controller.reverse(),
+          onSecondaryTap: widget.onSecondaryTap,
+          behavior: HitTestBehavior.opaque,
+          child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+        ),
+      ),
     );
   }
 }

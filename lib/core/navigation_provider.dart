@@ -26,6 +26,7 @@ enum NavItem {
 class NavigationState {
   final NavItem activeItem;
   final NavItem? highlightItem;
+  final NavItem? searchSourceTab;
   final String? collectionTitle;
   final String? collectionSubtitle;
   final String? collectionArt;
@@ -39,6 +40,7 @@ class NavigationState {
   NavigationState({
     required this.activeItem,
     this.highlightItem,
+    this.searchSourceTab,
     this.collectionTitle,
     this.collectionSubtitle,
     this.collectionArt,
@@ -53,6 +55,7 @@ class NavigationState {
   NavigationState copyWith({
     NavItem? activeItem,
     NavItem? Function()? highlightItem,
+    NavItem? Function()? searchSourceTab,
     String? collectionTitle,
     String? collectionSubtitle,
     String? collectionArt,
@@ -68,6 +71,9 @@ class NavigationState {
       highlightItem: highlightItem != null
           ? highlightItem()
           : this.highlightItem,
+      searchSourceTab: searchSourceTab != null
+          ? searchSourceTab()
+          : this.searchSourceTab,
       collectionTitle: collectionTitle ?? this.collectionTitle,
       collectionSubtitle: collectionSubtitle ?? this.collectionSubtitle,
       collectionArt: collectionArt ?? this.collectionArt,
@@ -92,12 +98,22 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
       return;
     }
 
-    // Push current state to history
-    final newHistory = List<NavigationState>.from(state.history)
-      ..add(_captureCurrentState());
+    final sourceTab = item == NavItem.search
+        ? (state.highlightItem ?? state.activeItem)
+        : state.searchSourceTab;
+
+    // Do not push NavItem.search into navigation history
+    final newHistory = List<NavigationState>.from(state.history);
+    if (state.activeItem != NavItem.search) {
+      newHistory.add(_captureCurrentState());
+    }
+
+    final nextHighlight = item == NavItem.search ? state.highlightItem : null;
 
     state = NavigationState(
       activeItem: item,
+      highlightItem: nextHighlight,
+      searchSourceTab: sourceTab,
       history: newHistory,
       isPlayerExpanded: state.isPlayerExpanded,
     );
@@ -127,13 +143,16 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
       return;
     }
 
-    // Push current state to history
-    final newHistory = List<NavigationState>.from(state.history)
-      ..add(_captureCurrentState());
+    // Do not push NavItem.search into navigation history
+    final newHistory = List<NavigationState>.from(state.history);
+    if (state.activeItem != NavItem.search) {
+      newHistory.add(_captureCurrentState());
+    }
 
     state = NavigationState(
       activeItem: NavItem.collectionDetail,
       highlightItem: highlightItem,
+      searchSourceTab: state.searchSourceTab,
       collectionTitle: title,
       collectionSubtitle: subtitle,
       collectionArt: art,
@@ -152,16 +171,28 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
       return;
     }
 
-    final previousState = state.history.last;
-    final newHistory = List<NavigationState>.from(state.history)..removeLast();
+    final newHistory = List<NavigationState>.from(state.history);
+    NavigationState? target;
+    while (newHistory.isNotEmpty) {
+      final candidate = newHistory.removeLast();
+      if (candidate.activeItem != NavItem.search) {
+        target = candidate;
+        break;
+      }
+    }
 
-    state = previousState.copyWith(history: newHistory);
+    if (target != null) {
+      state = target.copyWith(history: newHistory);
+    } else {
+      state = NavigationState(activeItem: NavItem.home);
+    }
   }
 
   NavigationState _captureCurrentState() {
     return NavigationState(
       activeItem: state.activeItem,
       highlightItem: state.highlightItem,
+      searchSourceTab: state.searchSourceTab,
       collectionTitle: state.collectionTitle,
       collectionSubtitle: state.collectionSubtitle,
       collectionArt: state.collectionArt,

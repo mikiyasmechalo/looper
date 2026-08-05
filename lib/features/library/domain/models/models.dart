@@ -183,6 +183,12 @@ class AppSettings {
   int genreSortOptionIndex = 0;
   int collectionSortOptionIndex = 0;
   bool collectionSortAscending = true;
+  int albumDetailSortOptionIndex = 0;
+  bool albumDetailSortAscending = true;
+  int artistDetailSortOptionIndex = 1;
+  bool artistDetailSortAscending = true;
+  int playlistDetailSortOptionIndex = 0;
+  bool playlistDetailSortAscending = true;
 
   double homeDarkness = 0.62;
   double songsDarkness = 0.62;

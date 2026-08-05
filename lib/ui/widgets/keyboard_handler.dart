@@ -80,7 +80,7 @@ class _KeyboardHandlerState extends ConsumerState<KeyboardHandler> {
       }
       final navState = ref.read(appNavigationProvider);
       if (navState.activeItem == NavItem.search) {
-        nav.setItem(NavItem.home);
+        nav.goBack();
         return true;
       }
       if (navState.isPlayerExpanded) {

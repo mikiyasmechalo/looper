@@ -47,12 +47,10 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
     _debounceTimer?.cancel();
     _controller.clear();
     ref.read(searchQueryProvider.notifier).state = '';
-    // Unfocus the search bar to return to music control mode
     FocusManager.instance.primaryFocus?.unfocus();
 
-    // If we are currently in the search view, exit to home
     if (ref.read(appNavigationProvider).activeItem == NavItem.search) {
-      ref.read(appNavigationProvider.notifier).setItem(NavItem.home);
+      ref.read(appNavigationProvider.notifier).goBack();
     }
   }
 
@@ -62,9 +60,41 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
     final isDynamic = settings.enableDynamicTheming;
     final nav = ref.watch(appNavigationProvider);
     final l10n = AppLocalizations.of(context)!;
+
+    final sourceTab = nav.activeItem == NavItem.search
+        ? nav.searchSourceTab
+        : (nav.highlightItem ?? nav.activeItem);
+
+    final String hintText;
+    switch (sourceTab) {
+      case NavItem.albums:
+        hintText = 'Search albums...';
+        break;
+      case NavItem.artists:
+        hintText = 'Search artists...';
+        break;
+      case NavItem.playlists:
+        hintText = 'Search playlists...';
+        break;
+      case NavItem.genres:
+        hintText = 'Search genres...';
+        break;
+      default:
+        hintText = l10n.searchSongsHint;
+        break;
+    }
+
     ref.listen<String>(searchQueryProvider, (prev, next) {
       if (next.isEmpty && _controller.text.isNotEmpty) {
         _controller.clear();
+      }
+    });
+
+    ref.listen<NavigationState>(appNavigationProvider, (prev, next) {
+      if (prev?.activeItem != next.activeItem && next.activeItem != NavItem.search) {
+        if (ref.read(searchQueryProvider).isNotEmpty) {
+          ref.read(searchQueryProvider.notifier).state = '';
+        }
       }
     });
 
@@ -151,7 +181,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
                           }
                         },
                         decoration: InputDecoration(
-                          hintText: l10n.searchSongsHint,
+                          hintText: hintText,
                           hintStyle: AppFonts.jostStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 14,

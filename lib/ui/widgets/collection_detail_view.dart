@@ -57,15 +57,21 @@ class CollectionDetailView extends ConsumerWidget {
     final activeSong = ref.watch(playbackProvider.select((s) => s.currentSong));
     final l10n = AppLocalizations.of(context)!;
 
-    // Album detail pages list tracks from a single album, so the album name
-    // next to each artist would be redundant there. Other collections (artist,
-    // genre, playlist, search, etc.) show it.
+    final nav = ref.watch(appNavigationProvider);
+
+    final bool isArtistCollection = playlist == null &&
+        (nav.highlightItem == NavItem.artists ||
+            subtitle == l10n.artist ||
+            subtitle?.toLowerCase() == 'artist' ||
+            subtitle == l10n.artists);
+
+    final bool isPlaylistCollection = playlist != null ||
+        nav.highlightItem == NavItem.playlists ||
+        subtitle == 'Playlist';
+
     final bool isAlbumCollection = playlist == null &&
-        subtitle != null &&
-        subtitle != l10n.artist &&
-        subtitle?.toLowerCase() != 'artist' &&
-        subtitle != l10n.artists &&
-        subtitle != 'Playlist' &&
+        !isArtistCollection &&
+        !isPlaylistCollection &&
         subtitle != l10n.genre &&
         subtitle?.toLowerCase() != 'genre';
 
@@ -85,8 +91,22 @@ class CollectionDetailView extends ConsumerWidget {
         ? (playlistSongsAsync.value ?? <Song>[])
         : songs;
 
-    final sortOptionIndex = ref.watch(settingsProvider.select((s) => s.collectionSortOptionIndex));
-    final isAscending = ref.watch(settingsProvider.select((s) => s.collectionSortAscending));
+    final int sortOptionIndex;
+    final bool isAscending;
+
+    if (isAlbumCollection) {
+      sortOptionIndex = ref.watch(settingsProvider.select((s) => s.albumDetailSortOptionIndex));
+      isAscending = ref.watch(settingsProvider.select((s) => s.albumDetailSortAscending));
+    } else if (isArtistCollection) {
+      sortOptionIndex = ref.watch(settingsProvider.select((s) => s.artistDetailSortOptionIndex));
+      isAscending = ref.watch(settingsProvider.select((s) => s.artistDetailSortAscending));
+    } else if (isPlaylistCollection) {
+      sortOptionIndex = ref.watch(settingsProvider.select((s) => s.playlistDetailSortOptionIndex));
+      isAscending = ref.watch(settingsProvider.select((s) => s.playlistDetailSortAscending));
+    } else {
+      sortOptionIndex = ref.watch(settingsProvider.select((s) => s.collectionSortOptionIndex));
+      isAscending = ref.watch(settingsProvider.select((s) => s.collectionSortAscending));
+    }
     final sortOption = CollectionSortOption.values[sortOptionIndex.clamp(0, CollectionSortOption.values.length - 1)];
     final sortedSongs = List<Song>.from(songsToRender);
     switch (sortOption) {
@@ -430,15 +450,67 @@ class CollectionDetailView extends ConsumerWidget {
         final l10n = AppLocalizations.of(context)!;
         final settings = ref.watch(settingsProvider);
         final accentColor = Color(settings.accentColor);
-        final sortIdx = settings.collectionSortOptionIndex;
-        final isAscending = settings.collectionSortAscending;
-        // Reliable collection type from the nav highlight, instead of guessing
-        // from song contents (which breaks when a song is only matched via
-        // albumArtist or has differently-cased names). Artist views get the
-        // Album sort option and album views get the Artist sort option.
+
         final nav = ref.read(appNavigationProvider);
-        final bool isArtistCollection = nav.highlightItem == NavItem.artists;
-        final bool isAlbumCollection = nav.highlightItem == NavItem.albums;
+
+        final bool isArtistCollection = playlist == null &&
+            (nav.highlightItem == NavItem.artists ||
+                subtitle == l10n.artist ||
+                subtitle?.toLowerCase() == 'artist' ||
+                subtitle == l10n.artists);
+
+        final bool isPlaylistCollection = playlist != null ||
+            nav.highlightItem == NavItem.playlists ||
+            subtitle == 'Playlist';
+
+        final bool isAlbumCollection = playlist == null &&
+            !isArtistCollection &&
+            !isPlaylistCollection &&
+            subtitle != l10n.genre &&
+            subtitle?.toLowerCase() != 'genre';
+
+        final int sortIdx;
+        final bool isAscending;
+
+        if (isAlbumCollection) {
+          sortIdx = settings.albumDetailSortOptionIndex;
+          isAscending = settings.albumDetailSortAscending;
+        } else if (isArtistCollection) {
+          sortIdx = settings.artistDetailSortOptionIndex;
+          isAscending = settings.artistDetailSortAscending;
+        } else if (isPlaylistCollection) {
+          sortIdx = settings.playlistDetailSortOptionIndex;
+          isAscending = settings.playlistDetailSortAscending;
+        } else {
+          sortIdx = settings.collectionSortOptionIndex;
+          isAscending = settings.collectionSortAscending;
+        }
+
+        void updateSortIndex(int index) {
+          final notifier = ref.read(settingsProvider.notifier);
+          if (isAlbumCollection) {
+            notifier.updateAlbumDetailSortOptionIndex(index);
+          } else if (isArtistCollection) {
+            notifier.updateArtistDetailSortOptionIndex(index);
+          } else if (isPlaylistCollection) {
+            notifier.updatePlaylistDetailSortOptionIndex(index);
+          } else {
+            notifier.updateCollectionSortOptionIndex(index);
+          }
+        }
+
+        void updateSortAsc(bool asc) {
+          final notifier = ref.read(settingsProvider.notifier);
+          if (isAlbumCollection) {
+            notifier.updateAlbumDetailSortAscending(asc);
+          } else if (isArtistCollection) {
+            notifier.updateArtistDetailSortAscending(asc);
+          } else if (isPlaylistCollection) {
+            notifier.updatePlaylistDetailSortAscending(asc);
+          } else {
+            notifier.updateCollectionSortAscending(asc);
+          }
+        }
 
         return AppBottomSheetContainer(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -462,7 +534,7 @@ class CollectionDetailView extends ConsumerWidget {
                   TextButton.icon(
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      ref.read(settingsProvider.notifier).updateCollectionSortAscending(!isAscending);
+                      updateSortAsc(!isAscending);
                     },
                     icon: Icon(
                       isAscending ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
@@ -502,7 +574,7 @@ class CollectionDetailView extends ConsumerWidget {
                             isLast: false,
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.trackNumber.index);
+                              updateSortIndex(CollectionSortOption.trackNumber.index);
                               Navigator.pop(context);
                             },
                           ),
@@ -515,7 +587,7 @@ class CollectionDetailView extends ConsumerWidget {
                             isLast: false,
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.title.index);
+                              updateSortIndex(CollectionSortOption.title.index);
                               Navigator.pop(context);
                             },
                           ),
@@ -529,7 +601,7 @@ class CollectionDetailView extends ConsumerWidget {
                               isLast: false,
                               onTap: () {
                                 HapticFeedback.lightImpact();
-                                ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.artist.index);
+                                updateSortIndex(CollectionSortOption.artist.index);
                                 Navigator.pop(context);
                               },
                             ),
@@ -544,7 +616,7 @@ class CollectionDetailView extends ConsumerWidget {
                               isLast: false,
                               onTap: () {
                                 HapticFeedback.lightImpact();
-                                ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.album.index);
+                                updateSortIndex(CollectionSortOption.album.index);
                                 Navigator.pop(context);
                               },
                             ),
@@ -558,7 +630,7 @@ class CollectionDetailView extends ConsumerWidget {
                             isLast: false,
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.playCount.index);
+                              updateSortIndex(CollectionSortOption.playCount.index);
                               Navigator.pop(context);
                             },
                           ),
@@ -571,7 +643,7 @@ class CollectionDetailView extends ConsumerWidget {
                             isLast: false,
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.duration.index);
+                              updateSortIndex(CollectionSortOption.duration.index);
                               Navigator.pop(context);
                             },
                           ),
@@ -584,7 +656,7 @@ class CollectionDetailView extends ConsumerWidget {
                             isLast: true,
                             onTap: () {
                               HapticFeedback.lightImpact();
-                              ref.read(settingsProvider.notifier).updateCollectionSortOptionIndex(CollectionSortOption.year.index);
+                              updateSortIndex(CollectionSortOption.year.index);
                               Navigator.pop(context);
                             },
                           ),

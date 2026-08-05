@@ -208,7 +208,7 @@ class HomeDashboard extends ConsumerWidget {
           }
         }
 
-        orderedChildren.add(const SizedBox(height: 120));
+        orderedChildren.add(const SizedBox(height: 24));
 
         return ListView(
           padding: EdgeInsets.only(

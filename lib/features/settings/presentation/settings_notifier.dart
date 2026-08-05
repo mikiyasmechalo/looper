@@ -282,6 +282,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..genreSortOptionIndex = s.genreSortOptionIndex
       ..collectionSortOptionIndex = s.collectionSortOptionIndex
       ..collectionSortAscending = s.collectionSortAscending
+      ..albumDetailSortOptionIndex = s.albumDetailSortOptionIndex
+      ..albumDetailSortAscending = s.albumDetailSortAscending
+      ..artistDetailSortOptionIndex = s.artistDetailSortOptionIndex
+      ..artistDetailSortAscending = s.artistDetailSortAscending
+      ..playlistDetailSortOptionIndex = s.playlistDetailSortOptionIndex
+      ..playlistDetailSortAscending = s.playlistDetailSortAscending
       ..homeDarkness = s.homeDarkness
       ..songsDarkness = s.songsDarkness
       ..libraryDarkness = s.libraryDarkness
@@ -737,6 +743,42 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateCollectionSortAscending(bool ascending) async {
     final newState = _clone(state)..collectionSortAscending = ascending;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateAlbumDetailSortOptionIndex(int index) async {
+    final newState = _clone(state)..albumDetailSortOptionIndex = index;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateAlbumDetailSortAscending(bool ascending) async {
+    final newState = _clone(state)..albumDetailSortAscending = ascending;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateArtistDetailSortOptionIndex(int index) async {
+    final newState = _clone(state)..artistDetailSortOptionIndex = index;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateArtistDetailSortAscending(bool ascending) async {
+    final newState = _clone(state)..artistDetailSortAscending = ascending;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updatePlaylistDetailSortOptionIndex(int index) async {
+    final newState = _clone(state)..playlistDetailSortOptionIndex = index;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updatePlaylistDetailSortAscending(bool ascending) async {
+    final newState = _clone(state)..playlistDetailSortAscending = ascending;
     await _save(newState);
     state = newState;
   }

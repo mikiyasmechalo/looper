@@ -490,6 +490,9 @@ class Sidebar extends ConsumerWidget {
     final compact = MediaQuery.sizeOf(context).width < 1000;
 
     void navigateTo(NavItem item) {
+      if (item != NavItem.search) {
+        ref.read(searchQueryProvider.notifier).state = '';
+      }
       ref.read(appNavigationProvider.notifier).setItem(item);
       if (Scaffold.of(context).isDrawerOpen) {
         Navigator.of(context).pop();
