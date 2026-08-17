@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/gestures.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,8 @@ import 'package:looper_player/ui/widgets/color_maper.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'premium_progress_bar.dart';
+import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
 
 class PlayerBar extends ConsumerWidget {
   const PlayerBar({super.key});
@@ -198,6 +201,8 @@ class _PremiumPlayerBar extends ConsumerWidget {
 
                       if (stackControls)
                         const SizedBox(width: 16)
+                      else if (hoverVolume)
+                        const SizedBox(width: 8)
                       else
                         const Spacer(),
 
@@ -469,6 +474,12 @@ class _PremiumPlayerBar extends ConsumerWidget {
               .toggleItem(NavItem.queue),
           tooltip: 'Queue',
         ),
+        if (!Platform.isAndroid && !Platform.isIOS) ...<Widget>[
+          const SizedBox(width: 4),
+          const _FullscreenButton(),
+          const SizedBox(width: 4),
+          const _MiniPlayerMenuButton(),
+        ],
       ],
     );
   }
@@ -800,6 +811,131 @@ class _BouncyTapState extends State<_BouncyTap>
       onTapCancel: () => _controller.reverse(),
       behavior: HitTestBehavior.opaque,
       child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+    );
+  }
+}
+
+// ─── Mini-Player Mode picker button ──────────────────────────────────────────
+
+/// Button shown at the far right of the player bar on desktop. Opens a small
+/// popup menu that lets the user switch to either mini-player mode.
+class _MiniPlayerMenuButton extends ConsumerWidget {
+  const _MiniPlayerMenuButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(miniPlayerModeProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final isActive = mode != MiniPlayerMode.none;
+
+    return Tooltip(
+      message: 'Mini player',
+      child: IconButton(
+        icon: Icon(
+          LucideIcons.minimize2,
+          size: 16,
+          color: isActive ? colorScheme.primary : Colors.white54,
+        ),
+        onPressed: () async {
+          final service = ref.read(miniPlayerOverlayServiceProvider);
+          // Show a tiny popup menu anchored to the button.
+          final renderBox = context.findRenderObject() as RenderBox?;
+          if (renderBox == null) return;
+          final offset = renderBox.localToGlobal(Offset.zero);
+          final size = renderBox.size;
+
+          final result = await showMenu<String>(
+            context: context,
+            color: const Color(0xFF1E1E1E),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            position: RelativeRect.fromLTRB(
+              offset.dx,
+              offset.dy - 90,
+              offset.dx + size.width,
+              offset.dy,
+            ),
+            items: [
+              PopupMenuItem(
+                value: 'mini_player',
+                child: Row(
+                  children: [
+                    Icon(
+                      LucideIcons.minus,
+                      size: 15,
+                      color: mode == MiniPlayerMode.miniPlayer
+                          ? colorScheme.primary
+                          : Colors.white70,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Mini Player',
+                      style: TextStyle(
+                        color: mode == MiniPlayerMode.miniPlayer
+                            ? colorScheme.primary
+                            : Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'corner',
+                child: Row(
+                  children: [
+                    Icon(
+                      LucideIcons.layoutGrid,
+                      size: 15,
+                      color: mode == MiniPlayerMode.cornerWidget
+                          ? colorScheme.primary
+                          : Colors.white70,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Corner Widget',
+                      style: TextStyle(
+                        color: mode == MiniPlayerMode.cornerWidget
+                            ? colorScheme.primary
+                            : Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+
+          if (result == null) return;
+          if (result == 'mini_player') {
+            await service.enterMiniPlayerMode();
+          } else if (result == 'corner') {
+            await service.enterCornerWidgetMode();
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _FullscreenButton extends ConsumerWidget {
+  const _FullscreenButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return IconButton(
+      icon: const Icon(
+        LucideIcons.maximize,
+        size: 16,
+        color: Colors.white54,
+      ),
+      onPressed: () {
+        ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
+      },
+      tooltip: 'Fullscreen Player',
     );
   }
 }

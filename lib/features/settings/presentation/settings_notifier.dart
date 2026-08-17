@@ -94,6 +94,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.lyricsDarkness = 0.55;
         needsSave = true;
       }
+      if (settings.seekBarStyleIndex == -9223372036854775808 || settings.seekBarStyleIndex < 0) {
+        settings.seekBarStyleIndex = 0;
+        needsSave = true;
+      }
       if (!settings.settingsV2) {
         settings.showQualityBadge = true;
         settings.enablePlayerGradient = true;

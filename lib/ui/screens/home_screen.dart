@@ -39,6 +39,8 @@ import 'package:looper_player/core/update_service.dart';
 
 import 'android/android_main_screen.dart';
 import 'android/widgets/empty_library_view.dart';
+import 'package:looper_player/ui/widgets/mini_player_standard.dart';
+import 'package:looper_player/ui/widgets/mini_player_corner_widget.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -110,6 +112,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return const Scaffold(
         backgroundColor: Colors.transparent,
         body: OverlayLyricsWidget(),
+      );
+    }
+
+    final miniPlayerMode = ref.watch(miniPlayerModeProvider);
+    if (miniPlayerMode == MiniPlayerMode.miniPlayer) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: StandardMiniPlayer(),
+      );
+    }
+    if (miniPlayerMode == MiniPlayerMode.cornerWidget) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: CornerWidgetPlayer(),
       );
     }
 

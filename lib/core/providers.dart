@@ -29,3 +29,8 @@ final overlayModeProvider = StateProvider<bool>((ref) => false);
 
 final forceWelcomeProvider = StateProvider<bool>((ref) => false);
 
+/// Which desktop mini-player mode is currently active.
+enum MiniPlayerMode { none, miniPlayer, cornerWidget }
+
+final miniPlayerModeProvider =
+    StateProvider<MiniPlayerMode>((ref) => MiniPlayerMode.none);
