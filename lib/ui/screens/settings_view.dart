@@ -13,6 +13,8 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/folder_picker_helper.dart';
+import 'package:looper_player/features/shortcuts/presentation/shortcuts_settings_view.dart';
+import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_cheatsheet_dialog.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -21,7 +23,8 @@ class SettingsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
-    final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    final isDesktop =
+        Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -156,7 +159,10 @@ class SettingsView extends ConsumerWidget {
                           value: 'center',
                           child: Text(l10n.center),
                         ),
-                        DropdownMenuItem(value: 'right', child: Text(l10n.right)),
+                        DropdownMenuItem(
+                          value: 'right',
+                          child: Text(l10n.right),
+                        ),
                       ],
                       onChanged: (align) {
                         if (align != null) {
@@ -256,22 +262,24 @@ class SettingsView extends ConsumerWidget {
                         ),
                         ...AppLocalizations.supportedLocales.map((locale) {
                           final code = locale.languageCode;
-                          final name = {
-                            'en': 'English',
-                            'es': 'Español',
-                            'fr': 'Français',
-                            'de': 'Deutsch',
-                            'pt': 'Português',
-                            'ru': 'Русский',
-                            'it': 'Italiano',
-                            'zh': '中文',
-                            'ja': '日本語',
-                            'ko': '한국어',
-                            'ar': 'العربية',
-                            'tr': 'Türkçe',
-                            'nl': 'Nederlands',
-                            'hi': 'हिन्दी',
-                          }[code] ?? code;
+                          final name =
+                              {
+                                'en': 'English',
+                                'es': 'Español',
+                                'fr': 'Français',
+                                'de': 'Deutsch',
+                                'pt': 'Português',
+                                'ru': 'Русский',
+                                'it': 'Italiano',
+                                'zh': '中文',
+                                'ja': '日本語',
+                                'ko': '한국어',
+                                'ar': 'العربية',
+                                'tr': 'Türkçe',
+                                'nl': 'Nederlands',
+                                'hi': 'हिन्दी',
+                              }[code] ??
+                              code;
                           return DropdownMenuItem(
                             value: code,
                             child: Text(name),
@@ -404,7 +412,7 @@ class SettingsView extends ConsumerWidget {
             ),
 
             // Library Section
-             SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: _Section(
@@ -463,13 +471,13 @@ class SettingsView extends ConsumerWidget {
               ),
             ),
 
-            // System Tray Section
+            // System Tray & Mini Player Section
             if (isDesktop)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: _Section(
-                    title: l10n.systemTray,
+                    title: 'System Tray & Mini Player',
                     children: [
                       _PremiumSwitchRow(
                         icon: LucideIcons.panelTop,
@@ -481,6 +489,32 @@ class SettingsView extends ConsumerWidget {
                           ref
                               .read(settingsProvider.notifier)
                               .updateMinimizeToTray(value);
+                        },
+                        isLast: false,
+                      ),
+                      _PremiumDropdownRow<int>(
+                        icon: LucideIcons.minimize2,
+                        title: 'Default Mini Player Shortcut',
+                        subtitle:
+                            'Select which mini player style is opened by the keyboard shortcut',
+                        value: settings.defaultMiniPlayerType,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text('Mini Player '),
+                          ),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text('Corner Widget '),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            HapticFeedback.lightImpact();
+                            ref
+                                .read(settingsProvider.notifier)
+                                .updateDefaultMiniPlayerType(value);
+                          }
                         },
                         isLast: true,
                       ),
@@ -529,18 +563,9 @@ class SettingsView extends ConsumerWidget {
                         title: 'Now playing seek bar',
                         value: settings.seekBarStyleIndex,
                         items: const [
-                          DropdownMenuItem(
-                            value: 0,
-                            child: Text('Visualizer'),
-                          ),
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('Expressive'),
-                          ),
-                          DropdownMenuItem(
-                            value: 2,
-                            child: Text('Flat'),
-                          ),
+                          DropdownMenuItem(value: 0, child: Text('Visualizer')),
+                          DropdownMenuItem(value: 1, child: Text('Expressive')),
+                          DropdownMenuItem(value: 2, child: Text('Flat')),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -556,6 +581,50 @@ class SettingsView extends ConsumerWidget {
                   ),
                 ),
               ),
+
+            // Keyboard Shortcuts Section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _Section(
+                  title: 'Keyboard Shortcuts',
+                  children: [
+                    _PremiumActionRow(
+                      icon: LucideIcons.keyboard,
+                      title: 'Customize Shortcuts',
+                      subtitle:
+                          'Rebind and customize key combinations for playback, seeking, volume, and navigation',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const ShortcutsSettingsView(),
+                          ),
+                        );
+                      },
+                      trailing: const Icon(
+                        LucideIcons.chevronRight,
+                        color: Colors.white38,
+                        size: 18,
+                      ),
+                      isLast: false,
+                    ),
+                    _PremiumActionRow(
+                      icon: LucideIcons.helpCircle,
+                      title: 'Shortcuts Cheatsheet',
+                      subtitle:
+                          'Quick reference card of all currently active shortcuts (Press ?)',
+                      onTap: () => showShortcutsCheatsheetDialog(context),
+                      trailing: const Icon(
+                        LucideIcons.chevronRight,
+                        color: Colors.white38,
+                        size: 18,
+                      ),
+                      isLast: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
             // About Section
             SliverToBoxAdapter(
@@ -745,7 +814,11 @@ class _PremiumSwitchRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 22),
+                Icon(
+                  icon,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  size: 22,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -796,6 +869,7 @@ class _PremiumSwitchRow extends StatelessWidget {
 class _PremiumDropdownRow<T> extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final T value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
@@ -804,6 +878,7 @@ class _PremiumDropdownRow<T> extends StatelessWidget {
   const _PremiumDropdownRow({
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.value,
     required this.items,
     required this.onChanged,
@@ -821,15 +896,31 @@ class _PremiumDropdownRow<T> extends StatelessWidget {
               Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 22),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.45),
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
+              const SizedBox(width: 12),
               Theme(
                 data: Theme.of(
                   context,
@@ -1040,12 +1131,8 @@ class _PremiumMaintainerRow extends StatelessWidget {
   Future<void> _launchUrl(String url) async {
     final Uri uri = Uri.parse(url);
     try {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-
-      }
-    } catch (e) {
-
-    }
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {}
+    } catch (e) {}
   }
 
   @override
@@ -1292,7 +1379,11 @@ class _PremiumSliderRow extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 22),
+                  Icon(
+                    icon,
+                    color: Colors.white.withValues(alpha: 0.9),
+                    size: 22,
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(

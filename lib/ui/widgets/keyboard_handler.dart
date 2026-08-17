@@ -5,6 +5,7 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/features/search/presentation/search_view.dart';
 import 'package:looper_player/core/navigation_provider.dart';
+import 'package:looper_player/features/shortcuts/presentation/shortcuts_provider.dart';
 
 class KeyboardHandler extends ConsumerStatefulWidget {
   final Widget child;
@@ -103,72 +104,9 @@ class _KeyboardHandlerState extends ConsumerState<KeyboardHandler> {
       return false; // Let it bubble to TextField
     }
 
-    final playback = ref.read(playbackProvider.notifier);
-
-    // Global Playback Shortcuts
-    if (key == LogicalKeyboardKey.space) {
-      playback.togglePlay();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.mediaPlayPause) {
-      playback.togglePlay();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.mediaTrackNext) {
-      playback.skipNext();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.mediaTrackPrevious) {
-      playback.skipPrevious();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.arrowRight) {
-      playback.seekRelative(5);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.arrowLeft) {
-      playback.seekRelative(-5);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.arrowUp) {
-      playback.adjustVolume(0.05);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.arrowDown) {
-      playback.adjustVolume(-0.05);
-      return true;
-    }
-
-    // Functional Shortcuts
-    if (key == LogicalKeyboardKey.slash) {
-      ref.read(searchFocusNodeProvider).requestFocus();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyF &&
-        HardwareKeyboard.instance.isControlPressed) {
-      ref.read(searchFocusNodeProvider).requestFocus();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyM) {
-      playback.toggleMute();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyS) {
-      playback.toggleShuffle();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyR) {
-      playback.nextRepeatMode();
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyL) {
-      nav.toggleItem(NavItem.lyrics);
-      return true;
-    }
-    if (key == LogicalKeyboardKey.keyQ) {
-      nav.toggleItem(NavItem.queue);
-      return true;
-    }
+    // Dynamic Customizable Shortcuts
+    final handled = ref.read(shortcutsProvider.notifier).handleKeyEvent(event, ref);
+    if (handled) return true;
 
     return false;
   }

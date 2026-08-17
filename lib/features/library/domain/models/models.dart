@@ -240,6 +240,13 @@ class AppSettings {
 
   // Queue: show previously played songs in the queue list with darker styling.
   bool showPlayedSongsInQueue = true;
+
+  // Keyboard Shortcuts: JSON map of customized shortcut action IDs to key combos.
+  String customShortcutsJson = '{}';
+
+  // Desktop Mini-Player: default mini-player style triggered by shortcut.
+  // 0: standard (300x420), 1: corner widget (330x110)
+  int defaultMiniPlayerType = 0;
 }
 
 enum SeekBarStyle { visualizer, expressive, flat }

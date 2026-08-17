@@ -152,13 +152,14 @@ class _AdvancedLyricRendererState extends ConsumerState<AdvancedLyricRenderer> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final key = _lineKeys[index];
+      const targetAlignment = 0.48; // Centers the active line vertically in the middle of the viewport
       if (animate) {
         if (key?.currentContext != null) {
           Scrollable.ensureVisible(
             key!.currentContext!,
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOutCubic,
-            alignment: isSearch ? 0.5 : 0.15, // Center more for search matches
+            alignment: targetAlignment,
           );
         } else if (_scrollController.hasClients) {
           _scrollController
@@ -173,7 +174,7 @@ class _AdvancedLyricRendererState extends ConsumerState<AdvancedLyricRenderer> {
                     _lineKeys[index]!.currentContext!,
                     duration: const Duration(milliseconds: 500),
                     curve: Curves.easeInOutCubic,
-                    alignment: isSearch ? 0.5 : 0.15,
+                    alignment: targetAlignment,
                   );
                 }
               });
@@ -192,7 +193,7 @@ class _AdvancedLyricRendererState extends ConsumerState<AdvancedLyricRenderer> {
               currentKey!.currentContext!,
               duration: const Duration(milliseconds: 1000),
               curve: Curves.easeOutCubic,
-              alignment: isSearch ? 0.5 : 0.15,
+              alignment: targetAlignment,
             );
           } else if (_scrollController.hasClients) {
             _scrollController.animateTo(
@@ -245,8 +246,8 @@ class _AdvancedLyricRendererState extends ConsumerState<AdvancedLyricRenderer> {
         physics: const BouncingScrollPhysics(),
         itemCount: widget.lines.length + 1,
         padding: EdgeInsets.only(
-          top: 60.s,
-          bottom: (Platform.isAndroid || Platform.isIOS) ? 120.s : 400.s,
+          top: (Platform.isAndroid || Platform.isIOS) ? 180.s : 220.s,
+          bottom: (Platform.isAndroid || Platform.isIOS) ? 220.s : 400.s,
           left: 24.s,
           right: 24.s,
         ),

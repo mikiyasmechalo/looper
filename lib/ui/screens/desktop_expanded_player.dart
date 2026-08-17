@@ -2446,7 +2446,7 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
           currentKey!.currentContext!,
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeOutCubic,
-          alignment: 0.35,
+          alignment: 0.48,
         );
       }
     });
@@ -2462,7 +2462,7 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
           currentKey!.currentContext!,
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeOutCubic,
-          alignment: 0.35,
+          alignment: 0.48,
         );
       }
     });
@@ -2573,8 +2573,8 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
           padding: const EdgeInsets.only(
             left: 20,
             right: 28,
-            top: 100,
-            bottom: 180,
+            top: 180,
+            bottom: 260,
           ),
           itemCount: lines.length,
           itemBuilder: (context, i) {

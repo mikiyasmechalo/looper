@@ -272,6 +272,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..uniformLyricsFontSize = s.uniformLyricsFontSize
       ..fullscreenVisualizerEnabled = s.fullscreenVisualizerEnabled
       ..showPlayedSongsInQueue = s.showPlayedSongsInQueue
+      ..customShortcutsJson = s.customShortcutsJson
+      ..defaultMiniPlayerType = s.defaultMiniPlayerType
       ..fadePlayPauseStop = s.fadePlayPauseStop
       ..playPauseStopFadeLength = s.playPauseStopFadeLength
       ..resumeAfterCall = s.resumeAfterCall
@@ -482,6 +484,22 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateShowPlayedSongsInQueue(bool value) async {
     final newState = _clone(state)..showPlayedSongsInQueue = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateCustomShortcutsJson(String value) async {
+    final newState = _clone(state)..customShortcutsJson = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateDefaultMiniPlayerType(int value) async {
+    final newState = _clone(state)..defaultMiniPlayerType = value;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

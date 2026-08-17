@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'widgets/advanced_lyric_renderer.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:looper_player/ui/widgets/app_loading_indicator.dart';
+import 'package:looper_player/ui/widgets/optimized_image.dart';
 
 enum LyricsSyncMode { line, word, char }
 
@@ -23,6 +25,17 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
   void initState() {
     super.initState();
     _enableWakelock();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final currentSong = ref.read(playbackProvider).currentSong;
+        if (currentSong != null) {
+          final state = ref.read(lyricsProvider);
+          if (state.songId != currentSong.id || state.rawLrc == null) {
+            ref.read(lyricsProvider.notifier).fetchForSong(currentSong);
+          }
+        }
+      }
+    });
   }
 
   @override
@@ -34,112 +47,210 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
   Future<void> _enableWakelock() async {
     try {
       await WakelockPlus.enable();
-    } catch (e) {
-
-    }
+    } catch (_) {}
   }
 
   Future<void> _disableWakelock() async {
     try {
       await WakelockPlus.disable();
-    } catch (e) {
-
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     final lyricsState = ref.watch(lyricsProvider);
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    //final playback = ref.watch(playbackProvider);
-    // final song = playback.currentSong;
-    // final settings = ref.watch(settingsProvider);
+    final currentSong = ref.watch(playbackProvider.select((s) => s.currentSong));
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
 
-    // final lyricsDarkness = settings.lyricsDarkness.isNaN
-    //     ? 0.55
-    //     : settings.lyricsDarkness;
+    // Trigger lyrics fetch when the song changes
+    ref.listen(playbackProvider.select((s) => s.currentSong), (previous, next) {
+      if (next != null && (previous == null || previous.id != next.id)) {
+        ref.read(lyricsProvider.notifier).fetchForSong(next);
+      }
+    });
 
-    // final showDynamicBg = (settings.enableDynamicTheming || settings.dynamicLyrics) &&
-    //     !settings.blurredArtworkForLyrics &&
-    //     song?.artPath != null;
-
-    // final showBlurredArtworkBg = settings.blurredArtworkForLyrics &&
-    //     song?.artPath != null;
-
-    return Stack(
-      children: [
-        // if (showDynamicBg)
-        //   Positioned.fill(
-        //     child: FluidBackground(
-        //       key: ValueKey('lyrics_fluid_bg_${song!.path}'),
-        //       imageProvider: FileImage(File(song.artPath!)),
-        //       animate: playback.isPlaying,
-        //       blurSigma: 80,
-        //       overlayDarken: lyricsDarkness,
-        //       child: const SizedBox.expand(),
-        //     ),
-        //   )
-        // else if (showBlurredArtworkBg)
-        //   Positioned.fill(
-        //     child: Stack(
-        //       children: [
-        //         Positioned.fill(
-        //           child: ImageFiltered(
-        //             imageFilter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-        //             child: Image.file(
-        //               File(song!.artPath!),
-        //               fit: BoxFit.cover,
-        //               filterQuality: FilterQuality.low,
-        //             ),
-        //           ),
-        //         ),
-        //         Positioned.fill(
-        //           child: Container(
-        //             color: Colors.black.withValues(alpha: lyricsDarkness),
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        Column(
-          children: [
-            //const SizedBox(height: 48), // Space for floating button
-            if (_syncMode != LyricsSyncMode.line) _buildDisclaimer(),
-            Expanded(
-              child: lyricsState.isLoading
-                  ? const AppLoadingIndicator()
-                  : lyricsState.rawLrc == null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.music_note,
-                            size: 80,
-                            color: primaryColor.withValues(alpha: 0.3),
+    return SafeArea(
+      child: Column(
+        children: [
+          // Top Header Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+            child: Row(
+              children: [
+                if (currentSong != null) ...[
+                  OptimizedImage(
+                    imagePath: currentSong.artPath,
+                    width: 44,
+                    height: 44,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          currentSong.title,
+                          style: AppFonts.jostStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Lyrics not available.',
-                            style: AppFonts.spaceGroteskStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          currentSong.artist ?? 'Unknown Artist',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.white.withValues(alpha: 0.5),
                           ),
-                        ],
-                      ),
-                    )
-                  : AdvancedLyricRenderer(
-                      lines: lyricsState.parsedLines,
-                      mode: _syncMode,
-                      onSeek: (pos) =>
-                          ref.read(playbackProvider.notifier).seek(pos),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
+                  ),
+                ] else ...[
+                  Expanded(
+                    child: Text(
+                      'Lyrics',
+                      style: AppFonts.jostStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 8),
+                if (currentSong != null)
+                  _buildModeSelector(true),
+                if (currentSong != null) ...[
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(LucideIcons.rotateCcw, size: 16, color: Colors.white54),
+                    tooltip: 'Reload lyrics',
+                    onPressed: () => ref
+                        .read(lyricsProvider.notifier)
+                        .fetchForSong(currentSong, force: true),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ),
-      ],
+          ),
+
+          if (_syncMode != LyricsSyncMode.line) _buildDisclaimer(),
+
+          // Main Lyrics Content
+          Expanded(
+            child: currentSong == null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            LucideIcons.music,
+                            size: 48,
+                            color: Colors.white24,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No track currently playing',
+                          style: AppFonts.jostStyle(
+                            color: Colors.white70,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Play a song to view synchronized lyrics',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : lyricsState.isLoading
+                    ? const Center(child: AppLoadingIndicator())
+                    : (lyricsState.rawLrc == null || lyricsState.parsedLines.isEmpty)
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withValues(alpha: 0.08),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.languages,
+                                    size: 48,
+                                    color: primaryColor.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Lyrics not available',
+                                  style: AppFonts.spaceGroteskStyle(
+                                    color: Colors.white70,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'No synchronized lyrics found for "${currentSong.title}"',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.35),
+                                    fontSize: 12.5,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 20),
+                                ElevatedButton.icon(
+                                  onPressed: () => ref
+                                      .read(lyricsProvider.notifier)
+                                      .fetchForSong(currentSong, force: true),
+                                  icon: const Icon(LucideIcons.refreshCw, size: 15),
+                                  label: const Text('Search & Retry'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 11,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : AdvancedLyricRenderer(
+                            lines: lyricsState.parsedLines,
+                            mode: _syncMode,
+                            onSeek: (pos) =>
+                                ref.read(playbackProvider.notifier).seek(pos),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -171,10 +282,10 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
 
   Widget _buildModeSelector([bool isShort = false]) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -228,24 +339,24 @@ class _ModeButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: isShort ? 12 : 20,
-          vertical: isShort ? 6 : 10,
+          horizontal: isShort ? 10 : 16,
+          vertical: isShort ? 5 : 8,
         ),
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primary
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Text(
           label,
           style: AppFonts.jostStyle(
-            fontSize: isShort ? 10 : 11,
-            fontWeight: FontWeight.normal,
+            fontSize: isShort ? 9.5 : 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             color: isSelected
                 ? Theme.of(context).colorScheme.onPrimary
                 : Colors.grey[400],
-            letterSpacing: 1.2,
+            letterSpacing: 1.0,
           ),
         ),
       ),
