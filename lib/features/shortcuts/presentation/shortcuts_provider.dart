@@ -168,6 +168,18 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
       case 'toggle_favorite':
         playback.toggleFavorite();
         return true;
+      case 'set_loop_a':
+        playback.setLoopPointA();
+        return true;
+      case 'set_loop_b':
+        playback.setLoopPointB();
+        return true;
+      case 'toggle_ab_loop':
+        playback.toggleABLoop();
+        return true;
+      case 'clear_ab_loop':
+        playback.clearABLoop();
+        return true;
 
       // Seeking & Volume
       case 'seek_forward_5':

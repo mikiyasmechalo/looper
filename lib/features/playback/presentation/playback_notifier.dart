@@ -25,6 +25,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:looper_player/features/streaming/data/youtube_stream_service.dart';
 import 'package:looper_player/features/playback/data/queue_repository.dart';
+import 'package:looper_player/core/app_toast.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 enum RepeatMode { off, all, one }
 
@@ -54,6 +56,10 @@ class PlaybackState {
   final Duration? sleepTimerDurationInitial;
   final int? sleepTimerSongsInitial;
 
+  final Duration? loopStart;
+  final Duration? loopEnd;
+  final bool isABLooping;
+
   PlaybackState({
     this.currentSong,
     this.isPlaying = false,
@@ -70,6 +76,9 @@ class PlaybackState {
     this.sleepTimerSongsRemaining,
     this.sleepTimerDurationInitial,
     this.sleepTimerSongsInitial,
+    this.loopStart,
+    this.loopEnd,
+    this.isABLooping = false,
   });
 
   PlaybackState copyWith({
@@ -88,6 +97,9 @@ class PlaybackState {
     Object? sleepTimerSongsRemaining = _sentinel,
     Object? sleepTimerDurationInitial = _sentinel,
     Object? sleepTimerSongsInitial = _sentinel,
+    Object? loopStart = _sentinel,
+    Object? loopEnd = _sentinel,
+    bool? isABLooping,
   }) {
     return PlaybackState(
       currentSong: currentSong == _sentinel ? this.currentSong : currentSong as Song?,
@@ -113,6 +125,9 @@ class PlaybackState {
       sleepTimerSongsInitial: sleepTimerSongsInitial == _sentinel 
           ? this.sleepTimerSongsInitial 
           : sleepTimerSongsInitial as int?,
+      loopStart: loopStart == _sentinel ? this.loopStart : loopStart as Duration?,
+      loopEnd: loopEnd == _sentinel ? this.loopEnd : loopEnd as Duration?,
+      isABLooping: isABLooping ?? this.isABLooping,
     );
   }
 }
@@ -289,6 +304,17 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     });
 
     player.stream.position.listen((position) {
+      // Enforce A-B Section Loop
+      if (state.isABLooping &&
+          state.loopStart != null &&
+          state.loopEnd != null &&
+          state.loopEnd! > state.loopStart!) {
+        if (!state.isScrubbing && position >= state.loopEnd!) {
+          seek(state.loopStart!);
+          return;
+        }
+      }
+
       if (!state.isScrubbing) {
         state = state.copyWith(position: position);
       }
@@ -2192,6 +2218,153 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       sleepTimerSongsRemaining: null,
       sleepTimerDurationInitial: null,
       sleepTimerSongsInitial: null,
+    );
+  }
+
+  // ─── A-B Section Looper ───────────────────────────────────────────────────
+
+  String _formatLoopTime(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final millis = (d.inMilliseconds.remainder(1000) ~/ 100).toString();
+    return '$minutes:$seconds.$millis';
+  }
+
+  /// Sets Marker A (loop start). Defaults to current playback position.
+  void setLoopPointA([Duration? position]) {
+    final pos = position ?? state.position;
+    Duration? newEnd = state.loopEnd;
+    if (newEnd != null && newEnd <= pos) {
+      newEnd = null;
+    }
+    final shouldLoop = newEnd != null && newEnd > pos;
+    state = state.copyWith(
+      loopStart: pos,
+      loopEnd: newEnd,
+      isABLooping: shouldLoop,
+    );
+    AppToast.showLoopToast(
+      title: 'Marker A Set',
+      subtitle: '${_formatLoopTime(pos)}${shouldLoop ? "  •  Looping Active" : ""}',
+    );
+  }
+
+  /// Sets Marker B (loop end). Defaults to current playback position.
+  void setLoopPointB([Duration? position]) {
+    final pos = position ?? state.position;
+    final start = state.loopStart ?? Duration.zero;
+    if (pos <= start) {
+      state = state.copyWith(
+        loopStart: Duration.zero,
+        loopEnd: pos,
+        isABLooping: pos > Duration.zero,
+      );
+      AppToast.showLoopToast(
+        title: 'Marker B Set',
+        subtitle: '${_formatLoopTime(pos)}  •  Looping from Start',
+      );
+      return;
+    }
+    state = state.copyWith(
+      loopStart: start,
+      loopEnd: pos,
+      isABLooping: true,
+    );
+    AppToast.showLoopToast(
+      title: 'Marker B Set',
+      subtitle: '${_formatLoopTime(pos)}  •  Looping Active',
+    );
+  }
+
+  /// Toggles A-B loop on/off without clearing markers (or sets points sequentially).
+  void toggleABLoop() {
+    if (state.isABLooping) {
+      state = state.copyWith(isABLooping: false);
+      AppToast.showLoopToast(
+        title: 'A-B Loop Paused',
+        subtitle: 'Normal playback resumed',
+        iconData: LucideIcons.pause,
+      );
+    } else if (state.loopStart != null && state.loopEnd != null) {
+      state = state.copyWith(isABLooping: true);
+      if (state.position < state.loopStart! || state.position >= state.loopEnd!) {
+        seek(state.loopStart!);
+      }
+      AppToast.showLoopToast(
+        title: 'A-B Loop Active',
+        subtitle: '${_formatLoopTime(state.loopStart!)} ➔ ${_formatLoopTime(state.loopEnd!)}',
+      );
+    } else if (state.loopStart == null) {
+      setLoopPointA();
+    } else {
+      setLoopPointB();
+    }
+  }
+
+  /// Clears A-B loop markers and disables looping.
+  void clearABLoop() {
+    state = state.copyWith(
+      loopStart: null,
+      loopEnd: null,
+      isABLooping: false,
+    );
+    AppToast.showLoopToast(
+      title: 'A-B Loop Cleared',
+      subtitle: 'Markers reset',
+      iconData: LucideIcons.trash2,
+    );
+  }
+
+  /// Adjusts loop start point A by delta (e.g. +/- 500ms).
+  void adjustLoopPointA(Duration delta) {
+    if (state.loopStart == null) return;
+    final maxA = state.loopEnd != null
+        ? state.loopEnd! - const Duration(milliseconds: 100)
+        : state.duration;
+    final rawMs = (state.loopStart! + delta).inMilliseconds;
+    final clampedMs = rawMs.clamp(0, maxA.inMilliseconds);
+    final newA = Duration(milliseconds: clampedMs);
+    state = state.copyWith(loopStart: newA);
+    if (state.position < newA) {
+      seek(newA);
+    }
+    AppToast.showLoopToast(
+      title: 'Marker A Adjusted',
+      subtitle: _formatLoopTime(newA),
+    );
+  }
+
+  /// Adjusts loop end point B by delta (e.g. +/- 500ms).
+  void adjustLoopPointB(Duration delta) {
+    if (state.loopEnd == null) return;
+    final minB = (state.loopStart ?? Duration.zero) + const Duration(milliseconds: 100);
+    final maxB = state.duration;
+    final rawMs = (state.loopEnd! + delta).inMilliseconds;
+    final clampedMs = rawMs.clamp(minB.inMilliseconds, maxB.inMilliseconds);
+    final newB = Duration(milliseconds: clampedMs);
+    state = state.copyWith(loopEnd: newB);
+    AppToast.showLoopToast(
+      title: 'Marker B Adjusted',
+      subtitle: _formatLoopTime(newB),
+    );
+  }
+
+  /// Sets custom loop range directly.
+  void setLoopRange(Duration start, Duration end) {
+    if (end <= start) return;
+    state = state.copyWith(
+      loopStart: start,
+      loopEnd: end,
+      isABLooping: true,
+    );
+    if (state.position < start || state.position >= end) {
+      seek(start);
+    }
+    final len = end - start;
+    final lenSecs = (len.inMilliseconds / 1000).toStringAsFixed(1);
+    AppToast.showLoopToast(
+      title: 'A-B Loop Active (${lenSecs}s)',
+      subtitle: '${_formatLoopTime(start)} ➔ ${_formatLoopTime(end)}',
     );
   }
 

@@ -25,6 +25,7 @@ import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/ui/widgets/edit_song_sheet.dart';
 import 'package:looper_player/ui/widgets/sleep_timer_sheet_content.dart';
 import 'package:looper_player/ui/widgets/playlist_selector.dart';
+import 'package:looper_player/features/playback/presentation/widgets/ab_looper_widget.dart';
 
 void showSongOptionsBottomSheet({
   required BuildContext context,
@@ -374,6 +375,18 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                           HapticFeedback.lightImpact();
                           Navigator.pop(context);
                           showSleepTimerBottomSheet(parentContext, ref);
+                        },
+                      ),
+                      MenuOptionTile(
+                        label: playbackState.isABLooping
+                            ? 'A-B Looper (Active)'
+                            : 'A-B Section Looper',
+                        icon: LucideIcons.repeat1,
+                        iconColor: playbackState.isABLooping ? accentColor : Colors.white70,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                          showABLooper(parentContext);
                         },
                       ),
                       MenuOptionTile(

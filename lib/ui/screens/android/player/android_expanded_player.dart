@@ -25,6 +25,7 @@ import 'android_lyrics_screen.dart';
 import 'painters/sleep_timer_clock_painter.dart';
 import 'package:looper_player/ui/screens/android/player/widgets/expanded_player_header.dart';
 import 'package:looper_player/ui/screens/android/player/widgets/sleep_timer_clock.dart';
+import 'package:looper_player/features/playback/presentation/widgets/ab_looper_widget.dart';
 import 'painters/liked_glow_painter.dart';
 import 'package:looper_player/ui/widgets/scrolling_text.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -797,6 +798,43 @@ class _AndroidExpandedPlayerState extends ConsumerState<AndroidExpandedPlayer>
                                           ),
                                     width: AppIcons.expandedPlayerSecondaryControl.s,
                                     height: AppIcons.expandedPlayerSecondaryControl.s,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 6),
+                            // A-B Looper
+                            Consumer(
+                              builder: (context, ref, _) {
+                                final isABLooping = ref.watch(playbackProvider.select((s) => s.isABLooping));
+                                final hasLoop = ref.watch(playbackProvider.select((s) => s.loopStart != null && s.loopEnd != null));
+                                final primaryColor = Theme.of(context).colorScheme.primary;
+                                return PremiumSection(
+                                  heroTag: 'android_ab_looper_btn',
+                                  height: 64,
+                                  useBlur: useBlur,
+                                  showShadow: false,
+                                  forceNoBlur: true,
+                                  backgroundColor: isABLooping
+                                      ? primaryColor
+                                      : (hasLoop ? primaryColor.withValues(alpha: 0.25) : null),
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    showABLooper(context);
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Center(
+                                    child: Text(
+                                      'A-B',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                        color: isABLooping
+                                            ? HSLColor.fromColor(primaryColor).withLightness(0.15).toColor()
+                                            : (hasLoop ? primaryColor : Colors.white70),
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
                                   ),
                                 );
                               },

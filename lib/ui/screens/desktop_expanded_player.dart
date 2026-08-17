@@ -23,6 +23,7 @@ import 'package:looper_player/features/playback/presentation/audio_level_provide
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'package:looper_player/features/playback/presentation/waveform_provider.dart';
+import 'package:looper_player/features/playback/presentation/widgets/ab_looper_widget.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 
 enum PlayerPanelTab { queue, lyrics }
@@ -1304,6 +1305,48 @@ class _MobileUtilityControls extends StatelessWidget {
             width: 15,
             height: 15,
           ),
+        ),
+        const SizedBox(width: 6),
+        // A-B Looper
+        Consumer(
+          builder: (context, ref, _) {
+            final isABLooping =
+                ref.watch(playbackProvider.select((s) => s.isABLooping));
+            final hasLoop = ref.watch(playbackProvider.select(
+                (s) => s.loopStart != null && s.loopEnd != null));
+            return PremiumSection(
+              heroTag: 'desktop_util_ab_looper',
+              width: 68,
+              height: 52,
+              useBlur: true,
+              showShadow: false,
+              animate: true,
+              forceNoBlur: true,
+              useExpanded: false,
+              backgroundColor: isABLooping
+                  ? colorScheme.primary
+                  : (hasLoop
+                      ? colorScheme.primary.withValues(alpha: 0.25)
+                      : null),
+              onTap: () => showABLooper(context),
+              borderRadius: BorderRadius.circular(12),
+              child: Center(
+                child: Text(
+                  'A-B',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: isABLooping
+                        ? HSLColor.fromColor(colorScheme.primary)
+                            .withLightness(0.15)
+                            .toColor()
+                        : (hasLoop ? colorScheme.primary : Colors.white70),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
         const SizedBox(width: 6),
         // Lyrics

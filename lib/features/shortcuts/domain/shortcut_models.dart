@@ -226,6 +226,38 @@ class AppShortcutAction {
       category: ShortcutCategory.playback,
       defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyF),
     ),
+    const AppShortcutAction(
+      id: 'set_loop_a',
+      title: 'Set Loop Marker A',
+      description: 'Set loop start point A at current position',
+      category: ShortcutCategory.playback,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.bracketLeft, isCtrl: true),
+    ),
+    const AppShortcutAction(
+      id: 'set_loop_b',
+      title: 'Set Loop Marker B',
+      description: 'Set loop end point B at current position',
+      category: ShortcutCategory.playback,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.bracketRight, isCtrl: true),
+    ),
+    const AppShortcutAction(
+      id: 'toggle_ab_loop',
+      title: 'Toggle A-B Section Loop',
+      description: 'Toggle A-B looping on or off',
+      category: ShortcutCategory.playback,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.backslash, isCtrl: true),
+    ),
+    const AppShortcutAction(
+      id: 'clear_ab_loop',
+      title: 'Clear A-B Section Loop',
+      description: 'Clear loop markers A & B and disable looping',
+      category: ShortcutCategory.playback,
+      defaultPrimary: AppKeyCombo(
+        key: LogicalKeyboardKey.backslash,
+        isCtrl: true,
+        isShift: true,
+      ),
+    ),
 
     // ─── Seeking & Volume ───────────────────────────────────────────────────
     const AppShortcutAction(
