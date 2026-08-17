@@ -63,6 +63,24 @@ class SongDetailsBottomSheet extends ConsumerWidget {
                 ? null
                 : () => _openAlbum(context, ref, l10n),
           ),
+          if (song.albumArtist != null && song.albumArtist!.isNotEmpty)
+            _detailItem(context, 'Album Artist', song.albumArtist!),
+          if (song.trackNumber != null && song.trackNumber! > 0)
+            _detailItem(
+              context,
+              'Track Number',
+              song.trackTotal != null && song.trackTotal! > 0
+                  ? '${song.trackNumber}/${song.trackTotal}'
+                  : song.trackNumber.toString(),
+            ),
+          if (song.discNumber != null && song.discNumber! > 0)
+            _detailItem(
+              context,
+              'Disc Number',
+              song.discTotal != null && song.discTotal! > 0
+                  ? '${song.discNumber}/${song.discTotal}'
+                  : song.discNumber.toString(),
+            ),
           _detailItem(
             context,
             'Duration',

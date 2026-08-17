@@ -94,8 +94,60 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.lyricsDarkness = 0.55;
         needsSave = true;
       }
-      if (settings.seekBarStyleIndex == -9223372036854775808 || settings.seekBarStyleIndex < 0) {
+      if (settings.seekBarStyleIndex == -9223372036854775808 || settings.seekBarStyleIndex < 0 || settings.seekBarStyleIndex > 2) {
         settings.seekBarStyleIndex = 1;
+        needsSave = true;
+      }
+      if (settings.crossfadeMode == -9223372036854775808 || settings.crossfadeMode < 0 || settings.crossfadeMode > 2) {
+        settings.crossfadeMode = 0;
+        needsSave = true;
+      }
+      if (settings.crossfadeDuration == -9223372036854775808 || settings.crossfadeDuration < 0) {
+        settings.crossfadeDuration = 0;
+        needsSave = true;
+      }
+      if (settings.defaultMiniPlayerType == -9223372036854775808 || settings.defaultMiniPlayerType < 0 || settings.defaultMiniPlayerType > 1) {
+        settings.defaultMiniPlayerType = 0;
+        needsSave = true;
+      }
+      if (settings.playbackModeIndex == -9223372036854775808 || settings.playbackModeIndex < 0 || settings.playbackModeIndex > 2) {
+        settings.playbackModeIndex = 0;
+        needsSave = true;
+      }
+      if (settings.streamingQuality == -9223372036854775808 || settings.streamingQuality < 0 || settings.streamingQuality > 1) {
+        settings.streamingQuality = 1;
+        needsSave = true;
+      }
+      if (settings.sortStrategyIndex == -9223372036854775808 || settings.sortStrategyIndex < 0) {
+        settings.sortStrategyIndex = 0;
+        needsSave = true;
+      }
+      if (settings.albumSortOptionIndex == -9223372036854775808 || settings.albumSortOptionIndex < 0) {
+        settings.albumSortOptionIndex = 0;
+        needsSave = true;
+      }
+      if (settings.artistSortOptionIndex == -9223372036854775808 || settings.artistSortOptionIndex < 0) {
+        settings.artistSortOptionIndex = 0;
+        needsSave = true;
+      }
+      if (settings.genreSortOptionIndex == -9223372036854775808 || settings.genreSortOptionIndex < 0) {
+        settings.genreSortOptionIndex = 0;
+        needsSave = true;
+      }
+      if (settings.collectionSortOptionIndex == -9223372036854775808 || settings.collectionSortOptionIndex < 0) {
+        settings.collectionSortOptionIndex = 0;
+        needsSave = true;
+      }
+      if (settings.albumDetailSortOptionIndex == -9223372036854775808 || settings.albumDetailSortOptionIndex < 0) {
+        settings.albumDetailSortOptionIndex = 0;
+        needsSave = true;
+      }
+      if (settings.artistDetailSortOptionIndex == -9223372036854775808 || settings.artistDetailSortOptionIndex < 0) {
+        settings.artistDetailSortOptionIndex = 1;
+        needsSave = true;
+      }
+      if (settings.playlistDetailSortOptionIndex == -9223372036854775808 || settings.playlistDetailSortOptionIndex < 0) {
+        settings.playlistDetailSortOptionIndex = 0;
         needsSave = true;
       }
       if (!settings.settingsV2) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'widgets/advanced_lyric_renderer.dart';
@@ -142,6 +144,9 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
             ),
           ),
 
+          if (currentSong != null && lyricsState.parsedLines.isNotEmpty)
+            _buildSyncOffsetAdjuster(currentSong, lyricsState.syncOffsetMs, primaryColor),
+
           if (_syncMode != LyricsSyncMode.line) _buildDisclaimer(),
 
           // Main Lyrics Content
@@ -254,6 +259,99 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
     );
   }
 
+  Widget _buildSyncOffsetAdjuster(
+    Song song,
+    int syncOffsetMs,
+    Color primaryColor,
+  ) {
+    final offsetSec = syncOffsetMs / 1000.0;
+    final isOffsetZero = syncOffsetMs == 0;
+    final offsetText = isOffsetZero
+        ? 'Sync Offset: 0.0s'
+        : 'Offset: ${offsetSec > 0 ? '+' : ''}${offsetSec.toStringAsFixed(1)}s';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isOffsetZero
+                ? Colors.white.withValues(alpha: 0.08)
+                : primaryColor.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // -0.5s Nudge Button (Advance)
+            _NudgeButton(
+              label: '-0.5s',
+              tooltip: 'Advance lyrics by 0.5s',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                ref.read(lyricsProvider.notifier).adjustOffset(song, -500);
+              },
+            ),
+            const SizedBox(width: 4),
+            // Offset Display & Reset Pill
+            Tooltip(
+              message: isOffsetZero ? 'Lyrics are at default sync' : 'Tap to reset sync offset',
+              child: GestureDetector(
+                onTap: isOffsetZero
+                    ? null
+                    : () {
+                        HapticFeedback.mediumImpact();
+                        ref.read(lyricsProvider.notifier).resetOffset(song);
+                      },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isOffsetZero
+                        ? Colors.transparent
+                        : primaryColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isOffsetZero ? LucideIcons.check : LucideIcons.rotateCcw,
+                        size: 11,
+                        color: isOffsetZero ? Colors.white54 : primaryColor,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        offsetText,
+                        style: AppFonts.jostStyle(
+                          fontSize: 11,
+                          fontWeight: isOffsetZero ? FontWeight.normal : FontWeight.w600,
+                          color: isOffsetZero ? Colors.white70 : primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            // +0.5s Nudge Button (Delay)
+            _NudgeButton(
+              label: '+0.5s',
+              tooltip: 'Delay lyrics by 0.5s',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                ref.read(lyricsProvider.notifier).adjustOffset(song, 500);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDisclaimer() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
@@ -315,6 +413,45 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _NudgeButton extends StatelessWidget {
+  final String label;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _NudgeButton({
+    required this.label,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          hoverColor: Colors.white.withValues(alpha: 0.1),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Text(
+              label,
+              style: AppFonts.jostStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

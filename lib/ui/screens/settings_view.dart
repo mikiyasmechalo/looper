@@ -1011,26 +1011,35 @@ class _PremiumDropdownRow<T> extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Theme(
-                data: Theme.of(
-                  context,
-                ).copyWith(canvasColor: const Color(0xFF1E1E1E)),
-                child: DropdownButton<T>(
-                  value: value,
-                  underline: const SizedBox(),
-                  icon: const Icon(
-                    LucideIcons.chevronDown,
-                    color: Colors.white70,
-                    size: 16,
-                  ),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  items: items,
-                  onChanged: onChanged,
-                ),
+              Builder(
+                builder: (context) {
+                  final hasMatchingItem = items.any((item) => item.value == value);
+                  final effectiveValue = hasMatchingItem
+                      ? value
+                      : (items.isNotEmpty ? items.first.value : null);
+
+                  return Theme(
+                    data: Theme.of(
+                      context,
+                    ).copyWith(canvasColor: const Color(0xFF1E1E1E)),
+                    child: DropdownButton<T>(
+                      value: effectiveValue,
+                      underline: const SizedBox(),
+                      icon: const Icon(
+                        LucideIcons.chevronDown,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      items: items,
+                      onChanged: onChanged,
+                    ),
+                  );
+                },
               ),
             ],
           ),

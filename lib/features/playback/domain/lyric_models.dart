@@ -22,7 +22,11 @@ class LyricLine {
 }
 
 class LrcParser {
-  static List<LyricLine> parse(String lrc, Duration totalDuration) {
+  static List<LyricLine> parse(
+    String lrc,
+    Duration totalDuration, {
+    int manualOffsetMs = 0,
+  }) {
     final lines = lrc.split('\n');
     final List<Map<String, dynamic>> rawLines = [];
 
@@ -51,11 +55,9 @@ class LrcParser {
           milliseconds = fractionStr.length == 2 ? fraction * 10 : fraction;
         }
 
-        final startTime = Duration(
-          minutes: minutes,
-          seconds: seconds,
-          milliseconds: milliseconds + globalOffsetMs,
-        );
+        final totalOffsetMs = globalOffsetMs + manualOffsetMs;
+        final startMs = (minutes * 60 + seconds) * 1000 + milliseconds + totalOffsetMs;
+        final startTime = Duration(milliseconds: startMs < 0 ? 0 : startMs);
         final text = match.group(4)!.trim();
         rawLines.add({'start': startTime, 'text': text});
       }

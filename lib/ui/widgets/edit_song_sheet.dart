@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:audiotags/audiotags.dart' as audiotags;
+import 'package:metadata_god/metadata_god.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
@@ -22,7 +24,10 @@ class EditSongSheet extends ConsumerStatefulWidget {
 class _EditSongSheetState extends ConsumerState<EditSongSheet> {
   late final TextEditingController _titleCtrl;
   late final TextEditingController _artistCtrl;
+  late final TextEditingController _albumArtistCtrl;
   late final TextEditingController _albumCtrl;
+  late final TextEditingController _trackNumberCtrl;
+  late final TextEditingController _discNumberCtrl;
   late final TextEditingController _yearCtrl;
   late final TextEditingController _genreCtrl;
   late final TextEditingController _lyricsCtrl;
@@ -30,12 +35,31 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
   String? _pickedArtPath; // null = unchanged, '' = cleared, '/path' = new path
   bool _isSaving = false;
 
+  String _formatNumberWithTotal(int? num, int? total) {
+    if (num == null || num <= 0) return '';
+    if (total != null && total > 0) return '$num/$total';
+    return num.toString();
+  }
+
   @override
   void initState() {
     super.initState();
     _titleCtrl = TextEditingController(text: widget.song.title);
     _artistCtrl = TextEditingController(text: widget.song.artist ?? '');
+    _albumArtistCtrl = TextEditingController(text: widget.song.albumArtist ?? '');
     _albumCtrl = TextEditingController(text: widget.song.album ?? '');
+    _trackNumberCtrl = TextEditingController(
+      text: _formatNumberWithTotal(
+        widget.song.trackNumber,
+        widget.song.trackTotal,
+      ),
+    );
+    _discNumberCtrl = TextEditingController(
+      text: _formatNumberWithTotal(
+        widget.song.discNumber,
+        widget.song.discTotal,
+      ),
+    );
     _yearCtrl = TextEditingController(
         text: widget.song.year != null && widget.song.year! > 0
             ? widget.song.year.toString()
@@ -43,13 +67,89 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
     _genreCtrl = TextEditingController(text: widget.song.genre ?? '');
     _lyricsCtrl = TextEditingController(text: widget.song.lyrics ?? '');
     _pickedArtPath = null; // unchanged
+
+    if (!widget.song.isOnlineStream &&
+        (widget.song.discNumber == null ||
+            widget.song.discTotal == null ||
+            widget.song.trackNumber == null ||
+            widget.song.trackTotal == null ||
+            widget.song.albumArtist == null)) {
+      _loadMissingFileTags();
+    }
+  }
+
+  Future<void> _loadMissingFileTags() async {
+    try {
+      final file = File(widget.song.path);
+      if (!await file.exists()) return;
+      int? disc = widget.song.discNumber;
+      int? discTotal = widget.song.discTotal;
+      int? track = widget.song.trackNumber;
+      int? trackTotal = widget.song.trackTotal;
+      String? albumArtist = widget.song.albumArtist;
+
+      try {
+        final meta = await MetadataGod.readMetadata(file: widget.song.path);
+        disc ??= meta.discNumber;
+        discTotal ??= meta.discTotal;
+        track ??= meta.trackNumber;
+        trackTotal ??= meta.trackTotal;
+        albumArtist ??= meta.albumArtist;
+      } catch (_) {}
+
+      if (disc == null ||
+          discTotal == null ||
+          track == null ||
+          trackTotal == null ||
+          albumArtist == null) {
+        try {
+          final tag = await audiotags.AudioTags.read(widget.song.path);
+          if (tag != null) {
+            disc ??= tag.discNumber;
+            discTotal ??= tag.discTotal;
+            track ??= tag.trackNumber;
+            trackTotal ??= tag.trackTotal;
+            albumArtist ??= tag.albumArtist;
+          }
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        final formattedDisc = _formatNumberWithTotal(disc, discTotal);
+        if (formattedDisc.isNotEmpty &&
+            (_discNumberCtrl.text.isEmpty ||
+                _discNumberCtrl.text == disc.toString())) {
+          setState(() {
+            _discNumberCtrl.text = formattedDisc;
+          });
+        }
+        final formattedTrack = _formatNumberWithTotal(track, trackTotal);
+        if (formattedTrack.isNotEmpty &&
+            (_trackNumberCtrl.text.isEmpty ||
+                _trackNumberCtrl.text == track.toString())) {
+          setState(() {
+            _trackNumberCtrl.text = formattedTrack;
+          });
+        }
+        if (albumArtist != null &&
+            albumArtist.isNotEmpty &&
+            _albumArtistCtrl.text.isEmpty) {
+          setState(() {
+            _albumArtistCtrl.text = albumArtist!;
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _titleCtrl.dispose();
     _artistCtrl.dispose();
+    _albumArtistCtrl.dispose();
     _albumCtrl.dispose();
+    _trackNumberCtrl.dispose();
+    _discNumberCtrl.dispose();
     _yearCtrl.dispose();
     _genreCtrl.dispose();
     _lyricsCtrl.dispose();
@@ -76,12 +176,37 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
     if (_titleCtrl.text.trim().isEmpty) return;
     setState(() => _isSaving = true);
 
+    int? trackNum;
+    int? trackTot;
+    if (_trackNumberCtrl.text.contains('/')) {
+      final parts = _trackNumberCtrl.text.split('/');
+      trackNum = int.tryParse(parts[0].trim());
+      trackTot = parts.length > 1 ? int.tryParse(parts[1].trim()) : null;
+    } else {
+      trackNum = int.tryParse(_trackNumberCtrl.text.trim());
+    }
+
+    int? discNum;
+    int? discTot;
+    if (_discNumberCtrl.text.contains('/')) {
+      final parts = _discNumberCtrl.text.split('/');
+      discNum = int.tryParse(parts[0].trim());
+      discTot = parts.length > 1 ? int.tryParse(parts[1].trim()) : null;
+    } else {
+      discNum = int.tryParse(_discNumberCtrl.text.trim());
+    }
+
     final notifier = ref.read(playbackProvider.notifier);
     final success = await notifier.editSongMetadata(
       widget.song,
       title: _titleCtrl.text,
       artist: _artistCtrl.text,
+      albumArtist: _albumArtistCtrl.text,
       album: _albumCtrl.text,
+      trackNumber: trackNum ?? 0,
+      trackTotal: trackTot,
+      discNumber: discNum ?? 0,
+      discTotal: discTot,
       year: int.tryParse(_yearCtrl.text) ?? 0,
       genre: _genreCtrl.text,
       artPath: _pickedArtPath, // null = unchanged
@@ -162,6 +287,34 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
                         Text('Tap a field to edit',
                             style: AppFonts.jostStyle(color: Colors.white38, fontSize: 12)),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Tooltip(
+                    message: 'Save Changes',
+                    child: Material(
+                      color: _isSaving
+                          ? accentColor.withValues(alpha: 0.4)
+                          : accentColor,
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: _isSaving ? null : _save,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: AppLoadingIndicator(size: 20),
+                                )
+                              : const Icon(
+                                  LucideIcons.check,
+                                  color: Colors.black,
+                                  size: 22,
+                                ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -258,6 +411,13 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
                   ),
                   const SizedBox(height: 12),
                   _EditField(
+                    controller: _albumArtistCtrl,
+                    label: 'Album Artist',
+                    icon: LucideIcons.userCheck,
+                    accentColor: accentColor,
+                  ),
+                  const SizedBox(height: 12),
+                  _EditField(
                     controller: _albumCtrl,
                     label: 'Album',
                     icon: LucideIcons.disc,
@@ -266,6 +426,34 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
                   const SizedBox(height: 28),
 
                   _SectionLabel('DETAILS'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _EditField(
+                          controller: _trackNumberCtrl,
+                          label: 'Track Number',
+                          icon: LucideIcons.listOrdered,
+                          accentColor: accentColor,
+                          keyboardType: TextInputType.text,
+                          maxLength: 8,
+                          hintText: 'e.g. 1/12 or 1',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _EditField(
+                          controller: _discNumberCtrl,
+                          label: 'Disc Number',
+                          icon: LucideIcons.layers,
+                          accentColor: accentColor,
+                          keyboardType: TextInputType.text,
+                          maxLength: 8,
+                          hintText: 'e.g. 1/1 or 1',
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [

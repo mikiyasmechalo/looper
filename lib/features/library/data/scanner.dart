@@ -170,13 +170,14 @@ class LibraryScanner {
       });
     }
 
-    // Re-check songs with missing metadata — they may have failed timeout previously
+    // Re-check songs with missing metadata or missing discNumber
     final songsToRetry = songsInPathDb
         .where(
           (s) =>
               s.artist == 'Unknown Artist' ||
               s.album == 'Unknown Album' ||
-              s.artist == null,
+              s.artist == null ||
+              s.discNumber == null,
         )
         .toList();
 
@@ -211,6 +212,22 @@ class LibraryScanner {
             }
             if (newSong.duration != null && song.duration == null) {
               song.duration = newSong.duration;
+              updated = true;
+            }
+            if (newSong.trackNumber != null && song.trackNumber == null) {
+              song.trackNumber = newSong.trackNumber;
+              updated = true;
+            }
+            if (newSong.trackTotal != null && song.trackTotal == null) {
+              song.trackTotal = newSong.trackTotal;
+              updated = true;
+            }
+            if (newSong.discNumber != null && song.discNumber == null) {
+              song.discNumber = newSong.discNumber;
+              updated = true;
+            }
+            if (newSong.discTotal != null && song.discTotal == null) {
+              song.discTotal = newSong.discTotal;
               updated = true;
             }
             if (newSong.artPath != null && song.artPath == null) {
@@ -332,28 +349,40 @@ class LibraryScanner {
         ).timeout(const Duration(milliseconds: 800));
       } catch (e) {}
 
-      // Fallback: when metadata_god fails or returns null for key fields
+      // Fallback or supplement: if metadata_god failed OR was missing discNumber/trackNumber/albumArtist/etc.
       if (metadata == null ||
-          (metadata.artist == null &&
-              metadata.album == null &&
-              metadata.title == null)) {
+          metadata.discNumber == null ||
+          metadata.trackNumber == null ||
+          metadata.albumArtist == null ||
+          metadata.title == null ||
+          metadata.artist == null ||
+          metadata.album == null) {
         try {
           final tag = await audiotags.AudioTags.read(file.path);
           if (tag != null) {
             // Merge AudioTags with any partial metadata_god results
             metadata = Metadata(
-              title: metadata?.title ?? tag.title,
-              artist: metadata?.artist ?? tag.trackArtist ?? tag.albumArtist,
-              album: metadata?.album ?? tag.album,
+              title: (metadata?.title != null && metadata!.title!.isNotEmpty)
+                  ? metadata.title
+                  : tag.title,
+              artist: (metadata?.artist != null &&
+                      metadata!.artist != 'Unknown Artist')
+                  ? metadata.artist
+                  : (tag.trackArtist ?? tag.albumArtist),
+              album: (metadata?.album != null &&
+                      metadata!.album != 'Unknown Album')
+                  ? metadata.album
+                  : tag.album,
               albumArtist: metadata?.albumArtist ?? tag.albumArtist,
               genre: metadata?.genre ?? tag.genre,
               trackNumber: metadata?.trackNumber ?? tag.trackNumber,
+              trackTotal: metadata?.trackTotal ?? tag.trackTotal,
+              discNumber: metadata?.discNumber ?? tag.discNumber,
+              discTotal: metadata?.discTotal ?? tag.discTotal,
               year: metadata?.year ?? tag.year,
-              durationMs:
-                  metadata?.durationMs ??
+              durationMs: metadata?.durationMs ??
                   (tag.duration != null ? tag.duration! * 1000.0 : null),
-              picture:
-                  metadata?.picture ??
+              picture: metadata?.picture ??
                   (tag.pictures.isNotEmpty
                       ? Picture(
                           mimeType:
@@ -392,6 +421,9 @@ class LibraryScanner {
         ..genre = metadata?.genre
         ..duration = metadata?.durationMs?.toInt()
         ..trackNumber = metadata?.trackNumber
+        ..trackTotal = metadata?.trackTotal
+        ..discNumber = metadata?.discNumber
+        ..discTotal = metadata?.discTotal
         ..year = metadata?.year
         ..artPath = artPath
         ..lyrics = lyrics

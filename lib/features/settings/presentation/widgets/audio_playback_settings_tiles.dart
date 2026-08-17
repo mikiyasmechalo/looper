@@ -77,7 +77,9 @@ class CrossfadeModeTile extends ConsumerWidget {
         style: _tileSubtitleStyle(),
       ),
       trailing: DropdownButton<int>(
-        value: settings.crossfadeMode,
+        value: (settings.crossfadeMode >= 0 && settings.crossfadeMode <= 2)
+            ? settings.crossfadeMode
+            : 0,
         dropdownColor: const Color(0xFF1E1E1E),
         underline: const SizedBox.shrink(),
         items: const [

@@ -18,10 +18,15 @@ class LanguageTile extends ConsumerWidget {
         l10n.language,
         style: _tileTitleStyle(),
       ),
-      trailing: DropdownButton<String>(
-        value: settings.language,
-        dropdownColor: const Color(0xFF1A1A1A),
-        underline: const SizedBox(),
+      trailing: Builder(
+        builder: (context) {
+          const supportedLangs = {'', 'en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar', 'tr', 'pl', 'nl', 'hi'};
+          final langValue = supportedLangs.contains(settings.language) ? settings.language : '';
+
+          return DropdownButton<String>(
+            value: langValue,
+            dropdownColor: const Color(0xFF1A1A1A),
+            underline: const SizedBox(),
         items: [
           DropdownMenuItem(
             value: '',
@@ -95,8 +100,10 @@ class LanguageTile extends ConsumerWidget {
             ref.read(settingsProvider.notifier).updateLanguage(lang);
           }
         },
-      ),
-    );
+      );
+    },
+  ),
+);
   }
 }
 

@@ -162,6 +162,22 @@ class _SongInfoScreenState extends ConsumerState<SongInfoScreen> {
                                     _InfoItem('Track Title', widget.song.title),
                                     _InfoItem('Artist', widget.song.artist ?? 'Unknown Artist'),
                                     _InfoItem('Album', widget.song.album ?? 'Unknown Album'),
+                                    if (widget.song.albumArtist != null && widget.song.albumArtist!.isNotEmpty)
+                                      _InfoItem('Album Artist', widget.song.albumArtist!),
+                                    if (widget.song.trackNumber != null && widget.song.trackNumber! > 0)
+                                      _InfoItem(
+                                        'Track Number',
+                                        widget.song.trackTotal != null && widget.song.trackTotal! > 0
+                                            ? '${widget.song.trackNumber}/${widget.song.trackTotal}'
+                                            : widget.song.trackNumber.toString(),
+                                      ),
+                                    if (widget.song.discNumber != null && widget.song.discNumber! > 0)
+                                      _InfoItem(
+                                        'Disc Number',
+                                        widget.song.discTotal != null && widget.song.discTotal! > 0
+                                            ? '${widget.song.discNumber}/${widget.song.discTotal}'
+                                            : widget.song.discNumber.toString(),
+                                      ),
                                     if (analysis?.composer != null && analysis!.composer!.isNotEmpty)
                                       _InfoItem('Composer', analysis.composer!),
                                     _InfoItem('Genre', widget.song.genre ?? 'Unknown Genre'),

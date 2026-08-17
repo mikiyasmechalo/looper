@@ -23,6 +23,10 @@ class Song {
   String? genre;
   int? duration; // In milliseconds
   int? trackNumber;
+  int? trackTotal;
+  int? discNumber;
+  int? discTotal;
+  int? lyricsOffsetMs;
   int? year;
   String? artPath;
 

@@ -1999,12 +1999,17 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
-  /// Edits song metadata in the database (title, artist, album, year, genre, artPath).
+  /// Edits song metadata in the database (title, artist, albumArtist, album, trackNumber, trackTotal, discNumber, discTotal, year, genre, artPath, lyrics).
   /// Does NOT rename the physical file — only updates the DB record.
   Future<bool> editSongMetadata(Song song, {
     String? title,
     String? artist,
+    String? albumArtist,
     String? album,
+    int? trackNumber,
+    int? trackTotal,
+    int? discNumber,
+    int? discTotal,
     int? year,
     String? genre,
     String? artPath,
@@ -2014,7 +2019,12 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       await DbService.isar.writeTxn(() async {
         if (title != null && title.isNotEmpty) song.title = title.trim();
         if (artist != null) song.artist = artist.trim().isEmpty ? null : artist.trim();
+        if (albumArtist != null) song.albumArtist = albumArtist.trim().isEmpty ? null : albumArtist.trim();
         if (album != null) song.album = album.trim().isEmpty ? null : album.trim();
+        if (trackNumber != null) song.trackNumber = trackNumber <= 0 ? null : trackNumber;
+        song.trackTotal = (trackTotal == null || trackTotal <= 0) ? null : trackTotal;
+        if (discNumber != null) song.discNumber = discNumber <= 0 ? null : discNumber;
+        song.discTotal = (discTotal == null || discTotal <= 0) ? null : discTotal;
         if (year != null) song.year = year == 0 ? null : year;
         if (genre != null) song.genre = genre.trim().isEmpty ? null : genre.trim();
         if (artPath != null) song.artPath = artPath.trim().isEmpty ? null : artPath.trim();

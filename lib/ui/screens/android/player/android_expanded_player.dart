@@ -1138,7 +1138,7 @@ class _GestureArtworkWithFeedbackState
             alignment: Alignment.center,
             children: <Widget>[
               ...previousChildren,
-              ?currentChild,
+              if (currentChild != null) currentChild,
             ],
           );
         },
