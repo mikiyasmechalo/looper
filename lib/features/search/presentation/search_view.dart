@@ -907,7 +907,7 @@ class _SongResultCard extends ConsumerWidget {
       onSecondaryTap: () => showSongOptionsBottomSheet(context: context, ref: ref, song: song),
       child: InkWell(
         onTap: () {
-          ref.read(searchQueryProvider.notifier).state = '';
+
           if (searchQuery != null) {
             ref.read(lyricsSearchQueryProvider.notifier).state = searchQuery!;
           }
@@ -970,7 +970,7 @@ class _ArtistResultCard extends ConsumerWidget {
           hoverColor: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            ref.read(searchQueryProvider.notifier).state = '';
+
             final songs = await DbService.isar.songs
                 .filter()
                 .artistEqualTo(artist.name)
@@ -1048,7 +1048,7 @@ class _AlbumResultCard extends ConsumerWidget {
           hoverColor: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            ref.read(searchQueryProvider.notifier).state = '';
+
             final songs = await DbService.isar.songs
                 .filter()
                 .albumEqualTo(album.name)
@@ -1128,7 +1128,7 @@ class _PlaylistResultCard extends ConsumerWidget {
           hoverColor: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            ref.read(searchQueryProvider.notifier).state = '';
+
             final songs = await DbService.isar.songs
                 .filter()
                 .anyOf(playlist.songPaths, (q, String path) => q.pathEqualTo(path))
@@ -1201,7 +1201,7 @@ class _GenreResultCard extends ConsumerWidget {
           hoverColor: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            ref.read(searchQueryProvider.notifier).state = '';
+
             final songs = await DbService.isar.songs
                 .filter()
                 .genreEqualTo(genreName)
@@ -1272,7 +1272,7 @@ class _TopAlbumResultCard extends ConsumerWidget {
       child: InkWell(
         hoverColor: Colors.white.withValues(alpha: 0.08),
         onTap: () async {
-          ref.read(searchQueryProvider.notifier).state = '';
+
           final songs = await DbService.isar.songs
               .filter()
               .albumEqualTo(album.name)
@@ -1354,7 +1354,7 @@ class _TopArtistResultCard extends ConsumerWidget {
       child: InkWell(
         hoverColor: Colors.white.withValues(alpha: 0.08),
         onTap: () async {
-          ref.read(searchQueryProvider.notifier).state = '';
+
           final songs = await DbService.isar.songs
               .filter()
               .artistEqualTo(artist.name)
@@ -1431,7 +1431,7 @@ class _TopPlaylistResultCard extends ConsumerWidget {
       child: InkWell(
         hoverColor: Colors.white.withValues(alpha: 0.08),
         onTap: () async {
-          ref.read(searchQueryProvider.notifier).state = '';
+
           final songs = await DbService.isar.songs
               .filter()
               .anyOf(playlist.songPaths, (q, String path) => q.pathEqualTo(path))
@@ -1512,7 +1512,7 @@ class _TopGenreResultCard extends ConsumerWidget {
       child: InkWell(
         hoverColor: Colors.white.withValues(alpha: 0.08),
         onTap: () async {
-          ref.read(searchQueryProvider.notifier).state = '';
+
           final songs = await DbService.isar.songs
               .filter()
               .genreEqualTo(genreName)

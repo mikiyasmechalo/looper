@@ -134,6 +134,7 @@ final categoryFoldersDataProvider = Provider.autoDispose<FoldersCategoryData>((
   final songs = ref.watch(libraryProvider.select((l) => l.songs));
   final foldersMap = <String, List<Song>>{};
   for (var song in songs) {
+    if (song.isOnlineStream) continue;
     final folder = Directory(song.path).parent.path;
     foldersMap.putIfAbsent(folder, () => []).add(song);
   }

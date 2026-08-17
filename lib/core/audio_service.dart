@@ -135,31 +135,17 @@ class AudioService {
       await player.setRawProperty('volume-max', '150');
     } catch (e) {}
 
-    /*
-    try {
-      await player.setRawProperty('audio-buffer', '4.0');
-    } catch (e) {}
-
-    try {
-      await player.setRawProperty('demuxer-readahead-secs', '20');
-    } catch (e) {}
-
-    try {
-      await player.setRawProperty('audio-stream-silence', 'yes');
-    } catch (e) {}
-
     try {
       await player.setRawProperty('gapless-audio', 'yes');
     } catch (e) {}
 
     try {
-      await player.setRawProperty('audio-normalize-downmix', 'yes');
+      await player.setRawProperty('prefetch-playlist', 'yes');
     } catch (e) {}
 
     try {
-      await player.setRawProperty('replaygain-clip', 'yes');
+      await player.setRawProperty('audio-stream-silence', 'yes');
     } catch (e) {}
-    */
 
     try {
       await player.setRawProperty('audio-pitch-correction', 'no');
@@ -183,6 +169,14 @@ class AudioService {
     } catch (e) {}
 
     _initMediaSession();
+  }
+
+  Future<void> setGaplessAudio(bool enabled) async {
+    try {
+      await player.setRawProperty('gapless-audio', enabled ? 'yes' : 'no');
+    } catch (e) {
+      LoggerHelper.write('AudioService: Failed to set gapless-audio to $enabled', e);
+    }
   }
 
   void _initMediaSession({
@@ -519,6 +513,25 @@ class AudioService {
     // EQ is now applied via the playlist stream listener (deferred to FILE_LOADED)
     // so we do NOT call setEqualizerGains() here — that would race the empty playlist.
     await player.open(media, play: play);
+  }
+
+  Future<void> enqueueNext(String path, {Map<String, String>? metadata}) async {
+    final title = metadata?['title'];
+    final artist = metadata?['artist'];
+    final album = metadata?['album'];
+    final artPath = metadata?['artPath'];
+    
+    final media = Media(
+      path,
+      extras: {
+        if (title != null) 'title': title,
+        if (artist != null) 'artist': artist,
+        if (album != null) 'album': album,
+        if (artPath != null) 'artPath': artPath,
+        if (metadata?['duration'] != null) 'duration': metadata!['duration']!,
+      },
+    );
+    await player.add(media);
   }
 
   Future<void> pause() async {

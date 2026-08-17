@@ -257,12 +257,8 @@ class _QueueTile extends StatelessWidget {
             ),
           ),
           if (!queue.isPermanent)
-            IconButton(
-              icon: Icon(LucideIcons.trash2, size: 15, color: Colors.red.withValues(alpha: 0.7)),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              tooltip: 'Delete queue slot',
-              onPressed: () {
+            _DeleteQueueButton(
+              onDelete: () {
                 ref.read(playbackProvider.notifier).deleteQueue(queue.name);
               },
             ),
@@ -277,5 +273,48 @@ class _QueueTile extends StatelessWidget {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
+  }
+}
+
+class _DeleteQueueButton extends StatefulWidget {
+  final VoidCallback onDelete;
+
+  const _DeleteQueueButton({required this.onDelete});
+
+  @override
+  State<_DeleteQueueButton> createState() => _DeleteQueueButtonState();
+}
+
+class _DeleteQueueButtonState extends State<_DeleteQueueButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onDelete,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? Colors.red.withValues(alpha: 0.18)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            LucideIcons.trash2,
+            size: 15,
+            color: _isHovered
+                ? Colors.redAccent
+                : Colors.red.withValues(alpha: 0.65),
+          ),
+        ),
+      ),
+    );
   }
 }

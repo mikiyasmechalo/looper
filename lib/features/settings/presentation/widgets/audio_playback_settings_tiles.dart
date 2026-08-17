@@ -6,6 +6,95 @@ import 'package:looper_player/features/settings/presentation/settings_notifier.d
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'settings_widgets.dart';
 
+class GaplessPlaybackTile extends ConsumerWidget {
+  const GaplessPlaybackTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    return SwitchListTile(
+      secondary: const Icon(LucideIcons.infinity, color: Colors.white70),
+      title: Text(
+        'Gapless Playback',
+        style: _tileTitleStyle(),
+      ),
+      subtitle: Text(
+        'Eliminate silence between consecutive tracks for continuous album & live playback',
+        style: _tileSubtitleStyle(),
+      ),
+      activeThumbColor: Color(settings.accentColor),
+      value: settings.gaplessPlayback,
+      onChanged: (value) {
+        ref.read(settingsProvider.notifier).updateGaplessPlayback(value);
+      },
+    );
+  }
+}
+
+class CrossfadeDurationSlider extends ConsumerWidget {
+  const CrossfadeDurationSlider({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    return SettingsSliderTile(
+      icon: LucideIcons.blend,
+      title: 'Crossfade Duration',
+      subtitle: settings.crossfadeDuration == 0
+          ? 'Disabled (Pure Gapless transitions)'
+          : 'Smoothly fade out track and fade in next over ${settings.crossfadeDuration}s',
+      value: settings.crossfadeDuration.toDouble(),
+      min: 0,
+      max: 12,
+      divisions: 12,
+      suffix: 's',
+      onChanged: (value) {
+        ref
+            .read(settingsProvider.notifier)
+            .updateCrossfadeDuration(value.round());
+      },
+    );
+  }
+}
+
+class CrossfadeModeTile extends ConsumerWidget {
+  const CrossfadeModeTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    if (settings.crossfadeDuration <= 0) return const SizedBox.shrink();
+
+    return ListTile(
+      leading: const Icon(LucideIcons.gitCommit, color: Colors.white70),
+      title: Text('Crossfade Mode', style: _tileTitleStyle()),
+      subtitle: Text(
+        settings.crossfadeMode == 0
+            ? 'Always (Auto & Manual)'
+            : settings.crossfadeMode == 1
+                ? 'Automatic Transitions Only'
+                : 'Manual Skips Only',
+        style: _tileSubtitleStyle(),
+      ),
+      trailing: DropdownButton<int>(
+        value: settings.crossfadeMode,
+        dropdownColor: const Color(0xFF1E1E1E),
+        underline: const SizedBox.shrink(),
+        items: const [
+          DropdownMenuItem(value: 0, child: Text('Always')),
+          DropdownMenuItem(value: 1, child: Text('Auto Only')),
+          DropdownMenuItem(value: 2, child: Text('Manual Only')),
+        ],
+        onChanged: (value) {
+          if (value != null) {
+            ref.read(settingsProvider.notifier).updateCrossfadeMode(value);
+          }
+        },
+      ),
+    );
+  }
+}
+
 class FadePlayPauseStopTile extends ConsumerWidget {
   const FadePlayPauseStopTile({super.key});
 

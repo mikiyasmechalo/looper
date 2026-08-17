@@ -253,6 +253,15 @@ class AppSettings {
 
   // Desktop Fullscreen: show Sleep Timer button in player toolbar.
   bool showFullscreenSleepTimer = false;
+
+  // Playback: True Gapless Playback
+  bool gaplessPlayback = true;
+
+  // Playback: Crossfade Duration (0 = disabled / pure gapless, 1-12 seconds)
+  int crossfadeDuration = 0;
+
+  // Playback: Crossfade Mode (0: Always, 1: Automatic Only, 2: Manual Only)
+  int crossfadeMode = 0;
 }
 
 enum SeekBarStyle { visualizer, expressive, flat }

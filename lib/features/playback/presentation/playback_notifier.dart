@@ -228,6 +228,9 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       if (previous?.exclusiveHardwareMode != next.exclusiveHardwareMode) {
         ref.read(audioServiceProvider).configureHardwareExclusive(next.exclusiveHardwareMode);
       }
+      if (previous?.gaplessPlayback != next.gaplessPlayback) {
+        ref.read(audioServiceProvider).setGaplessAudio(next.gaplessPlayback);
+      }
       if (previous?.stopOnTaskRemoved != next.stopOnTaskRemoved) {
         ref.read(audioServiceProvider).setStopOnTaskRemoved(next.stopOnTaskRemoved);
       }
@@ -320,6 +323,25 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       }
       _checkAndUpdateLyrics();
 
+      // Check and trigger automatic crossfade
+      if (state.isPlaying &&
+          !state.isScrubbing &&
+          !_autoCrossfadeTriggered &&
+          !_isTransitioning &&
+          state.repeatMode != RepeatMode.one &&
+          state.duration > const Duration(seconds: 4)) {
+        final settings = ref.read(settingsProvider);
+        final crossfadeSec = settings.crossfadeDuration;
+        final isAutoAllowed = settings.crossfadeMode == 0 || settings.crossfadeMode == 1;
+        if (crossfadeSec > 0 && isAutoAllowed) {
+          final remaining = state.duration - position;
+          if (remaining <= Duration(seconds: crossfadeSec) && remaining.inMilliseconds > 200) {
+            _autoCrossfadeTriggered = true;
+            _performAutoCrossfade(crossfadeSec);
+          }
+        }
+      }
+
       final now = DateTime.now().millisecondsSinceEpoch;
       if (state.isPlaying && now - _lastWidgetPositionUpdate > 2000) {
         _lastWidgetPositionUpdate = now;
@@ -400,11 +422,81 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
           }
         }
 
-        final remaining = state.duration - state.position;
-        if (remaining.inMilliseconds > 0 && remaining.inMilliseconds < 10000) {
-          _songCompletionTimer = Timer(remaining + const Duration(milliseconds: 100), onSongFinished);
-        } else {
-          onSongFinished();
+        onSongFinished();
+      }
+    });
+
+    player.stream.playlist.listen((playlist) async {
+      if (playlist.index > 0 && playlist.items.length > 1) {
+        // Native gapless transition occurred!
+        debugPrint("======== NATIVE PLAYLIST ADVANCED ========");
+        debugPrint("playlist.index = ${playlist.index}");
+        
+        if (!_isTransitioning) {
+          _isTransitioning = true;
+          _songCompletionTimer?.cancel();
+          _isLastPlayManual = false;
+          
+          final songToPlay = getNextSong(updateIndex: true);
+          final svc = ref.read(audioServiceProvider);
+          
+          if (songToPlay != null) {
+            _autoCrossfadeTriggered = false;
+            _lastWidgetLyricLine = '';
+            state = state.copyWith(
+              currentSong: songToPlay,
+              duration: songToPlay.duration != null ? Duration(milliseconds: songToPlay.duration!) : Duration.zero,
+              position: Duration.zero,
+              isRestoredSession: false,
+            );
+            ref.read(lyricsProvider.notifier).fetchForSong(songToPlay);
+            ref.read(equalizerProvider.notifier).onSongChanged(songToPlay);
+            
+            final settings = ref.read(settingsProvider);
+            final equalizerState = ref.read(equalizerProvider);
+            final gains = equalizerState.currentSongGains;
+            svc.setEqualizerGains(
+              gains, 
+              settings.equalizerEnabled,
+              customFilter: equalizerState.customFilterString,
+            );
+            
+            _updateWidgetState();
+            _updateNotification();
+            _armPlayCount(songToPlay);
+            
+            if (settings.persistQueue) {
+              ref.read(settingsProvider.notifier).updateLastPlayedSong(songToPlay.id);
+            }
+            
+            if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+              windowManager.setTitle('Looper Player - ${songToPlay.title} - ${songToPlay.artist ?? 'Unknown Artist'}');
+            }
+            
+            // Remove the finished track from native playlist so index becomes 0 again
+            await svc.player.remove(0);
+            
+            // Enqueue the next-next track
+            if (settings.crossfadeDuration == 0) {
+              final nextNext = getNextSong(updateIndex: false);
+              if (nextNext != null) {
+                await svc.enqueueNext(nextNext.path, metadata: {
+                  'title': nextNext.title,
+                  'artist': nextNext.artist ?? 'Unknown Artist',
+                  'album': nextNext.album ?? 'Unknown Album',
+                  if (nextNext.artPath != null) 'artPath': nextNext.artPath!,
+                  if (nextNext.duration != null) 'duration': nextNext.duration!.toString(),
+                });
+              }
+            }
+          } else {
+            // Queue ended, just stop
+            await svc.pause();
+            state = state.copyWith(isPlaying: false);
+            await svc.player.remove(0);
+          }
+          
+          _isTransitioning = false;
         }
       }
     });
@@ -824,7 +916,15 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         targetPlay = false;
       }
     }
-    final int fadeLength = settings.fadePlayPauseStop ? settings.playPauseStopFadeLength : 0;
+    final isManualCrossfade = _isLastPlayManual &&
+        (settings.crossfadeMode == 0 || settings.crossfadeMode == 2) &&
+        settings.crossfadeDuration > 0;
+    final isAutoCrossfade = !_isLastPlayManual &&
+        (settings.crossfadeMode == 0 || settings.crossfadeMode == 1) &&
+        settings.crossfadeDuration > 0;
+    final int fadeLength = (isManualCrossfade || isAutoCrossfade)
+        ? math.min(settings.crossfadeDuration * 1000, 3000)
+        : (_isLastPlayManual && settings.fadePlayPauseStop ? settings.playPauseStopFadeLength : 0);
     final bool shouldFade = fadeLength > 0 && targetPlay;
     if (shouldFade) {
       player.setVolume(0);
@@ -946,6 +1046,19 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         attempts++;
       }
       await seek(initialPosition);
+    }
+
+    if (settings.crossfadeDuration == 0) {
+      final nextNext = getNextSong(updateIndex: false);
+      if (nextNext != null) {
+        await ref.read(audioServiceProvider).enqueueNext(nextNext.path, metadata: {
+          'title': nextNext.title,
+          'artist': nextNext.artist ?? 'Unknown Artist',
+          'album': nextNext.album ?? 'Unknown Album',
+          if (nextNext.artPath != null) 'artPath': nextNext.artPath!,
+          if (nextNext.duration != null) 'duration': nextNext.duration!.toString(),
+        });
+      }
     }
   }
 
@@ -1338,22 +1451,20 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
-  Future<void> skipNext({bool isManual = true, bool shouldPlay = true}) async {
-    if (_playlist.isEmpty) return;
-    _isLastPlayManual = isManual;
-    _playCountTimer?.cancel();
-
-    final nextIndex = _currentIndex + 1;
+  Song? getNextSong({bool updateIndex = false}) {
+    if (_playlist.isEmpty) return null;
+    
+    int nextIndex = _currentIndex + 1;
     if (nextIndex >= _playlist.length) {
       if (state.repeatMode != RepeatMode.all) {
-        await ref.read(audioServiceProvider).pause();
-        state = state.copyWith(isPlaying: false);
-        return;
+        return null;
       }
     }
+    
+    int finalIndex = nextIndex;
+    List<Song> finalPlaylist = _playlist;
 
-    _currentIndex++;
-    if (_currentIndex >= _playlist.length) {
+    if (finalIndex >= finalPlaylist.length) {
       if (state.repeatMode == RepeatMode.all) {
         if (state.isShuffle) {
           final newPlaylist = List<Song>.from(_originalPlaylist)..shuffle();
@@ -1363,21 +1474,47 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
             newPlaylist[0] = newPlaylist[swapIdx];
             newPlaylist[swapIdx] = temp;
           }
-          _playlist = newPlaylist;
-          _currentIndex = 0;
-          state = state.copyWith(queue: List.from(_playlist));
+          finalPlaylist = newPlaylist;
+          finalIndex = 0;
         } else {
-          _currentIndex = 0;
+          finalIndex = 0;
         }
       } else {
-        _currentIndex = 0;
+        finalIndex = 0;
       }
     }
-    if (_manualQueueCount > 0) {
-      _manualQueueCount--;
+
+    if (updateIndex) {
+      _playlist = finalPlaylist;
+      _currentIndex = finalIndex;
+      if (_manualQueueCount > 0) {
+        _manualQueueCount--;
+      }
+      if (state.isShuffle && finalIndex == 0) {
+        state = state.copyWith(queue: List.from(_playlist));
+      }
+      return _playlist[_currentIndex];
+    }
+    
+    return finalPlaylist[finalIndex];
+  }
+
+  Future<void> skipNext({bool isManual = true, bool shouldPlay = true, bool skipPlayDirect = false}) async {
+    if (_playlist.isEmpty) return;
+    _isLastPlayManual = isManual;
+    _playCountTimer?.cancel();
+
+    final songToPlay = getNextSong(updateIndex: true);
+    
+    if (songToPlay == null) {
+      await ref.read(audioServiceProvider).pause();
+      state = state.copyWith(isPlaying: false);
+      return;
     }
 
-    await play(_playlist[_currentIndex], play: shouldPlay);
+    if (!skipPlayDirect) {
+      await play(songToPlay, play: shouldPlay);
+    }
   }
 
   Future<void> skipPrevious({bool force = false}) async {
@@ -2521,6 +2658,14 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       }
     });
     return completer.future;
+  }
+
+  Future<void> _performAutoCrossfade(int crossfadeSec) async {
+    final fadeDuration = Duration(seconds: crossfadeSec);
+    await _fadeVolume(0.0, fadeDuration);
+    if (_autoCrossfadeTriggered && state.isPlaying) {
+      await skipNext(isManual: false);
+    }
   }
 
   void pauseForInterruption({required bool permanent}) {

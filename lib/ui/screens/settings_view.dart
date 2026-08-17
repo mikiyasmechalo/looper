@@ -322,6 +322,68 @@ class SettingsView extends ConsumerWidget {
                       isLast: false,
                     ),
                     _PremiumSwitchRow(
+                      icon: LucideIcons.infinity,
+                      title: 'Gapless Playback',
+                      subtitle:
+                          'Eliminate silence between consecutive tracks for continuous album & live playback',
+                      value: settings.gaplessPlayback,
+                      onChanged: (value) {
+                        HapticFeedback.lightImpact();
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateGaplessPlayback(value);
+                      },
+                      isLast: false,
+                    ),
+                    _PremiumSliderRow(
+                      icon: LucideIcons.blend,
+                      title: 'Crossfade Duration',
+                      subtitle: settings.crossfadeDuration == 0
+                          ? 'Disabled (Pure Gapless transitions)'
+                          : 'Smoothly fade out track and fade in next over ${settings.crossfadeDuration}s',
+                      value: settings.crossfadeDuration.toDouble(),
+                      min: 0,
+                      max: 12,
+                      divisions: 12,
+                      suffix: 's',
+                      onChanged: (value) {
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateCrossfadeDuration(value.round());
+                      },
+                      isLast: false,
+                    ),
+                    if (settings.crossfadeDuration > 0)
+                      _PremiumDropdownRow<int>(
+                        icon: LucideIcons.gitCommit,
+                        title: 'Crossfade Mode',
+                        subtitle: 'Choose when crossfade transitions are triggered',
+                        value: settings.crossfadeMode,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text('Always (Auto & Manual)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text('Automatic Transitions Only'),
+                          ),
+                          DropdownMenuItem(
+                            value: 2,
+                            child: Text('Manual Skips Only'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            HapticFeedback.lightImpact();
+                            ref
+                                .read(settingsProvider.notifier)
+                                .updateCrossfadeMode(value);
+                          }
+                        },
+                        isLast: false,
+                      ),
+                    _PremiumSwitchRow(
                       icon: LucideIcons.music,
                       title: l10n.fadePlayPauseStop,
                       subtitle: l10n.fadePlayPauseStopDesc,

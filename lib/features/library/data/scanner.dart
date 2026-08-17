@@ -102,7 +102,7 @@ class LibraryScanner {
     if (filesToProcess.isEmpty) {
       // Clean up any songs in Isar that were in this folder
       await DbService.isar.writeTxn(() async {
-        final prefix = path.endsWith('/') ? path : '$path/';
+        final prefix = path.endsWith(p.separator) ? path : '$path${p.separator}';
         final toDelete = await DbService.isar.songs
             .filter()
             .pathStartsWith(prefix)
@@ -119,7 +119,7 @@ class LibraryScanner {
 
     // Get all existing songs under this scan path
     // (keys lowercased for case-insensitive comparison on Windows)
-    final prefix = path.endsWith('/') ? path : '$path/';
+    final prefix = path.endsWith(p.separator) ? path : '$path${p.separator}';
     final songsInPathDb = await DbService.isar.songs
         .filter()
         .pathStartsWith(prefix)

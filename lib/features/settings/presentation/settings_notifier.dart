@@ -273,6 +273,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..fullscreenVisualizerEnabled = s.fullscreenVisualizerEnabled
       ..showFullscreenABLooper = s.showFullscreenABLooper
       ..showFullscreenSleepTimer = s.showFullscreenSleepTimer
+      ..gaplessPlayback = s.gaplessPlayback
+      ..crossfadeDuration = s.crossfadeDuration
+      ..crossfadeMode = s.crossfadeMode
       ..showPlayedSongsInQueue = s.showPlayedSongsInQueue
       ..customShortcutsJson = s.customShortcutsJson
       ..defaultMiniPlayerType = s.defaultMiniPlayerType
@@ -494,6 +497,30 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateShowFullscreenSleepTimer(bool value) async {
     final newState = _clone(state)..showFullscreenSleepTimer = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateGaplessPlayback(bool value) async {
+    final newState = _clone(state)..gaplessPlayback = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateCrossfadeDuration(int seconds) async {
+    final newState = _clone(state)..crossfadeDuration = seconds;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateCrossfadeMode(int mode) async {
+    final newState = _clone(state)..crossfadeMode = mode;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });
