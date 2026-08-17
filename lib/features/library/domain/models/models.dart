@@ -247,6 +247,12 @@ class AppSettings {
   // Desktop Mini-Player: default mini-player style triggered by shortcut.
   // 0: standard (300x420), 1: corner widget (330x110)
   int defaultMiniPlayerType = 0;
+
+  // Desktop Fullscreen: show A-B Looper button in player toolbar.
+  bool showFullscreenABLooper = false;
+
+  // Desktop Fullscreen: show Sleep Timer button in player toolbar.
+  bool showFullscreenSleepTimer = false;
 }
 
 enum SeekBarStyle { visualizer, expressive, flat }

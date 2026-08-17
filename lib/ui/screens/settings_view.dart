@@ -558,6 +558,34 @@ class SettingsView extends ConsumerWidget {
                         },
                         isLast: false,
                       ),
+                      _PremiumSwitchRow(
+                        icon: LucideIcons.repeat1,
+                        title: 'Show A-B Looper Button',
+                        subtitle:
+                            'Display the A-B section looper shortcut in the player toolbar',
+                        value: settings.showFullscreenABLooper,
+                        onChanged: (value) {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateShowFullscreenABLooper(value);
+                        },
+                        isLast: false,
+                      ),
+                      _PremiumSwitchRow(
+                        icon: LucideIcons.timer,
+                        title: 'Show Sleep Timer Button',
+                        subtitle:
+                            'Display the sleep timer shortcut in the player toolbar',
+                        value: settings.showFullscreenSleepTimer,
+                        onChanged: (value) {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateShowFullscreenSleepTimer(value);
+                        },
+                        isLast: false,
+                      ),
                       _PremiumDropdownRow<int>(
                         icon: LucideIcons.barChart2,
                         title: 'Now playing seek bar',

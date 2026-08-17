@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -1307,85 +1308,99 @@ class _MobileUtilityControls extends StatelessWidget {
             height: 15,
           ),
         ),
-        const SizedBox(width: 6),
         // A-B Looper
         Consumer(
           builder: (context, ref, _) {
+            final showAB = ref.watch(
+              settingsProvider.select((s) => s.showFullscreenABLooper),
+            );
+            if (!showAB) return const SizedBox.shrink();
+
             final isABLooping =
                 ref.watch(playbackProvider.select((s) => s.isABLooping));
             final hasLoop = ref.watch(playbackProvider.select(
                 (s) => s.loopStart != null && s.loopEnd != null));
-            return PremiumSection(
-              heroTag: 'desktop_util_ab_looper',
-              width: 68,
-              height: 52,
-              useBlur: true,
-              showShadow: false,
-              animate: true,
-              forceNoBlur: true,
-              useExpanded: false,
-              backgroundColor: isABLooping
-                  ? colorScheme.primary
-                  : (hasLoop
-                      ? colorScheme.primary.withValues(alpha: 0.25)
-                      : null),
-              onTap: () => showABLooper(context),
-              borderRadius: BorderRadius.circular(12),
-              child: Center(
-                child: Text(
-                  'A-B',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: isABLooping
-                        ? HSLColor.fromColor(colorScheme.primary)
-                            .withLightness(0.15)
-                            .toColor()
-                        : (hasLoop ? colorScheme.primary : Colors.white70),
-                    letterSpacing: -0.5,
+            return Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: PremiumSection(
+                heroTag: 'desktop_util_ab_looper',
+                width: 68,
+                height: 52,
+                useBlur: true,
+                showShadow: false,
+                animate: true,
+                forceNoBlur: true,
+                useExpanded: false,
+                backgroundColor: isABLooping
+                    ? colorScheme.primary
+                    : (hasLoop
+                        ? colorScheme.primary.withValues(alpha: 0.25)
+                        : null),
+                onTap: () => showABLooper(context),
+                borderRadius: BorderRadius.circular(12),
+                child: Center(
+                  child: Text(
+                    'A-B',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: isABLooping
+                          ? HSLColor.fromColor(colorScheme.primary)
+                              .withLightness(0.15)
+                              .toColor()
+                          : (hasLoop ? colorScheme.primary : Colors.white70),
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
               ),
             );
           },
         ),
-        const SizedBox(width: 6),
         // Sleep Timer
         Consumer(
           builder: (context, ref, _) {
+            final showSleep = ref.watch(
+              settingsProvider.select((s) => s.showFullscreenSleepTimer),
+            );
+            if (!showSleep) return const SizedBox.shrink();
+
             final isSleepActive =
                 ref.watch(playbackProvider.select((s) => s.isSleepTimerActive));
             final playbackState = ref.watch(playbackProvider);
-            return PremiumSection(
-              heroTag: 'desktop_util_sleep_timer',
-              width: 68,
-              height: 52,
-              useBlur: true,
-              showShadow: false,
-              animate: true,
-              forceNoBlur: true,
-              useExpanded: false,
-              backgroundColor:
-                  isSleepActive ? colorScheme.primary : null,
-              onTap: () => showSleepTimer(context, ref),
-              borderRadius: BorderRadius.circular(12),
-              child: Center(
-                child: isSleepActive
-                    ? Text(
-                        formatSleepTimerRemaining(playbackState),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: HSLColor.fromColor(colorScheme.primary)
-                              .withLightness(0.15)
-                              .toColor(),
+            return Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: PremiumSection(
+                heroTag: 'desktop_util_sleep_timer',
+                width: 68,
+                height: 52,
+                useBlur: true,
+                showShadow: false,
+                animate: true,
+                forceNoBlur: true,
+                useExpanded: false,
+                backgroundColor:
+                    isSleepActive ? colorScheme.primary : null,
+                onTap: () => showSleepTimer(context, ref),
+                borderRadius: BorderRadius.circular(12),
+                child: Center(
+                  child: isSleepActive
+                      ? Text(
+                          formatSleepTimerRemaining(playbackState),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: HSLColor.fromColor(colorScheme.primary)
+                                .withLightness(0.15)
+                                .toColor(),
+                          ),
+                        )
+                      : Icon(
+                          LucideIcons.timer,
+                          size: 16,
+                          color: Colors.white70,
                         ),
-                      )
-                    : Icon(
-                        LucideIcons.timer,
-                        size: 16,
-                        color: Colors.white70,
-                      ),
+                ),
               ),
             );
           },
@@ -2086,7 +2101,7 @@ class _SidePanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
       decoration: BoxDecoration(
         border: Border(
           left: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
@@ -2097,11 +2112,27 @@ class _SidePanel extends ConsumerWidget {
         children: [
           Row(
             children: [
-              _PanelTabs(current: tab, onChanged: onTabChanged, l10n: l10n),
-              const Spacer(),
+              Expanded(
+                child: FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _PanelTabs(current: tab, onChanged: onTabChanged, l10n: l10n),
+                      const SizedBox(width: 6),
+                      _PanelHeaderBadge(current: tab),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(LucideIcons.x, size: 18, color: Colors.white60),
                 onPressed: onClose,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                splashRadius: 18,
               ),
             ],
           ),
@@ -2118,6 +2149,118 @@ class _SidePanel extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+class _PanelHeaderBadge extends ConsumerWidget {
+  const _PanelHeaderBadge({required this.current});
+
+  final PlayerPanelTab current;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (current == PlayerPanelTab.queue) {
+      final queue = ref.watch(playbackProvider.select((s) => s.queue));
+      final currentSongPath = ref.watch(
+        playbackProvider.select((s) => s.currentSong?.path),
+      );
+      final currentIdx = queue.indexWhere((s) => s.path == currentSongPath);
+      final activeNum = currentIdx >= 0 ? currentIdx + 1 : 0;
+      final totalNum = queue.length;
+
+      return Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 0),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              LucideIcons.listMusic,
+              size: 13,
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '$activeNum / $totalNum',
+              style: AppFonts.jostStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Colors.white70,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      final alignment = ref.watch(
+        settingsProvider.select((s) => s.lyricsAlignment),
+      );
+      final colorScheme = Theme.of(context).colorScheme;
+
+      Widget alignBtn(IconData icon, String value, String tooltip) {
+        final isSelected = alignment == value;
+        return Tooltip(
+          message: tooltip,
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              ref.read(settingsProvider.notifier).updateLyricsAlignment(value);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? colorScheme.primary.withValues(alpha: 0.22)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+                border: isSelected
+                    ? Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.4),
+                        width: 0.8,
+                      )
+                    : null,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 12.5,
+                color: isSelected ? colorScheme.primary : Colors.white54,
+              ),
+            ),
+          ),
+        );
+      }
+
+      return Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            alignBtn(LucideIcons.alignLeft, 'left', 'Left align'),
+            const SizedBox(width: 2),
+            alignBtn(LucideIcons.alignCenter, 'center', 'Center align'),
+            const SizedBox(width: 2),
+            alignBtn(LucideIcons.alignRight, 'right', 'Right align'),
+          ],
+        ),
+      );
+    }
   }
 }
 
@@ -2139,7 +2282,7 @@ class _PanelTabs extends StatelessWidget {
       return GestureDetector(
         onTap: () => onChanged(value),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
           decoration: BoxDecoration(
             color: active ? Colors.white.withValues(alpha: 0.08) : null,
             borderRadius: BorderRadius.circular(999),
@@ -2148,7 +2291,7 @@ class _PanelTabs extends StatelessWidget {
             label,
             style: AppFonts.jostStyle(
               color: active ? Colors.white : Colors.white60,
-              fontSize: 12,
+              fontSize: 11.5,
               fontWeight: active ? FontWeight.w500 : FontWeight.normal,
             ),
           ),
@@ -2157,7 +2300,7 @@ class _PanelTabs extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.045),
         borderRadius: BorderRadius.circular(999),
