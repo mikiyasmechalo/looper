@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,27 +9,65 @@ import 'package:looper_player/features/settings/presentation/settings_notifier.d
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+/// Opens the sleep timer modal dialog on desktop or bottom sheet on mobile.
+void showSleepTimer(BuildContext context, [WidgetRef? ref]) {
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    showDialog(
+      context: context,
+      builder: (ctx) => const _SleepTimerDesktopDialog(),
+    );
+  } else {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      isScrollControlled: true,
+      builder: (modalContext) => const SleepTimerSheetContent(),
+    );
+  }
+}
+
+/// Backwards compatibility alias for showSleepTimer
 void showSleepTimerBottomSheet(BuildContext context, WidgetRef ref) {
-  showModalBottomSheet(
-    context: context,
-    useRootNavigator: true,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
-    isScrollControlled: true,
-    builder: (modalContext) => const SleepTimerSheetContent(),
-  );
+  showSleepTimer(context, ref);
+}
+
+class _SleepTimerDesktopDialog extends StatelessWidget {
+  const _SleepTimerDesktopDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF18181B),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: const ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(24)),
+          child: SingleChildScrollView(
+            child: SleepTimerSheetContent(isDialog: true),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class SleepTimerSheetContent extends ConsumerStatefulWidget {
-  const SleepTimerSheetContent({super.key});
+  final bool isDialog;
+  const SleepTimerSheetContent({super.key, this.isDialog = false});
 
   @override
   ConsumerState<SleepTimerSheetContent> createState() => _SleepTimerSheetContentState();
 }
 
 class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent> {
-  int _customMinutes = 15;
-  int _customSongs = 5;
+  int _customMinutes = 30;
+  int _customSongs = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -38,69 +77,110 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
     final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
     final isPureBlack = settings.darkTheme;
 
-    final sheetBg = isPureBlack
-        ? Colors.black
-        : (useBlur ? Colors.black.withValues(alpha: 0.6) : const Color(0xFF1E1E1E));
+    final sheetBg = widget.isDialog
+        ? const Color(0xFF18181B)
+        : (isPureBlack
+            ? Colors.black
+            : (useBlur ? Colors.black.withValues(alpha: 0.6) : const Color(0xFF1E1E1E)));
 
     Widget sheetContent = Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        widget.isDialog ? 24 : 20,
+        24,
+        widget.isDialog ? 24 : 32,
+      ),
       decoration: BoxDecoration(
         color: sheetBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border.all(
-          color: isPureBlack
-              ? Colors.white10
-              : Colors.white.withValues(alpha: 0.08),
-          width: 1,
-        ),
+        borderRadius: widget.isDialog
+            ? BorderRadius.circular(24)
+            : const BorderRadius.vertical(top: Radius.circular(28)),
+        border: widget.isDialog
+            ? null
+            : Border.all(
+                color: isPureBlack
+                    ? Colors.white10
+                    : Colors.white.withValues(alpha: 0.08),
+                width: 1,
+              ),
       ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Icon(LucideIcons.timer, color: accentColor, size: 24),
-                const SizedBox(width: 12),
-                Text(
-                  'Sleep Timer',
-                  style: AppFonts.jostStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+            if (!widget.isDialog) ...[
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: playbackState.isSleepTimerActive
+                        ? accentColor.withValues(alpha: 0.2)
+                        : Colors.white10,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    LucideIcons.timer,
+                    color: playbackState.isSleepTimerActive ? accentColor : Colors.white70,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sleep Timer',
+                        style: AppFonts.jostStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        playbackState.isSleepTimerActive
+                            ? (playbackState.sleepTimerDurationRemaining != null
+                                ? 'Active: Stopping in ${formatSleepTimerRemaining(playbackState)}'
+                                : 'Active: Stopping after ${formatSleepTimerRemaining(playbackState)}')
+                            : 'Automatically fade out and pause playback',
+                        style: AppFonts.jostStyle(
+                          fontSize: 13,
+                          color: playbackState.isSleepTimerActive
+                              ? accentColor
+                              : Colors.white54,
+                          fontWeight: playbackState.isSleepTimerActive
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (widget.isDialog && Navigator.of(context).canPop())
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, size: 18, color: Colors.white54),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 22),
             Text(
-              playbackState.isSleepTimerActive
-                  ? (playbackState.sleepTimerDurationRemaining != null
-                      ? 'Active: Stopping in ${formatSleepTimerRemaining(playbackState)}'
-                      : 'Active: Stopping after ${formatSleepTimerRemaining(playbackState)}')
-                  : 'Select when to pause music playback',
-              style: AppFonts.jostStyle(
-                fontSize: 14,
-                color: playbackState.isSleepTimerActive
-                    ? accentColor
-                    : Colors.white54,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'STOP BY TIME',
+              'STOP BY DURATION',
               style: AppFonts.jostStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
@@ -108,10 +188,10 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                 letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             PremiumSection(
               borderRadius: BorderRadius.circular(16),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               useExpanded: false,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -121,18 +201,20 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                       IconButton(
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          if (_customMinutes > 1) {
+                          if (_customMinutes > 5) {
+                            setState(() => _customMinutes -= 5);
+                          } else if (_customMinutes > 1) {
                             setState(() => _customMinutes--);
                           }
                         },
-                        icon: const Icon(LucideIcons.minus, color: Colors.white70),
+                        icon: const Icon(LucideIcons.minus, color: Colors.white70, size: 16),
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white10,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 14),
                       Text(
                         '$_customMinutes ${_customMinutes == 1 ? 'Min' : 'Mins'}',
                         style: AppFonts.jostStyle(
@@ -141,17 +223,17 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 14),
                       IconButton(
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          setState(() => _customMinutes++);
+                          setState(() => _customMinutes += 5);
                         },
-                        icon: const Icon(LucideIcons.plus, color: Colors.white70),
+                        icon: const Icon(LucideIcons.plus, color: Colors.white70, size: 16),
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white10,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ],
@@ -179,33 +261,36 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
                   _buildCustomChip(
-                      label: '1 Min',
-                      onTap: () => _startTimer(const Duration(minutes: 1))),
-                  _buildCustomChip(
                       label: '5 Min',
                       onTap: () => _startTimer(const Duration(minutes: 5))),
                   _buildCustomChip(
-                      label: '10 Min',
-                      onTap: () => _startTimer(const Duration(minutes: 10))),
+                      label: '15 Min',
+                      onTap: () => _startTimer(const Duration(minutes: 15))),
                   _buildCustomChip(
                       label: '30 Min',
                       onTap: () => _startTimer(const Duration(minutes: 30))),
                   _buildCustomChip(
                       label: '45 Min',
                       onTap: () => _startTimer(const Duration(minutes: 45))),
+                  _buildCustomChip(
+                      label: '1 Hour',
+                      onTap: () => _startTimer(const Duration(hours: 1))),
+                  _buildCustomChip(
+                      label: '2 Hours',
+                      onTap: () => _startTimer(const Duration(hours: 2))),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             Text(
-              'STOP BY SONG COUNT',
+              'STOP BY TRACKS',
               style: AppFonts.jostStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
@@ -213,10 +298,10 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                 letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             PremiumSection(
               borderRadius: BorderRadius.circular(16),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               useExpanded: false,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -230,14 +315,14 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                             setState(() => _customSongs--);
                           }
                         },
-                        icon: const Icon(LucideIcons.minus, color: Colors.white70),
+                        icon: const Icon(LucideIcons.minus, color: Colors.white70, size: 16),
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white10,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 14),
                       Text(
                         '$_customSongs ${_customSongs == 1 ? 'Song' : 'Songs'}',
                         style: AppFonts.jostStyle(
@@ -246,17 +331,17 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 14),
                       IconButton(
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           setState(() => _customSongs++);
                         },
-                        icon: const Icon(LucideIcons.plus, color: Colors.white70),
+                        icon: const Icon(LucideIcons.plus, color: Colors.white70, size: 16),
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white10,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ],
@@ -284,14 +369,17 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
                   _buildCustomChip(
-                      label: '1 Song', onTap: () => _startSongs(1)),
+                      label: 'End of Current Track (1 Song)',
+                      highlight: true,
+                      accentColor: accentColor,
+                      onTap: () => _startSongs(1)),
                   _buildCustomChip(
                       label: '2 Songs', onTap: () => _startSongs(2)),
                   _buildCustomChip(
@@ -311,18 +399,18 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                   ref.read(playbackProvider.notifier).stopSleepTimer();
                   Navigator.pop(context);
                 },
-                icon: const Icon(LucideIcons.xCircle, size: 20),
+                icon: const Icon(LucideIcons.xCircle, size: 18),
                 label: Text('Cancel Sleep Timer',
                     style: AppFonts.jostStyle(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+                  backgroundColor: Colors.redAccent.withValues(alpha: 0.15),
                   foregroundColor: Colors.redAccent,
                   elevation: 0,
                   side: const BorderSide(color: Colors.redAccent, width: 1),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
           ],
@@ -330,7 +418,7 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
       ),
     );
 
-    if (useBlur && !isPureBlack) {
+    if (useBlur && !isPureBlack && !widget.isDialog) {
       return RepaintBoundary(
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -358,23 +446,27 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
   Widget _buildCustomChip({
     required String label,
     required VoidCallback onTap,
+    bool highlight = false,
+    Color? accentColor,
   }) {
     return Container(
       margin: const EdgeInsets.only(right: 8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Material(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: highlight
+              ? (accentColor ?? Colors.white).withValues(alpha: 0.18)
+              : Colors.white.withValues(alpha: 0.06),
           child: InkWell(
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Text(
                 label,
                 style: AppFonts.jostStyle(
-                  color: Colors.white,
+                  color: highlight && accentColor != null ? accentColor : Colors.white,
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                  fontSize: 13,
                 ),
               ),
             ),

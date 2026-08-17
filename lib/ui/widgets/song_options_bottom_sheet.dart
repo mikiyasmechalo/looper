@@ -32,6 +32,7 @@ void showSongOptionsBottomSheet({
   required WidgetRef ref,
   required Song song,
   Playlist? playlist,
+  int? queueIndex,
   bool showDeleteOption = true,
   bool showRenameOption = true,
 }) {
@@ -44,6 +45,7 @@ void showSongOptionsBottomSheet({
     builder: (modalContext) => _SongOptionsSheetContent(
       song: song,
       playlist: playlist,
+      queueIndex: queueIndex,
       showDeleteOption: showDeleteOption,
       showRenameOption: showRenameOption,
       parentContext: context,
@@ -54,6 +56,7 @@ void showSongOptionsBottomSheet({
 class _SongOptionsSheetContent extends ConsumerWidget {
   final Song song;
   final Playlist? playlist;
+  final int? queueIndex;
   final bool showDeleteOption;
   final bool showRenameOption;
   final BuildContext parentContext;
@@ -61,6 +64,7 @@ class _SongOptionsSheetContent extends ConsumerWidget {
   const _SongOptionsSheetContent({
     required this.song,
     this.playlist,
+    this.queueIndex,
     required this.showDeleteOption,
     required this.showRenameOption,
     required this.parentContext,
@@ -247,6 +251,16 @@ class _SongOptionsSheetContent extends ConsumerWidget {
         ? Colors.black
         : (useBlur ? Colors.black.withValues(alpha: 0.6) : const Color(0xFF1E1E1E));
 
+    final queue = playbackState.queue;
+    final currentSongPath = playbackState.currentSong?.path;
+    final currentIdx = queue.indexWhere((s) => s.path == currentSongPath);
+    final targetIdx = queueIndex ?? queue.indexWhere((s) => s.path == song.path);
+    final isUpcomingInQueue = currentIdx != -1 && targetIdx != -1 && targetIdx >= currentIdx;
+    final songsUntilStop = isUpcomingInQueue ? (targetIdx - currentIdx + 1) : null;
+    final isStoppingAfterThis = playbackState.isSleepTimerActive &&
+        playbackState.sleepTimerSongsRemaining != null &&
+        playbackState.sleepTimerSongsRemaining == songsUntilStop;
+
     Widget sheetContent = Container(
       decoration: BoxDecoration(
         color: sheetBg,
@@ -377,6 +391,27 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                           showSleepTimerBottomSheet(parentContext, ref);
                         },
                       ),
+                      if (isUpcomingInQueue && songsUntilStop != null)
+                        MenuOptionTile(
+                          label: isStoppingAfterThis
+                              ? 'Cancel Stop After This Song'
+                              : (songsUntilStop == 1
+                                  ? 'Stop After This Song'
+                                  : 'Stop After This Song ($songsUntilStop songs)'),
+                          icon: isStoppingAfterThis ? LucideIcons.timerOff : LucideIcons.timer,
+                          iconColor: isStoppingAfterThis ? Colors.redAccent : accentColor,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                            if (isStoppingAfterThis) {
+                              ref.read(playbackProvider.notifier).stopSleepTimer();
+                            } else {
+                              ref
+                                  .read(playbackProvider.notifier)
+                                  .startSleepTimer(songCount: songsUntilStop);
+                            }
+                          },
+                        ),
                       MenuOptionTile(
                         label: playbackState.isABLooping
                             ? 'A-B Looper (Active)'

@@ -9,6 +9,7 @@ import 'package:looper_player/features/search/presentation/search_view.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/features/shortcuts/domain/shortcut_models.dart';
 import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_cheatsheet_dialog.dart';
+import 'package:looper_player/ui/widgets/sleep_timer_sheet_content.dart';
 
 final shortcutsProvider =
     StateNotifierProvider<ShortcutsNotifier, Map<String, String>>((ref) {
@@ -179,6 +180,17 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
         return true;
       case 'clear_ab_loop':
         playback.clearABLoop();
+        return true;
+      case 'toggle_sleep_timer':
+        final isSleepActive = ref.read(playbackProvider).isSleepTimerActive;
+        if (isSleepActive) {
+          playback.stopSleepTimer();
+        } else {
+          final context = rootNavigatorKey.currentContext;
+          if (context != null) {
+            showSleepTimer(context, ref);
+          }
+        }
         return true;
 
       // Seeking & Volume

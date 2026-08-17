@@ -373,9 +373,15 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
                 sleepTimerSongsInitial: null,
                 sleepTimerDurationRemaining: null,
                 sleepTimerDurationInitial: null,
+                isPlaying: false,
               );
-              player.pause();
               _isTransitioning = false;
+              AppToast.show(
+                title: 'Sleep Timer Finished',
+                subtitle: 'Advanced to next track & paused',
+                iconData: LucideIcons.moon,
+              );
+              skipNext(isManual: false, shouldPlay: false);
               return;
             } else {
               state = state.copyWith(sleepTimerSongsRemaining: remaining);
@@ -1332,7 +1338,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
-  Future<void> skipNext({bool isManual = true}) async {
+  Future<void> skipNext({bool isManual = true, bool shouldPlay = true}) async {
     if (_playlist.isEmpty) return;
     _isLastPlayManual = isManual;
     _playCountTimer?.cancel();
@@ -1341,6 +1347,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     if (nextIndex >= _playlist.length) {
       if (state.repeatMode != RepeatMode.all) {
         await ref.read(audioServiceProvider).pause();
+        state = state.copyWith(isPlaying: false);
         return;
       }
     }
@@ -1370,7 +1377,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       _manualQueueCount--;
     }
 
-    await play(_playlist[_currentIndex]);
+    await play(_playlist[_currentIndex], play: shouldPlay);
   }
 
   Future<void> skipPrevious({bool force = false}) async {
@@ -2175,6 +2182,15 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         sleepTimerSongsInitial: null,
       );
 
+      final mins = duration.inMinutes;
+      final secs = duration.inSeconds.remainder(60);
+      final label = mins > 0 ? '$mins min${mins > 1 ? "s" : ""}' : '$secs seconds';
+      AppToast.show(
+        title: 'Sleep Timer Set',
+        subtitle: 'Playback will stop in $label',
+        iconData: LucideIcons.timer,
+      );
+
       _sleepTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (!state.isSleepTimerActive || state.sleepTimerDurationRemaining == null) {
           timer.cancel();
@@ -2192,8 +2208,19 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
             sleepTimerSongsRemaining: null,
             sleepTimerDurationInitial: null,
             sleepTimerSongsInitial: null,
+            isPlaying: false,
           );
-          player.pause();
+          AppToast.show(
+            title: 'Sleep Timer Finished',
+            subtitle: 'Advanced to next track & paused',
+            iconData: LucideIcons.moon,
+          );
+          // Fade out volume smoothly over 2 seconds before pausing on next track
+          final savedVol = state.volume;
+          _fadeVolume(0.0, const Duration(milliseconds: 2000)).then((_) async {
+            await skipNext(isManual: false, shouldPlay: false);
+            player.setVolume(savedVol * 100);
+          });
         } else {
           state = state.copyWith(sleepTimerDurationRemaining: remaining);
         }
@@ -2205,6 +2232,11 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         sleepTimerDurationInitial: null,
         sleepTimerSongsRemaining: songCount,
         sleepTimerSongsInitial: songCount,
+      );
+      AppToast.show(
+        title: 'Sleep Timer Set',
+        subtitle: 'Stopping after $songCount ${songCount == 1 ? "song" : "songs"}',
+        iconData: LucideIcons.timer,
       );
     }
   }
@@ -2218,6 +2250,11 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       sleepTimerSongsRemaining: null,
       sleepTimerDurationInitial: null,
       sleepTimerSongsInitial: null,
+    );
+    AppToast.show(
+      title: 'Sleep Timer Cancelled',
+      subtitle: 'Playback will continue normally',
+      iconData: LucideIcons.timerOff,
     );
   }
 

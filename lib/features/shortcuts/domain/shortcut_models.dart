@@ -258,6 +258,17 @@ class AppShortcutAction {
         isShift: true,
       ),
     ),
+    const AppShortcutAction(
+      id: 'toggle_sleep_timer',
+      title: 'Sleep Timer / Dialog',
+      description: 'Open sleep timer dialog or stop active timer',
+      category: ShortcutCategory.playback,
+      defaultPrimary: AppKeyCombo(
+        key: LogicalKeyboardKey.keyS,
+        isCtrl: true,
+        isShift: true,
+      ),
+    ),
 
     // ─── Seeking & Volume ───────────────────────────────────────────────────
     const AppShortcutAction(

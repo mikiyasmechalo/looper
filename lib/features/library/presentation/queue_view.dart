@@ -48,8 +48,9 @@ class _QueueViewState extends ConsumerState<QueueView> {
 
   @override
   Widget build(BuildContext context) {
-    final queue = ref.watch(playbackProvider.select((s) => s.queue));
-    final currentSongPath = ref.watch(playbackProvider.select((s) => s.currentSong?.path));
+    final playbackState = ref.watch(playbackProvider);
+    final queue = playbackState.queue;
+    final currentSongPath = playbackState.currentSong?.path;
     final l10n = AppLocalizations.of(context)!;
 
     final showPlayed =
@@ -152,6 +153,10 @@ class _QueueViewState extends ConsumerState<QueueView> {
                     final isPlayed = currentIdx != -1 &&
                         originalIndex < currentIdx;
                     final isDraggable = !isPlayed && !isCurrent;
+                    final isStopTarget = playbackState.isSleepTimerActive &&
+                        playbackState.sleepTimerSongsRemaining != null &&
+                        currentIdx != -1 &&
+                        originalIndex == currentIdx + playbackState.sleepTimerSongsRemaining! - 1;
 
                     return GestureDetector(
                       key: ValueKey('queue_view_${song.path}_$index'),
@@ -159,6 +164,7 @@ class _QueueViewState extends ConsumerState<QueueView> {
                         context: context,
                         ref: ref,
                         song: song,
+                        queueIndex: originalIndex,
                         showDeleteOption: true,
                         showRenameOption: true,
                       ),
@@ -240,8 +246,44 @@ class _QueueViewState extends ConsumerState<QueueView> {
                                     ),
                                   ],
                                 ),
-                                trailing: isCurrent
-                                    ? const Padding(
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isStopTarget)
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 8),
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.18),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              LucideIcons.timer,
+                                              size: 10,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              'STOP',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context).colorScheme.primary,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    if (isCurrent)
+                                      const Padding(
                                         padding: EdgeInsets.only(right: 20.0),
                                         child: Icon(
                                           LucideIcons.volume2,
@@ -249,19 +291,22 @@ class _QueueViewState extends ConsumerState<QueueView> {
                                           size: 20,
                                         ),
                                       )
-                                    : isDraggable
-                                        ? ReorderableDragStartListener(
-                                            index: index,
-                                            child: const Padding(
-                                              padding: EdgeInsets.only(right: 20.0),
-                                              child: Icon(
-                                                LucideIcons.gripVertical,
-                                                size: 24,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                          )
-                                        : const SizedBox(width: 44),
+                                    else if (isDraggable)
+                                      ReorderableDragStartListener(
+                                        index: index,
+                                        child: const Padding(
+                                          padding: EdgeInsets.only(right: 20.0),
+                                          child: Icon(
+                                            LucideIcons.gripVertical,
+                                            size: 24,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      const SizedBox(width: 44),
+                                  ],
+                                ),
                                 onTap: () =>
                                     ref.read(playbackProvider.notifier).playAtIndex(originalIndex),
                               ),

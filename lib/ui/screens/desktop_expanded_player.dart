@@ -24,6 +24,7 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'package:looper_player/features/playback/presentation/waveform_provider.dart';
 import 'package:looper_player/features/playback/presentation/widgets/ab_looper_widget.dart';
+import 'package:looper_player/ui/widgets/sleep_timer_sheet_content.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 
 enum PlayerPanelTab { queue, lyrics }
@@ -1349,6 +1350,47 @@ class _MobileUtilityControls extends StatelessWidget {
           },
         ),
         const SizedBox(width: 6),
+        // Sleep Timer
+        Consumer(
+          builder: (context, ref, _) {
+            final isSleepActive =
+                ref.watch(playbackProvider.select((s) => s.isSleepTimerActive));
+            final playbackState = ref.watch(playbackProvider);
+            return PremiumSection(
+              heroTag: 'desktop_util_sleep_timer',
+              width: 68,
+              height: 52,
+              useBlur: true,
+              showShadow: false,
+              animate: true,
+              forceNoBlur: true,
+              useExpanded: false,
+              backgroundColor:
+                  isSleepActive ? colorScheme.primary : null,
+              onTap: () => showSleepTimer(context, ref),
+              borderRadius: BorderRadius.circular(12),
+              child: Center(
+                child: isSleepActive
+                    ? Text(
+                        formatSleepTimerRemaining(playbackState),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: HSLColor.fromColor(colorScheme.primary)
+                              .withLightness(0.15)
+                              .toColor(),
+                        ),
+                      )
+                    : Icon(
+                        LucideIcons.timer,
+                        size: 16,
+                        color: Colors.white70,
+                      ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 6),
         // Lyrics
         PremiumSection(
           heroTag: 'desktop_util_lyrics',
@@ -2208,11 +2250,10 @@ class _QueueListState extends ConsumerState<_QueueList> {
 
   @override
   Widget build(BuildContext context) {
-    final queue = ref.watch(playbackProvider.select((s) => s.queue));
-    final currentSongPath = ref.watch(
-      playbackProvider.select((s) => s.currentSong?.path),
-    );
-    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
+    final playback = ref.watch(playbackProvider);
+    final queue = playback.queue;
+    final currentSongPath = playback.currentSong?.path;
+    final isPlaying = playback.isPlaying;
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
@@ -2299,12 +2340,19 @@ class _QueueListState extends ConsumerState<_QueueList> {
               originalIndex < currentIndex;
           final isDraggable = !isPlayed && !isCurrent;
 
+          final isStopTarget = playback.isSleepTimerActive &&
+              playback.sleepTimerSongsRemaining != null &&
+              currentIndex != -1 &&
+              originalIndex != -1 &&
+              originalIndex == currentIndex + playback.sleepTimerSongsRemaining! - 1;
+
           return GestureDetector(
             key: ValueKey('fsq_${song.path}_$i'),
             onSecondaryTap: () => showSongOptionsBottomSheet(
               context: context,
               ref: ref,
               song: song,
+              queueIndex: originalIndex,
             ),
             child: Opacity(
               opacity: isPlayed ? 0.38 : 1.0,
@@ -2401,6 +2449,35 @@ class _QueueListState extends ConsumerState<_QueueList> {
                             ],
                           ),
                         ),
+                        if (isStopTarget)
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: colorScheme.primary.withValues(alpha: 0.35),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(LucideIcons.timer, size: 10, color: colorScheme.primary),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'STOP',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.primary,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         if (isCurrent && isPlaying)
                           Padding(
                             padding: const EdgeInsets.only(right: 4),
