@@ -18,6 +18,7 @@ final isarProvider = Provider<Isar>((ref) {
 });
 
 final startupFileProvider = Provider<String?>((ref) => null);
+final startupArgsProvider = Provider<List<String>>((ref) => const []);
 
 final searchFocusNodeProvider = Provider<FocusNode>((ref) {
   final node = FocusNode(debugLabel: 'SearchFocusNode');

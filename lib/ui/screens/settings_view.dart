@@ -15,6 +15,7 @@ import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/folder_picker_helper.dart';
 import 'package:looper_player/features/shortcuts/presentation/shortcuts_settings_view.dart';
 import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_cheatsheet_dialog.dart';
+import 'package:looper_player/core/windows_file_association_service.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -578,8 +579,34 @@ class SettingsView extends ConsumerWidget {
                                 .updateDefaultMiniPlayerType(value);
                           }
                         },
-                        isLast: true,
+                        isLast: !Platform.isWindows,
                       ),
+                      if (Platform.isWindows)
+                        _PremiumActionRow(
+                          icon: LucideIcons.mousePointerClick,
+                          title: 'Windows Explorer Context Menu',
+                          subtitle:
+                              'Re-register "Play in Looper" and "Add to Looper Queue" in Windows right-click menus',
+                          onTap: () async {
+                            HapticFeedback.lightImpact();
+                            final success =
+                                await WindowsFileAssociationService.register();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(success
+                                      ? 'Windows Explorer associations registered successfully!'
+                                      : 'Failed to register Windows associations.'),
+                                  backgroundColor: success
+                                      ? Colors.green.shade800
+                                      : Colors.red.shade800,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          isLast: true,
+                        ),
                     ],
                   ),
                 ),

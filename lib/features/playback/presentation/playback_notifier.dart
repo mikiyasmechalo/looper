@@ -546,10 +546,17 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     final savedSongIds = settings.lastQueueSongIds;
     final savedIndex = settings.lastQueueIndex;
     
+    // If a track is already playing/loaded from startup file arguments, do not overwrite it with the saved session
+    if (state.currentSong != null && !state.isRestoredSession) {
+      await _ensureDynamicQueue();
+      return;
+    }
+
     if (settings.persistQueue && savedSongIds.isNotEmpty) {
       final rawSongs = await DbService.isar.songs.getAll(savedSongIds);
       final List<Song> loadedSongs = rawSongs.whereType<Song>().toList();
       if (loadedSongs.isNotEmpty) {
+        if (state.currentSong != null && !state.isRestoredSession) return;
         _playlist = loadedSongs;
         _originalPlaylist = List.from(loadedSongs);
         _currentIndex = (savedIndex >= 0 && savedIndex < loadedSongs.length) ? savedIndex : 0;
@@ -567,12 +574,14 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         
         final initialPos = Duration(milliseconds: settings.lastPositionMs);
         Future.delayed(const Duration(milliseconds: 500), () async {
+          if (state.currentSong != null && !state.isRestoredSession) return;
           await play(song, forceDisableCrossfade: true, play: settings.resumeOnStart, initialPosition: initialPos);
         });
       }
     } else if (settings.persistQueue && settings.lastPlayedSongId != null) {
       final song = await DbService.isar.songs.get(settings.lastPlayedSongId!);
       if (song != null) {
+        if (state.currentSong != null && !state.isRestoredSession) return;
         state = state.copyWith(
           currentSong: song,
           isRestoredSession: true,
@@ -587,6 +596,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         
         final initialPos = Duration(milliseconds: settings.lastPositionMs);
         Future.delayed(const Duration(milliseconds: 500), () async {
+          if (state.currentSong != null && !state.isRestoredSession) return;
           await play(song, forceDisableCrossfade: true, play: settings.resumeOnStart, initialPosition: initialPos);
         });
       }
@@ -1283,38 +1293,138 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     state = state.copyWith(queue: List.from(_playlist));
   }
 
-  Future<void> playFromFile(String path) async {
-    // Check if song exists in DB
+  Future<Song> _getOrCreateSongForPath(String path) async {
     final songs = await DbService.isar.songs
         .filter()
         .pathEqualTo(path)
         .findAll();
-    Song? song = songs.isEmpty ? null : songs.first;
+    if (songs.isNotEmpty) return songs.first;
 
-    if (song == null) {
-      // Create a temporary song object from metadata
+    String? artPath;
+    String? title;
+    String? artist;
+    String? album;
+    String? albumArtist;
+    int? duration;
+    int? trackNumber;
+    int? trackTotal;
+    int? discNumber;
+    int? discTotal;
+    int? year;
+    String? genre;
+
+    try {
       final metadata = await MetadataGod.readMetadata(file: path);
-      // Extract and save artwork
-      String? artPath;
+      title = metadata.title;
+      artist = metadata.artist;
+      album = metadata.album;
+      albumArtist = metadata.albumArtist;
+      duration = metadata.durationMs?.toInt();
+      trackNumber = metadata.trackNumber;
+      trackTotal = metadata.trackTotal;
+      discNumber = metadata.discNumber;
+      discTotal = metadata.discTotal;
+      year = metadata.year;
+      genre = metadata.genre;
+
       if (metadata.picture != null) {
-        final scanner =
-            LibraryScanner(); // Need to save it using the same logic
+        final scanner = LibraryScanner();
         artPath = await scanner.saveAlbumArt(
           metadata.album ?? 'unknown',
           metadata.picture!.data,
         );
       }
+    } catch (_) {}
 
-      song = Song()
-        ..path = path
-        ..title = metadata.title ?? path.split('/').last
-        ..artist = metadata.artist
-        ..album = metadata.album
-        ..duration = metadata.durationMs?.toInt()
-        ..artPath = artPath;
+    final song = Song()
+      ..path = path
+      ..title = title ?? path.split(Platform.pathSeparator).last
+      ..artist = artist ?? 'Unknown Artist'
+      ..album = album ?? 'Unknown Album'
+      ..albumArtist = albumArtist
+      ..duration = duration
+      ..trackNumber = trackNumber
+      ..trackTotal = trackTotal
+      ..discNumber = discNumber
+      ..discTotal = discTotal
+      ..year = year
+      ..genre = genre
+      ..artPath = artPath
+      ..dateAdded = DateTime.now();
+
+    // Persist song record to DB to guarantee valid Isar Id for queues and state
+    try {
+      await DbService.isar.writeTxn(() async {
+        await DbService.isar.songs.put(song);
+      });
+    } catch (_) {}
+
+    return song;
+  }
+
+  Future<void> playFromFile(String path) async {
+    final song = await _getOrCreateSongForPath(path);
+
+    // Switch to or create dedicated "External" queue
+    if (_activeQueueName != 'External') {
+      if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
+        await _persistNamedQueue(_activeQueueName);
+      }
+      _activeQueueName = 'External';
+      ref.read(settingsProvider.notifier).updateActiveQueueName('External');
     }
 
+    _manualQueueCount = 0;
+    _playlist = [song];
+    _originalPlaylist = [song];
+    _currentIndex = 0;
+    state = state.copyWith(
+      currentSong: song,
+      queue: [song],
+      isRestoredSession: false,
+    );
     await play(song);
+    await _saveQueueState();
+  }
+
+  Future<void> enqueueFromFile(String path) async {
+    final song = await _getOrCreateSongForPath(path);
+    addToQueue(song);
+    await _saveQueueState();
+  }
+
+  Future<void> enqueueFromFiles(List<String> paths) async {
+    final List<Song> newSongs = [];
+    for (final path in paths) {
+      final song = await _getOrCreateSongForPath(path);
+      newSongs.add(song);
+    }
+
+    if (newSongs.isEmpty) return;
+
+    if (_playlist.isEmpty) {
+      if (_activeQueueName != 'External') {
+        _activeQueueName = 'External';
+        ref.read(settingsProvider.notifier).updateActiveQueueName('External');
+      }
+      _playlist = newSongs;
+      _originalPlaylist = List.from(newSongs);
+      _currentIndex = 0;
+      _manualQueueCount = 0;
+      state = state.copyWith(
+        queue: List.from(_playlist),
+        currentSong: newSongs.first,
+        isRestoredSession: false,
+      );
+      await play(newSongs.first);
+    } else {
+      final insertIndex = (_currentIndex + 1 + _manualQueueCount).clamp(0, _playlist.length);
+      _playlist.insertAll(insertIndex, newSongs);
+      _originalPlaylist.addAll(newSongs);
+      _manualQueueCount += newSongs.length;
+      state = state.copyWith(queue: List.from(_playlist));
+    }
+    await _saveQueueState();
   }
 
   Future<void> togglePlay() async {

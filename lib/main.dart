@@ -19,10 +19,12 @@ import 'core/system_tray_service.dart';
 import 'ui/screens/home_screen.dart';
 
 import 'package:metadata_god/metadata_god.dart';
-import 'package:looper_player/core/theme_provider.dart';
+import 'core/theme_provider.dart';
 import 'package:looper_player/ui/widgets/keyboard_handler.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'core/logger_helper.dart';
+import 'core/single_instance_service.dart';
+import 'core/windows_file_association_service.dart';
 
 final dbInitializerProvider = FutureProvider<void>((ref) async {
   LoggerHelper.write('dbInitializerProvider: Initializing db and settings...');
@@ -34,9 +36,16 @@ final dbInitializerProvider = FutureProvider<void>((ref) async {
 void main(List<String> args) async {
   // Capture unhandled Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
+    final exceptionStr = details.exceptionAsString();
+    if (exceptionStr.contains('raw_keyboard.dart') ||
+        exceptionStr.contains('no keys are in keysPressed') ||
+        exceptionStr.contains('Unable to parse JSON message')) {
+      // Benign framework Win32 RawKeyboard synchronization anomaly
+      return;
+    }
     FlutterError.presentError(details);
     LoggerHelper.write(
-      'Flutter Framework Exception: ${details.exceptionAsString()}',
+      'Flutter Framework Exception: $exceptionStr',
       details.exception,
       details.stack,
     );
@@ -44,11 +53,28 @@ void main(List<String> args) async {
 
   // Capture unhandled asynchronous errors
   PlatformDispatcher.instance.onError = (error, stack) {
+    final errorStr = error.toString();
+    if (errorStr.contains('raw_keyboard.dart') ||
+        errorStr.contains('no keys are in keysPressed') ||
+        errorStr.contains('Unable to parse JSON message')) {
+      return true;
+    }
     LoggerHelper.write('Unhandled Async Exception: $error', error, stack);
     return true;
   };
 
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Enforce single instance on desktop before initializing heavy components
+  final isPrimary = await SingleInstanceService.ensureSingleInstance(args);
+  if (!isPrimary) {
+    exit(0);
+  }
+
+  // Automatically register Windows file associations and context menu actions in background
+  if (Platform.isWindows) {
+    WindowsFileAssociationService.register();
+  }
 
   // Initialize rolling file logging helper in parallel
   final Future<void> logsInit = LoggerHelper.init().then((_) {
@@ -146,6 +172,7 @@ void main(List<String> args) async {
     ProviderScope(
       overrides: [
         startupFileProvider.overrideWithValue(initialFile),
+        startupArgsProvider.overrideWithValue(args),
         forceWelcomeProvider.overrideWith((ref) => !permissionsGranted),
       ],
       child: const MyApp(),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/ui_utils.dart';
@@ -41,6 +42,7 @@ import 'android/android_main_screen.dart';
 import 'android/widgets/empty_library_view.dart';
 import 'package:looper_player/ui/widgets/mini_player_standard.dart';
 import 'package:looper_player/ui/widgets/mini_player_corner_widget.dart';
+import 'package:looper_player/core/single_instance_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -50,9 +52,57 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  Timer? _enqueueToastTimer;
+  int _pendingEnqueueCount = 0;
+
+  void _showEnqueueToast(int count) {
+    _pendingEnqueueCount += count;
+    _enqueueToastTimer?.cancel();
+    _enqueueToastTimer = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted || _pendingEnqueueCount <= 0) return;
+      final total = _pendingEnqueueCount;
+      _pendingEnqueueCount = 0;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            total == 1
+                ? 'Added 1 song to queue'
+                : 'Added $total songs to queue',
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _enqueueToastTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+
+    // Register listener for runtime file associations & context menu actions
+    SingleInstanceService.setListener((action, files) {
+      if (!mounted || files.isEmpty) return;
+      final notifier = ref.read(playbackProvider.notifier);
+      if (action == 'enqueue') {
+        notifier.enqueueFromFiles(files);
+        _showEnqueueToast(files.length);
+      } else {
+        notifier.playFromFile(files.first);
+        if (files.length > 1) {
+          notifier.enqueueFromFiles(files.sublist(1));
+          _showEnqueueToast(files.length - 1);
+        }
+      }
+    });
+
     // Trigger library scan for saved folders on startup
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Wait for settings to load from DB
@@ -62,11 +112,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Check for application updates on GitHub
       UpdateService.checkForUpdates();
 
-      // Handle file passed via CLI arguments
-      final initialFile = ref.read(startupFileProvider);
-      if (initialFile != null) {
-        ref.read(playbackProvider.notifier).playFromFile(initialFile);
-        // If playing from file, maybe skip the folder prompt for now
+      // Handle CLI / Startup arguments (e.g. Open With, Add to Queue)
+      final startupArgs = ref.read(startupArgsProvider);
+      final parsed = SingleInstanceService.parseArgs(startupArgs);
+      final List<String> files = List<String>.from(parsed['files'] as List);
+      final String action = parsed['action'] as String;
+
+      if (files.isNotEmpty) {
+        final notifier = ref.read(playbackProvider.notifier);
+        if (action == 'enqueue') {
+          await notifier.enqueueFromFiles(files);
+        } else {
+          await notifier.playFromFile(files.first);
+          if (files.length > 1) {
+            await notifier.enqueueFromFiles(files.sublist(1));
+          }
+        }
         if (settings.libraryFolders.isNotEmpty) {
           ref
               .read(libraryProvider.notifier)
