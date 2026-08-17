@@ -2149,6 +2149,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Duration'**
   String get sortDuration;
+
+  /// No description provided for @showPlayedSongsInQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Show played songs in queue'**
+  String get showPlayedSongsInQueue;
+
+  /// No description provided for @showPlayedSongsInQueueDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep already played songs in the queue list with dimmed styling'**
+  String get showPlayedSongsInQueueDesc;
 }
 
 class _AppLocalizationsDelegate

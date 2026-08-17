@@ -301,6 +301,19 @@ class SettingsView extends ConsumerWidget {
                   title: l10n.audioPlayback,
                   children: [
                     _PremiumSwitchRow(
+                      icon: LucideIcons.listMusic,
+                      title: l10n.showPlayedSongsInQueue,
+                      subtitle: l10n.showPlayedSongsInQueueDesc,
+                      value: settings.showPlayedSongsInQueue,
+                      onChanged: (value) {
+                        HapticFeedback.lightImpact();
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateShowPlayedSongsInQueue(value);
+                      },
+                      isLast: false,
+                    ),
+                    _PremiumSwitchRow(
                       icon: LucideIcons.music,
                       title: l10n.fadePlayPauseStop,
                       subtitle: l10n.fadePlayPauseStopDesc,

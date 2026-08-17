@@ -1064,4 +1064,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get sortDuration => '재생 시간';
+
+  @override
+  String get showPlayedSongsInQueue => 'Show played songs in queue';
+
+  @override
+  String get showPlayedSongsInQueueDesc =>
+      'Keep already played songs in the queue list with dimmed styling';
 }

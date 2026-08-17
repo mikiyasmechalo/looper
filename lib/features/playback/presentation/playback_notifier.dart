@@ -1539,6 +1539,31 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     await _saveQueueState();
   }
 
+  /// Reorders directly using original playlist indices with no rotation involved.
+  /// [oldOriginalIdx] and [newOriginalIdx] are indices into the raw playlist.
+  /// The caller is responsible for resolving displayed indices → original indices.
+  Future<void> reorderQueueDirect(int oldOriginalIdx, int newOriginalIdx) async {
+    if (_playlist.isEmpty) return;
+    if (oldOriginalIdx == newOriginalIdx) return;
+    if (oldOriginalIdx < 0 || oldOriginalIdx >= _playlist.length) return;
+    if (newOriginalIdx < 0 || newOriginalIdx >= _playlist.length) return;
+
+    final song = _playlist.removeAt(oldOriginalIdx);
+    // After removal, if newOriginalIdx was after oldOriginalIdx it shifted down,
+    // but we want to insert AT the slot the target song occupied visually —
+    // no additional ±1 needed here; the caller already applied Flutter's adjustment.
+    _playlist.insert(newOriginalIdx, song);
+
+    if (!state.isShuffle) {
+      _originalPlaylist = List.from(_playlist);
+    }
+    state = state.copyWith(queue: List.from(_playlist));
+    if (state.currentSong != null) {
+      _currentIndex = _playlist.indexWhere((s) => s.path == state.currentSong!.path);
+    }
+    await _saveQueueState();
+  }
+
   Future<void> removeFromQueue(int index) async {
     if (index >= 0 && index < _playlist.length) {
       final song = _playlist[index];

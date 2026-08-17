@@ -2173,24 +2173,30 @@ class _QueueListState extends ConsumerState<_QueueList> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
+    final showPlayed =
+        ref.watch(settingsProvider.select((s) => s.showPlayedSongsInQueue));
     final currentIndex = queue.indexWhere((s) => s.path == currentSongPath);
-    _currentIndex = currentIndex;
-    if (currentIndex >= 0 && currentIndex != _lastCurrentIndex) {
-      _lastCurrentIndex = currentIndex;
-      if (widget.visible) _scheduleScrollToActive(currentIndex);
+    final displayedQueue = (showPlayed || currentIndex == -1)
+        ? queue
+        : queue.sublist(currentIndex);
+    final targetActiveIdx = showPlayed ? currentIndex : (currentIndex >= 0 ? 0 : -1);
+
+    _currentIndex = targetActiveIdx;
+    if (targetActiveIdx >= 0 && targetActiveIdx != _lastCurrentIndex) {
+      _lastCurrentIndex = targetActiveIdx;
+      if (widget.visible) _scheduleScrollToActive(targetActiveIdx);
     }
 
-    // When the panel becomes visible, snap to the active song only if it is
-    // off-screen; otherwise keep the remembered scroll position.
+    // When the panel becomes visible, scroll to the active song.
     if (widget.visible != _lastVisible) {
       _lastVisible = widget.visible;
-      if (widget.visible) {
+      if (widget.visible && targetActiveIdx >= 0) {
         _scrollTimer?.cancel();
-        _scheduleEnsureActiveVisible();
+        _scheduleScrollToActive(targetActiveIdx);
       }
     }
 
-    if (queue.isEmpty) {
+    if (displayedQueue.isEmpty) {
       return Center(
         child: Text(
           l10n.queueIsEmpty,
@@ -2210,138 +2216,191 @@ class _QueueListState extends ConsumerState<_QueueList> {
         crossAxisMargin: 4,
         minThumbLength: 40,
       ),
-      child: Scrollbar(
-        controller: _scrollController,
-        thumbVisibility: true,
-        trackVisibility: false,
-        thickness: 4,
-        radius: const Radius.circular(4),
-        child: ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.only(right: 24, bottom: 24),
-          itemExtent: _itemExtent,
-          itemCount: queue.length,
-          itemBuilder: (context, i) {
-            final song = queue[i];
-            final isCurrent = currentSongPath == song.path;
-            return InkWell(
-              onTap: () =>
-                  ref.read(playbackProvider.notifier).playAtIndex(i),
-              borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: isCurrent
-                      ? colorScheme.primary.withValues(alpha: 0.16)
-                      : Colors.transparent,
+      child: ReorderableListView.builder(
+        scrollController: _scrollController,
+        buildDefaultDragHandles: false,
+        padding: const EdgeInsets.only(right: 8, bottom: 24),
+        itemCount: displayedQueue.length,
+        onReorder: (oldI, newI) {
+          // displayedQueue is full queue when showPlayed=true, sublist from currentIndex otherwise
+          final curDisp = (showPlayed || currentIndex == -1) ? currentIndex : 0;
+          // Block dragging played/current songs
+          if (currentIndex != -1 && oldI <= curDisp) return;
+          // Flutter adjustment
+          if (newI > oldI) newI -= 1;
+          // Clamp: cannot drop at or before current
+          if (currentIndex != -1 && newI <= curDisp) newI = curDisp + 1;
+          if (oldI == newI) return;
+          // Map displayed → original index
+          final int oldOrig;
+          final int newOrig;
+          if (showPlayed || currentIndex == -1) {
+            oldOrig = oldI;
+            newOrig = newI;
+          } else {
+            oldOrig = oldI + currentIndex;
+            newOrig = newI + currentIndex;
+          }
+          ref.read(playbackProvider.notifier).reorderQueueDirect(oldOrig, newOrig);
+        },
+        proxyDecorator: (child, index, animation) => Material(
+          color: Colors.transparent,
+          child: child,
+        ),
+        itemBuilder: (context, i) {
+          final song = displayedQueue[i];
+          final isCurrent = currentSongPath == song.path;
+          final originalIndex = queue.indexWhere((s) => s.path == song.path);
+          final isPlayed = currentIndex != -1 &&
+              originalIndex != -1 &&
+              originalIndex < currentIndex;
+          final isDraggable = !isPlayed && !isCurrent;
+
+          return GestureDetector(
+            key: ValueKey('fsq_${song.path}_$i'),
+            onSecondaryTap: () => showSongOptionsBottomSheet(
+              context: context,
+              ref: ref,
+              song: song,
+            ),
+            child: Opacity(
+              opacity: isPlayed ? 0.38 : 1.0,
+              child: SizedBox(
+                height: _itemExtent,
+                child: InkWell(
+                  onTap: () =>
+                      ref.read(playbackProvider.notifier).playAtIndex(originalIndex),
                   borderRadius: BorderRadius.circular(10),
-                  border: isCurrent
-                      ? Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.4),
-                        )
-                      : null,
-                ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Stack(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: isCurrent
+                          ? colorScheme.primary.withValues(alpha: 0.16)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      border: isCurrent
+                          ? Border.all(
+                              color: colorScheme.primary.withValues(alpha: 0.4),
+                            )
+                          : null,
+                    ),
+                    child: Row(
                       children: [
-                        OptimizedImage(
-                          imagePath: song.artPath,
-                          width: 38,
-                          height: 38,
-                          fit: BoxFit.cover,
-                          placeholder: Container(
-                            width: 38,
-                            height: 38,
-                            color: Colors.white10,
-                            child: const Icon(
-                              LucideIcons.music,
-                              size: 14,
-                              color: Colors.white24,
-                            ),
-                          ),
-                        ),
-                        if (isCurrent)
-                          Positioned.fill(
-                            child: AnimatedOpacity(
-                              duration: const Duration(milliseconds: 300),
-                              opacity: isPlaying ? 1.0 : 0.0,
-                              child: Container(
-                                color: Colors.black.withValues(alpha: 0.4),
-                                child: Center(
-                                  child: Image.asset(
-                                    'assets/android_icons/Playing.gif',
-                                    width: 20,
-                                    height: 20,
-                                    color: Colors.white,
+                        const SizedBox(width: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Stack(
+                            children: [
+                              OptimizedImage(
+                                imagePath: song.artPath,
+                                width: 38,
+                                height: 38,
+                                fit: BoxFit.cover,
+                                placeholder: Container(
+                                  width: 38,
+                                  height: 38,
+                                  color: Colors.white10,
+                                  child: const Icon(
+                                    LucideIcons.music,
+                                    size: 14,
+                                    color: Colors.white24,
                                   ),
                                 ),
                               ),
+                              if (isCurrent)
+                                Positioned.fill(
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 300),
+                                    opacity: isPlaying ? 1.0 : 0.0,
+                                    child: Container(
+                                      color: Colors.black.withValues(alpha: 0.4),
+                                      child: Center(
+                                        child: Image.asset(
+                                          'assets/android_icons/Playing.gif',
+                                          width: 20,
+                                          height: 20,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                song.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppFonts.jostStyle(
+                                  color: isCurrent ? colorScheme.primary : Colors.white,
+                                  fontSize: 13.5,
+                                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                song.album != null && song.album!.isNotEmpty
+                                    ? '${song.artist ?? l10n.unknownArtist} · ${song.album}'
+                                    : (song.artist ?? l10n.unknownArtist),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppFonts.jostStyle(
+                                  color: Colors.white38,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isCurrent && isPlaying)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Icon(
+                              LucideIcons.volume2,
+                              size: 14,
+                              color: colorScheme.primary,
+                            ),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Text(
+                              _formatDuration(Duration(milliseconds: song.duration ?? 0)),
+                              style: TextStyle(
+                                color: Colors.white24,
+                                fontSize: 11,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
                             ),
                           ),
+                        if (isDraggable)
+                          ReorderableDragStartListener(
+                            index: i,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Icon(
+                                LucideIcons.gripVertical,
+                                size: 16,
+                                color: Colors.white24,
+                              ),
+                            ),
+                          )
+                        else
+                          const SizedBox(width: 28),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          song.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.jostStyle(
-                            color:
-                                isCurrent ? colorScheme.primary : Colors.white,
-                            fontSize: 13.5,
-                            fontWeight: isCurrent
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          song.album != null && song.album!.isNotEmpty
-                              ? '${song.artist ?? l10n.unknownArtist} · ${song.album}'
-                              : (song.artist ?? l10n.unknownArtist),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.jostStyle(
-                            color: Colors.white38,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isCurrent && isPlaying)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Icon(
-                        LucideIcons.volume2,
-                        size: 14,
-                        color: colorScheme.primary,
-                      ),
-                    )
-                  else
-                    Text(
-                      _formatDuration(Duration(milliseconds: song.duration ?? 0)),
-                      style: TextStyle(
-                        color: Colors.white24,
-                        fontSize: 11,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
           );
         },
-      ),
       ),
     );
   }

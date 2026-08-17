@@ -95,7 +95,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         needsSave = true;
       }
       if (settings.seekBarStyleIndex == -9223372036854775808 || settings.seekBarStyleIndex < 0) {
-        settings.seekBarStyleIndex = 0;
+        settings.seekBarStyleIndex = 1;
         needsSave = true;
       }
       if (!settings.settingsV2) {
@@ -271,6 +271,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..seekBarStyleIndex = s.seekBarStyleIndex
       ..uniformLyricsFontSize = s.uniformLyricsFontSize
       ..fullscreenVisualizerEnabled = s.fullscreenVisualizerEnabled
+      ..showPlayedSongsInQueue = s.showPlayedSongsInQueue
       ..fadePlayPauseStop = s.fadePlayPauseStop
       ..playPauseStopFadeLength = s.playPauseStopFadeLength
       ..resumeAfterCall = s.resumeAfterCall
@@ -473,6 +474,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateFullscreenVisualizerEnabled(bool value) async {
     final newState = _clone(state)..fullscreenVisualizerEnabled = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateShowPlayedSongsInQueue(bool value) async {
+    final newState = _clone(state)..showPlayedSongsInQueue = value;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

@@ -373,5 +373,7 @@
   "sortDefault": "Default",
   "sortArtistAsc": "Artist (A-Z)",
   "sortAlbumAsc": "Album (A-Z)",
-  "sortDuration": "Duration"
+  "sortDuration": "Duration",
+  "showPlayedSongsInQueue": "Show played songs in queue",
+  "showPlayedSongsInQueueDesc": "Keep already played songs in the queue list with dimmed styling"
 }

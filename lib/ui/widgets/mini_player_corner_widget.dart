@@ -1080,6 +1080,18 @@ class _QueueDrawer extends ConsumerStatefulWidget {
 class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
   bool _isCompact = false;
   final ScrollController _scrollController = ScrollController();
+  int _lastScrolledIdx = -1;
+
+  void _scrollToCurrent(int idx) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      const double kItemHeight = 44.0;
+      final max = _scrollController.position.maxScrollExtent;
+      final viewport = _scrollController.position.viewportDimension;
+      final target = (idx * kItemHeight - viewport / 2 + kItemHeight / 2).clamp(0.0, max);
+      _scrollController.jumpTo(target);
+    });
+  }
 
   @override
   void dispose() {
@@ -1097,10 +1109,22 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
     final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
     final accent = Theme.of(context).colorScheme.primary;
 
+    final showPlayed =
+        ref.watch(settingsProvider.select((s) => s.showPlayedSongsInQueue));
     final idx = queue.indexWhere((s) => s.path == currentPath);
     final displayed = idx == -1
         ? queue
-        : [...queue.sublist(idx), ...queue.sublist(0, idx)];
+        : (showPlayed
+            ? [...queue.sublist(0, idx), ...queue.sublist(idx)]
+            : queue.sublist(idx));
+
+    // Auto-scroll to current song when idx changes or panel first opens
+    if (showPlayed && idx >= 0 && idx != _lastScrolledIdx) {
+      _lastScrolledIdx = idx;
+      _scrollToCurrent(idx);
+    } else if (!showPlayed && _lastScrolledIdx != 0) {
+      _lastScrolledIdx = 0;
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
@@ -1192,20 +1216,48 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: Scrollbar(
-              controller: _scrollController,
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(right: 18),
-                itemCount: displayed.length,
-                itemBuilder: (context, i) {
-                  final song = displayed[i];
-                  final isCurrent = song.path == currentPath;
-                  return GestureDetector(
+            child: ReorderableListView.builder(
+              scrollController: _scrollController,
+              buildDefaultDragHandles: false,
+              padding: const EdgeInsets.only(right: 4),
+              onReorder: (oldI, newI) {
+                final curDisp = showPlayed ? idx : 0;
+                if (idx != -1 && oldI <= curDisp) return;
+                if (newI > oldI) newI -= 1;
+                if (idx != -1 && newI <= curDisp) newI = curDisp + 1;
+                if (oldI == newI) return;
+                final int oldOrig;
+                final int newOrig;
+                if (showPlayed || idx == -1) {
+                  oldOrig = oldI;
+                  newOrig = newI;
+                } else {
+                  oldOrig = oldI + idx;
+                  newOrig = newI + idx;
+                }
+                ref.read(playbackProvider.notifier).reorderQueueDirect(oldOrig, newOrig);
+              },
+              proxyDecorator: (child, index, animation) => Material(
+                color: Colors.transparent,
+                child: child,
+              ),
+              itemCount: displayed.length,
+              itemBuilder: (context, i) {
+                final song = displayed[i];
+                final isCurrent = song.path == currentPath;
+                final originalIndex = queue.indexWhere(
+                  (s) => s.path == song.path,
+                );
+                final isPlayed = idx != -1 &&
+                    originalIndex != -1 &&
+                    originalIndex < idx;
+                final isDraggable = !isPlayed && !isCurrent;
+
+                return Opacity(
+                  key: ValueKey('crnq_${song.path}_$i'),
+                  opacity: isPlayed ? 0.38 : 1.0,
+                  child: GestureDetector(
                     onTap: () {
-                      final originalIndex = queue.indexWhere(
-                        (s) => s.path == song.path,
-                      );
                       if (originalIndex != -1) {
                         ref
                             .read(playbackProvider.notifier)
@@ -1261,9 +1313,7 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
                                             text: "  •  ${song.artist!}",
                                             style: TextStyle(
                                               color: isCurrent
-                                                  ? accent.withValues(
-                                                      alpha: 0.75,
-                                                    )
+                                                  ? accent.withValues(alpha: 0.75)
                                                   : Colors.white38,
                                               fontSize: 10,
                                               fontWeight: FontWeight.normal,
@@ -1289,6 +1339,20 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
                                           color: accent.withValues(alpha: 0.8),
                                         ),
                                 ],
+                                if (isDraggable)
+                                  ReorderableDragStartListener(
+                                    index: i,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: Icon(
+                                        LucideIcons.gripVertical,
+                                        size: 12,
+                                        color: Colors.white24,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  const SizedBox(width: 16),
                               ],
                             ),
                           )
@@ -1342,9 +1406,7 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
                                         style: TextStyle(
                                           color: isCurrent
                                               ? accent
-                                              : Colors.white.withValues(
-                                                  alpha: 0.9,
-                                                ),
+                                              : Colors.white.withValues(alpha: 0.9),
                                           fontSize: 12,
                                           fontWeight: isCurrent
                                               ? FontWeight.w600
@@ -1384,12 +1446,26 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
                                           color: accent.withValues(alpha: 0.8),
                                         ),
                                 ],
+                                if (isDraggable)
+                                  ReorderableDragStartListener(
+                                    index: i,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: Icon(
+                                        LucideIcons.gripVertical,
+                                        size: 14,
+                                        color: Colors.white24,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  const SizedBox(width: 18),
                               ],
                             ),
                           ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ],

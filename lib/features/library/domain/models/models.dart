@@ -230,13 +230,16 @@ class AppSettings {
 
   // Desktop: seek bar style in the now-playing view.
   // 0: visualizer bars, 1: expressive wiggly slider, 2: flat clean slider.
-  int seekBarStyleIndex = 0;
+  int seekBarStyleIndex = 1;
 
   // Lyrics: uniform font size across active and non-active lines (no scaling).
   bool uniformLyricsFontSize = false;
 
   // Desktop Fullscreen: bottom full-width visualizer.
   bool fullscreenVisualizerEnabled = true;
+
+  // Queue: show previously played songs in the queue list with darker styling.
+  bool showPlayedSongsInQueue = true;
 }
 
 enum SeekBarStyle { visualizer, expressive, flat }

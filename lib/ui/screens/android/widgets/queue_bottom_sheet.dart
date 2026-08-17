@@ -34,18 +34,21 @@ class _QueueBottomSheetState extends ConsumerState<QueueBottomSheet> {
     final accentColor = Color(settings.accentColor);
     final l10n = AppLocalizations.of(context)!;
 
-    // Rotate the queue list so that the initial song is at the top,
-    // preventing list items from jumping around while the sheet is open.
+    final showPlayed = settings.showPlayedSongsInQueue;
+    // Rotate the queue list so that played songs are above the current song,
+    // matching the fullscreen player layout.
     final rotationIdx = _initialSongPath != null
         ? queue.indexWhere((s) => s.path == _initialSongPath)
         : -1;
 
     final List<Song> displayedQueue;
     if (rotationIdx != -1) {
-      displayedQueue = [
-        ...queue.sublist(rotationIdx),
-        ...queue.sublist(0, rotationIdx),
-      ];
+      displayedQueue = showPlayed
+          ? [
+              ...queue.sublist(0, rotationIdx), // played (dimmed)
+              ...queue.sublist(rotationIdx),     // current + upcoming
+            ]
+          : queue.sublist(rotationIdx);
     } else {
       displayedQueue = List.from(queue);
     }
@@ -90,11 +93,14 @@ class _QueueBottomSheetState extends ConsumerState<QueueBottomSheet> {
                 final absoluteIndex = rotationIdx != -1
                     ? (rotationIdx + index) % queue.length
                     : index;
+                final isPlayed = rotationIdx != -1 && absoluteIndex < rotationIdx;
 
-                return Material(
+                return Opacity(
                   key: ValueKey('queue_sheet_${song.path}_$absoluteIndex'),
-                  color: Colors.transparent,
-                  child: ListTile(
+                  opacity: isPlayed ? 0.40 : 1.0,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
                     leading: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: OptimizedImage(
@@ -175,6 +181,7 @@ class _QueueBottomSheetState extends ConsumerState<QueueBottomSheet> {
                       ref.read(playbackProvider.notifier).playAtIndex(absoluteIndex);
                     },
                   ),
+                ),
                 );
               },
             ),

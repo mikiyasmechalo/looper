@@ -1113,4 +1113,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sortDuration => 'Duration';
+
+  @override
+  String get showPlayedSongsInQueue => 'Show played songs in queue';
+
+  @override
+  String get showPlayedSongsInQueueDesc =>
+      'Keep already played songs in the queue list with dimmed styling';
 }

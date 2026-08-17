@@ -1064,4 +1064,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sortDuration => '曲の長さ';
+
+  @override
+  String get showPlayedSongsInQueue => 'Show played songs in queue';
+
+  @override
+  String get showPlayedSongsInQueueDesc =>
+      'Keep already played songs in the queue list with dimmed styling';
 }
