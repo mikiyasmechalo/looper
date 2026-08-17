@@ -63,6 +63,16 @@ class SpectrumLevelNotifier extends StateNotifier<List<double>> {
     final bands = frame.bands;
     if (bands.isEmpty) return;
 
+    final volume =
+        _ref.read(playbackProvider.select((s) => s.volume)).clamp(0.0, 1.0);
+    // Apply 30%-70% virtual volume scaling:
+    // - Higher volume ALWAYS produces higher or equal bar heights (monotonic).
+    // - At 100% volume, maximum visualizer scale is capped at 0.70 (70% height) so bars never clip into solid blocks.
+    // - At lower volumes (10%-30%), bars stay active with a gentle minimum floor (~0.30-0.42).
+    final effectiveVol = volume > 0.001 ? volume : 0.001;
+    final targetVolScale = 0.30 + 0.40 * volume; // 0.30 at vol=0 -> 0.70 at vol=1.0
+    final gain = targetVolScale / effectiveVol;
+
     final buckets = List<double>.filled(_kBucketCount, 0);
     for (int b = 0; b < _kBucketCount; b++) {
       final start = (b * bands.length) ~/ _kBucketCount;
@@ -75,9 +85,8 @@ class SpectrumLevelNotifier extends StateNotifier<List<double>> {
         if (v > peak) peak = v;
       }
       final avg = end > start ? sum / (end - start) : 0.0;
-      // Peak dominates so transient hits (kicks, snare) stay punchy while a
-      // little average keeps sustained tones visible.
-      buckets[b] = (peak * 0.7 + avg * 0.3).clamp(0.0, 1.0);
+      final rawVal = (peak * 0.75 + avg * 0.25) * gain;
+      buckets[b] = rawVal.clamp(0.0, 0.80);
     }
     state = buckets;
   }

@@ -1609,28 +1609,31 @@ class _CornerVisualizerWidgetState extends ConsumerState<_CornerVisualizerWidget
       if (!widget.isPlaying) {
         target = 0.0;
       } else if (hasFftData) {
-        final norm = _barCount > 1 ? i / (_barCount - 1) : 0.0;
-        final rawPos = norm * (raw.length - 1);
+        // Center-out normal distribution mapping:
+        final center = (_barCount - 1) / 2.0;
+        final norm = (i - center).abs() / center; // 0.0 at center -> 1.0 at edges
+        final rawPos = pow(norm, 0.85).toDouble() * (raw.length - 1);
         final idx0 = rawPos.floor().clamp(0, raw.length - 1);
         final idx1 = rawPos.ceil().clamp(0, raw.length - 1);
         final frac = rawPos - idx0;
         final interpolated = raw[idx0] * (1.0 - frac) + raw[idx1] * frac;
 
-        final startIdx = (i * raw.length ~/ _barCount).clamp(0, raw.length - 1);
-        final endIdx = ((i + 1) * raw.length / _barCount)
-            .ceil()
-            .clamp(startIdx + 1, raw.length)
-            .toInt();
+        final startIdx = rawPos.floor().clamp(0, raw.length - 1);
+        final endIdx = (rawPos + raw.length / _barCount).ceil().clamp(startIdx + 1, raw.length);
         double rangePeak = 0;
         for (int j = startIdx; j < endIdx; j++) {
           if (raw[j] > rangePeak) rangePeak = raw[j];
         }
 
         final peak = max(interpolated, rangePeak);
-        target = (peak * _freqGain[i]).clamp(0.0, 1.0);
+        final bellShape = (1.0 - 0.20 * pow(norm, 1.4)).clamp(0.4, 1.0);
+        final trebleBoost = (0.75 + 0.60 * pow(norm, 0.6)).clamp(0.5, 1.35);
+        target = (peak * trebleBoost * bellShape).clamp(0.0, 1.0);
       } else {
+        final center = (_barCount - 1) / 2.0;
+        final norm = (i - center).abs() / center;
         final wave = (sin(t * _sineFreq[i] * 3.5 + _sinePhase[i]) + 1.0) / 2.0;
-        target = (wave * 0.45 + 0.08).clamp(0.0, 1.0);
+        target = ((wave * 0.45 + 0.08) * (1.0 - norm * 0.4)).clamp(0.0, 1.0);
       }
 
       final rate = target > _smoothed[i] ? _attack : _release;

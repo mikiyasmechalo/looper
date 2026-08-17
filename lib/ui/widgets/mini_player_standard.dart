@@ -1849,36 +1849,35 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
       if (!widget.isPlaying) {
         target = 0.0;
       } else if (hasFftData) {
-        // Continuous, range-safe sampling: works flawlessly whether _barCount <, ==, or > raw.length
-        final norm = _barCount > 1 ? i / (_barCount - 1) : 0.0;
-        final rawPos = norm * (raw.length - 1);
+        // Center-out normal distribution mapping:
+        final center = (_barCount - 1) / 2.0;
+        final norm = (i - center).abs() / center; // 0.0 at center -> 1.0 at edges
+        final rawPos = pow(norm, 0.85).toDouble() * (raw.length - 1);
         final idx0 = rawPos.floor().clamp(0, raw.length - 1);
         final idx1 = rawPos.ceil().clamp(0, raw.length - 1);
         final frac = rawPos - idx0;
         final interpolated = raw[idx0] * (1.0 - frac) + raw[idx1] * frac;
 
-        // Also check range peak when downsampling multiple raw buckets into one bar
-        final startIdx = (i * raw.length ~/ _barCount).clamp(0, raw.length - 1);
-        final endIdx =
-            ((i + 1) * raw.length / _barCount).ceil().clamp(startIdx + 1, raw.length);
+        final startIdx = rawPos.floor().clamp(0, raw.length - 1);
+        final endIdx = (rawPos + raw.length / _barCount).ceil().clamp(startIdx + 1, raw.length);
         double rangePeak = 0;
         for (int j = startIdx; j < endIdx; j++) {
           if (raw[j] > rangePeak) rangePeak = raw[j];
         }
 
         final peak = max(interpolated, rangePeak);
-        // Apply spectral-tilt gain: reduces bass dominance, lifts highs
-        target = (peak * _freqGain[i]).clamp(0.0, 1.0);
+        final bellShape = (1.0 - 0.20 * pow(norm, 1.4)).clamp(0.4, 1.0);
+        final trebleBoost = (0.75 + 0.60 * pow(norm, 0.6)).clamp(0.5, 1.35);
+        target = (peak * trebleBoost * bellShape).clamp(0.0, 1.0);
       } else {
-        // Fallback: organic sine waves so bars are always visible when playing
+        final center = (_barCount - 1) / 2.0;
+        final norm = (i - center).abs() / center;
         final v =
             (sin(t * _sineFreq[i] * 2.5 + _sinePhase[i]) * 0.4 +
                     sin(t * _sineFreq[i] * 1.3 + _sinePhase[i] * 0.7) * 0.3) *
                 0.5 +
             0.5;
-        // Taper edges
-        final edge = ((i / (_barCount - 1)) - 0.5).abs() * 2.0;
-        target = (v * (1.0 - edge * 0.45)).clamp(0.1, 1.0);
+        target = (v * (1.0 - norm * 0.45)).clamp(0.1, 1.0);
       }
 
       // Micro-jitter for sustained notes: when target ≈ smoothed (bar is
