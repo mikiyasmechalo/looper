@@ -169,6 +169,19 @@ class SettingsView extends ConsumerWidget {
                       isLast: false,
                     ),
                     _PremiumSwitchRow(
+                      icon: LucideIcons.type,
+                      title: 'Uniform Line Size',
+                      subtitle: 'Keep all lyrics lines at the same font size',
+                      value: settings.uniformLyricsFontSize,
+                      onChanged: (value) {
+                        HapticFeedback.lightImpact();
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateUniformLyricsFontSize(value);
+                      },
+                      isLast: false,
+                    ),
+                    _PremiumSwitchRow(
                       icon: LucideIcons.sliders,
                       title: l10n.flatProgressBar,
                       subtitle: l10n.disableSquigglyProgressBar,
@@ -437,7 +450,7 @@ class SettingsView extends ConsumerWidget {
               ),
             ),
 
-            // Desktop Section
+            // System Tray Section
             if (isDesktop)
               SliverToBoxAdapter(
                 child: Padding(
@@ -456,8 +469,21 @@ class SettingsView extends ConsumerWidget {
                               .read(settingsProvider.notifier)
                               .updateMinimizeToTray(value);
                         },
-                        isLast: false,
+                        isLast: true,
                       ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Fullscreen Player Section (Desktop)
+            if (isDesktop)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: _Section(
+                    title: 'Fullscreen Player',
+                    children: [
                       _PremiumSwitchRow(
                         icon: LucideIcons.maximize2,
                         title: l10n.nowPlayingFullscreen,
@@ -468,6 +494,20 @@ class SettingsView extends ConsumerWidget {
                           ref
                               .read(settingsProvider.notifier)
                               .updateNowPlayingFullscreen(value);
+                        },
+                        isLast: false,
+                      ),
+                      _PremiumSwitchRow(
+                        icon: LucideIcons.activity,
+                        title: 'Bottom Visualizer',
+                        subtitle:
+                            'Display a dynamic audio visualizer across the bottom of the player',
+                        value: settings.fullscreenVisualizerEnabled,
+                        onChanged: (value) {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateFullscreenVisualizerEnabled(value);
                         },
                         isLast: false,
                       ),

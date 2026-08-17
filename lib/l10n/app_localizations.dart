@@ -2117,7 +2117,7 @@ abstract class AppLocalizations {
   /// No description provided for @sortMostSongs.
   ///
   /// In en, this message translates to:
-  /// **'Most Songs'**
+  /// **'Number of Songs'**
   String get sortMostSongs;
 
   /// No description provided for @sortLeastSongs.

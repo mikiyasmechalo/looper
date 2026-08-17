@@ -16,6 +16,7 @@ import 'package:looper_player/features/playback/presentation/audio_level_provide
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/premium_progress_bar.dart';
@@ -1130,11 +1131,45 @@ class _UtilBtn extends StatelessWidget {
   }
 }
 
-class _LyricsOverlay extends ConsumerWidget {
+class _LyricsOverlay extends ConsumerStatefulWidget {
   const _LyricsOverlay();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LyricsOverlay> createState() => _LyricsOverlayState();
+}
+
+class _LyricsOverlayState extends ConsumerState<_LyricsOverlay> {
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _lineKeys = {};
+  int _lastActiveIndex = -1;
+  int _activeIndex = -1;
+  Timer? _scrollTimer;
+
+  @override
+  void dispose() {
+    _scrollTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scheduleScrollToActive(int index) {
+    _scrollTimer?.cancel();
+    _scrollTimer = Timer(const Duration(milliseconds: 60), () {
+      if (!mounted) return;
+      final currentKey = _lineKeys[index];
+      if (currentKey?.currentContext != null) {
+        Scrollable.ensureVisible(
+          currentKey!.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutCubic,
+          alignment: 0.38,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lyricsState = ref.watch(lyricsProvider);
     final posMs = ref.watch(
       playbackProvider.select((s) => s.position.inMilliseconds),
@@ -1142,7 +1177,7 @@ class _LyricsOverlay extends ConsumerWidget {
 
     if (lyricsState.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Colors.white54),
+        child: CircularProgressIndicator(color: Colors.white54, strokeWidth: 2.5),
       );
     }
     if (lyricsState.parsedLines.isEmpty) {
@@ -1154,110 +1189,97 @@ class _LyricsOverlay extends ConsumerWidget {
       );
     }
 
+    final lines = lyricsState.parsedLines;
     int idx =
-        lyricsState.parsedLines.indexWhere(
-          (l) => l.startTime.inMilliseconds > posMs,
-        ) -
-        1;
-    if (idx < -1) idx = lyricsState.parsedLines.length - 1;
+        lines.indexWhere((l) => l.startTime.inMilliseconds > posMs) - 1;
+    if (idx < -1) idx = lines.length - 1;
     if (idx == -1) idx = 0;
 
-    final prev = (idx > 0) ? lyricsState.parsedLines[idx - 1] : null;
-    final current = lyricsState.parsedLines[idx];
-    final next1 = (idx + 1 < lyricsState.parsedLines.length)
-        ? lyricsState.parsedLines[idx + 1]
-        : null;
-    final next2 = (idx + 2 < lyricsState.parsedLines.length)
-        ? lyricsState.parsedLines[idx + 2]
-        : null;
+    _activeIndex = idx;
+    if (idx != _lastActiveIndex) {
+      _lastActiveIndex = idx;
+      _scheduleScrollToActive(idx);
+    }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (prev != null) ...[
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
-                child: Text(
-                  prev.text,
-                  key: ValueKey('prev_${prev.text}'),
-                  style: AppFonts.jostStyle(
-                    color: Colors.white38,
-                    fontSize: 14,
-                    height: 1.3,
+    final settings = ref.watch(settingsProvider);
+    final uniformFontSize = settings.uniformLyricsFontSize;
+    final alignmentString = settings.lyricsAlignment;
+
+    final textAlign = alignmentString == 'left'
+        ? TextAlign.left
+        : alignmentString == 'right'
+            ? TextAlign.right
+            : TextAlign.center;
+
+    final lineAlignment = alignmentString == 'left'
+        ? Alignment.centerLeft
+        : alignmentString == 'right'
+            ? Alignment.centerRight
+            : Alignment.center;
+
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return ScrollConfiguration(
+      behavior: const ScrollBehavior().copyWith(scrollbars: false),
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 100),
+        itemCount: lines.length,
+        itemBuilder: (context, i) {
+          final line = lines[i];
+          final isCurrent = i == idx;
+          final lineKey = _lineKeys.putIfAbsent(i, () => GlobalKey());
+
+          return KeyedSubtree(
+            key: lineKey,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    ref.read(playbackProvider.notifier).seek(line.startTime);
+                  },
+                  child: Container(
+                    alignment: lineAlignment,
+                    width: double.infinity,
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      textAlign: textAlign,
+                      style: AppFonts.jostStyle(
+                        color: isCurrent
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.35),
+                        fontSize: uniformFontSize
+                            ? 16.5
+                            : (isCurrent ? 18.5 : 15.0),
+                        fontWeight: isCurrent
+                            ? FontWeight.w700
+                            : FontWeight.w400,
+                        height: 1.35,
+                        shadows: isCurrent
+                            ? [
+                                Shadow(
+                                  color: primaryColor.withValues(alpha: 0.35),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Text(
+                        line.text,
+                        textAlign: textAlign,
+                      ),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) =>
-                  FadeTransition(opacity: animation, child: child),
-              child: Text(
-                current.text,
-                key: ValueKey('curr_${current.text}'),
-                style: AppFonts.jostStyle(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  height: 1.35,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (next1 != null) ...[
-              const SizedBox(height: 12),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
-                child: Text(
-                  next1.text,
-                  key: ValueKey('next1_${next1.text}'),
-                  style: AppFonts.jostStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 15.5,
-                    height: 1.3,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-            if (next2 != null) ...[
-              const SizedBox(height: 10),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
-                child: Text(
-                  next2.text,
-                  key: ValueKey('next2_${next2.text}'),
-                  style: AppFonts.jostStyle(
-                    color: Colors.white24,
-                    fontSize: 13.5,
-                    height: 1.3,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }

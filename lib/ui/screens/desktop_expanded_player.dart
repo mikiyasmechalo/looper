@@ -155,6 +155,9 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
     final screenWidth = MediaQuery.of(context).size.width;
     final panelWidth = _panelWidth(screenWidth);
     final notifier = ref.read(playbackProvider.notifier);
+    final showBottomVisualizer = ref.watch(
+      settingsProvider.select((s) => s.fullscreenVisualizerEnabled),
+    );
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -172,6 +175,19 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
               ),
             ),
           ),
+          if (showBottomVisualizer)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 200,
+              child: IgnorePointer(
+                child: _DesktopBottomVisualizer(
+                  isPlaying: isPlaying,
+                  accent: colorScheme.primary,
+                ),
+              ),
+            ),
           SafeArea(
             child: _PlayerStage(
               screenWidth: screenWidth,
@@ -2342,8 +2358,8 @@ class _LyricsList extends ConsumerStatefulWidget {
 }
 
 class _LyricsListState extends ConsumerState<_LyricsList> {
-  static const double _itemExtent = 46;
   final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _lineKeys = {};
   int _lastActiveIndex = -1;
   int _activeIndex = -1;
   bool _lastVisible = false;
@@ -2360,44 +2376,33 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
 
   void _scheduleScrollToActive(int index) {
     _scrollTimer?.cancel();
-    _scrollTimer = Timer(const Duration(milliseconds: 480), () {
-      if (!mounted || !_scrollController.hasClients) return;
-      final position = _scrollController.position;
-      final target =
-          (index * _itemExtent - position.viewportDimension / 2 +
-                  _itemExtent / 2)
-              .clamp(0.0, position.maxScrollExtent);
-      _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
+    _scrollTimer = Timer(const Duration(milliseconds: 150), () {
+      if (!mounted) return;
+      final currentKey = _lineKeys[index];
+      if (currentKey?.currentContext != null) {
+        Scrollable.ensureVisible(
+          currentKey!.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutCubic,
+          alignment: 0.35,
+        );
+      }
     });
   }
 
-  /// When the panel is opened, snap back to the active line only if it is not
-  /// already visible, otherwise keep the previous scroll position.
   void _scheduleEnsureActiveVisible() {
     _openTimer?.cancel();
-    _openTimer = Timer(const Duration(milliseconds: 200), () {
-      if (!mounted || !_scrollController.hasClients || _activeIndex < 0) {
-        return;
+    _openTimer = Timer(const Duration(milliseconds: 150), () {
+      if (!mounted || _activeIndex < 0) return;
+      final currentKey = _lineKeys[_activeIndex];
+      if (currentKey?.currentContext != null) {
+        Scrollable.ensureVisible(
+          currentKey!.currentContext!,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutCubic,
+          alignment: 0.35,
+        );
       }
-      final position = _scrollController.position;
-      final start = _activeIndex * _itemExtent;
-      final end = start + _itemExtent;
-      if (start >= position.pixels &&
-          end <= position.pixels + position.viewportDimension) {
-        return;
-      }
-      final target =
-          (start - position.viewportDimension / 2 + _itemExtent / 2)
-              .clamp(0.0, position.maxScrollExtent);
-      _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
     });
   }
 
@@ -2406,6 +2411,27 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
     final lyrics = ref.watch(lyricsProvider);
     final position = ref.watch(playbackProvider.select((s) => s.position));
     final l10n = AppLocalizations.of(context)!;
+    final settings = ref.watch(settingsProvider);
+    final uniformFontSize = settings.uniformLyricsFontSize;
+    final alignmentString = settings.lyricsAlignment;
+
+    final textAlign = alignmentString == 'left'
+        ? TextAlign.left
+        : alignmentString == 'right'
+            ? TextAlign.right
+            : TextAlign.center;
+
+    final crossAxis = alignmentString == 'left'
+        ? CrossAxisAlignment.start
+        : alignmentString == 'right'
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.center;
+
+    final lineAlignment = alignmentString == 'left'
+        ? Alignment.centerLeft
+        : alignmentString == 'right'
+            ? Alignment.centerRight
+            : Alignment.center;
 
     if (lyrics.isLoading) {
       return const Center(
@@ -2453,8 +2479,6 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
       if (widget.visible) _scheduleScrollToActive(activeIndex);
     }
 
-    // When the panel becomes visible, snap to the active line only if it is
-    // off-screen; otherwise keep the remembered scroll position.
     if (widget.visible != _lastVisible) {
       _lastVisible = widget.visible;
       if (widget.visible) {
@@ -2463,12 +2487,14 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
       }
     }
 
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return ScrollbarTheme(
       data: ScrollbarThemeData(
         thumbVisibility: const WidgetStatePropertyAll(true),
         trackVisibility: const WidgetStatePropertyAll(false),
         thumbColor: WidgetStatePropertyAll(
-          Colors.white.withValues(alpha: 0.3),
+          Colors.white.withValues(alpha: 0.25),
         ),
         mainAxisMargin: 8,
         crossAxisMargin: 4,
@@ -2482,38 +2508,63 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
         radius: const Radius.circular(4),
         child: ListView.builder(
           controller: _scrollController,
-          padding: const EdgeInsets.only(right: 24, bottom: 24),
-          itemExtent: _itemExtent,
+          padding: const EdgeInsets.only(
+            left: 20,
+            right: 28,
+            top: 100,
+            bottom: 180,
+          ),
           itemCount: lines.length,
           itemBuilder: (context, i) {
             final line = lines[i];
             final isCurrent = i == activeIndex;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '${_formatDuration(line.startTime)}  ',
-                      style: TextStyle(
-                        color: isCurrent
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.white24,
-                        fontSize: 11,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+            final lineKey = _lineKeys.putIfAbsent(i, () => GlobalKey());
+
+            return KeyedSubtree(
+              key: lineKey,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () {
+                      ref.read(playbackProvider.notifier).seek(line.startTime);
+                    },
+                    child: Container(
+                      alignment: lineAlignment,
+                      width: double.infinity,
+                      child: AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                        textAlign: textAlign,
+                        style: AppFonts.jostStyle(
+                          color: isCurrent
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.35),
+                          fontSize: uniformFontSize
+                              ? 19.0
+                              : (isCurrent ? 22.0 : 17.5),
+                          fontWeight: isCurrent
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          height: 1.35,
+                          shadows: isCurrent
+                              ? [
+                                  Shadow(
+                                    color: primaryColor.withValues(alpha: 0.3),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          line.text,
+                          textAlign: textAlign,
+                        ),
                       ),
                     ),
-                    TextSpan(
-                      text: line.text,
-                      style: AppFonts.jostStyle(
-                        color: isCurrent ? Colors.white : Colors.white38,
-                        fontSize: isCurrent ? 15.5 : 15,
-                        fontWeight: isCurrent
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -2522,4 +2573,198 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
       ),
     );
   }
+}
+
+class _DesktopBottomVisualizer extends ConsumerStatefulWidget {
+  final bool isPlaying;
+  final Color accent;
+
+  const _DesktopBottomVisualizer({
+    required this.isPlaying,
+    required this.accent,
+  });
+
+  @override
+  ConsumerState<_DesktopBottomVisualizer> createState() =>
+      _DesktopBottomVisualizerState();
+}
+
+class _DesktopBottomVisualizerState
+    extends ConsumerState<_DesktopBottomVisualizer>
+    with SingleTickerProviderStateMixin {
+  static const int _barCount = 64;
+  final List<double> _smoothed = List.filled(_barCount, 0.0);
+  static const double _attack = 0.45;
+  static const double _release = 0.07;
+
+  late Ticker _ticker;
+  Duration _elapsed = Duration.zero;
+
+  static final List<double> _sinePhase = List.generate(
+    _barCount,
+    (i) => (i / _barCount) * 2 * pi + (i % 3) * 1.1,
+  );
+  static final List<double> _sineFreq = List.generate(
+    _barCount,
+    (i) => 1.0 + (i % 5) * 0.3,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick)..start();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  void _onTick(Duration elapsed) {
+    if (!mounted) return;
+    _elapsed = elapsed;
+
+    final raw = ref.read(spectrumProvider);
+    final hasFftData = raw.isNotEmpty && raw.any((v) => v > 0.01);
+    final t = elapsed.inMicroseconds / 1000000.0;
+
+    bool changed = false;
+    for (int i = 0; i < _barCount; i++) {
+      double target;
+      if (!widget.isPlaying) {
+        target = 0.0;
+      } else if (hasFftData) {
+        final norm = _barCount > 1 ? i / (_barCount - 1) : 0.0;
+        // Non-linear perceptual scale concentrating bands in the active musical audio spectrum (<15 kHz)
+        final audioFreqScale = pow(norm, 0.80).toDouble();
+        final maxActiveBucket =
+            (raw.length * 0.72).clamp(1.0, raw.length.toDouble() - 1);
+        final rawPos = audioFreqScale * maxActiveBucket;
+        final idx0 = rawPos.floor().clamp(0, raw.length - 1);
+        final idx1 = rawPos.ceil().clamp(0, raw.length - 1);
+        final frac = rawPos - idx0;
+        final interpolated = raw[idx0] * (1.0 - frac) + raw[idx1] * frac;
+
+        final startIdx = (audioFreqScale * maxActiveBucket)
+            .floor()
+            .clamp(0, raw.length - 1);
+        final endIdx = ((audioFreqScale + 1.0 / _barCount) * maxActiveBucket)
+            .ceil()
+            .clamp(startIdx + 1, raw.length);
+        double rangePeak = 0;
+        for (int j = startIdx; j < endIdx; j++) {
+          if (raw[j] > rangePeak) rangePeak = raw[j];
+        }
+
+        final peak = max(interpolated, rangePeak);
+        final trebleBoost = (0.75 + 1.65 * pow(norm, 0.65)).clamp(0.4, 2.5);
+        target = (peak * trebleBoost).clamp(0.0, 1.0);
+      } else {
+        final v = (sin(t * _sineFreq[i] * 2.5 + _sinePhase[i]) * 0.4 +
+                    sin(t * _sineFreq[i] * 1.3 + _sinePhase[i] * 0.7) * 0.3) *
+                0.5 +
+            0.5;
+        final edge = ((i / (_barCount - 1)) - 0.5).abs() * 2.0;
+        target = (v * (1.0 - edge * 0.45)).clamp(0.1, 1.0);
+      }
+
+      if (widget.isPlaying && target > 0.05) {
+        final diff = (target - _smoothed[i]).abs();
+        if (diff < 0.035) {
+          final jitter =
+              sin(t * (2.2 + _sineFreq[i] * 0.6) + _sinePhase[i] * 1.3) *
+              0.030;
+          target = (target + jitter).clamp(0.0, 1.0);
+        }
+      }
+
+      final alpha = target > _smoothed[i] ? _attack : _release;
+      final next = _smoothed[i] + (target - _smoothed[i]) * alpha;
+      if ((next - _smoothed[i]).abs() > 0.0005) {
+        _smoothed[i] = next;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Keep spectrumProvider active and listening to real mpv FFT stream
+    ref.watch(spectrumProvider);
+
+    return AnimatedOpacity(
+      opacity: widget.isPlaying ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 600),
+      child: CustomPaint(
+        painter: _DesktopBottomVisualizerPainter(
+          levels: List.unmodifiable(_smoothed),
+          accent: widget.accent,
+        ),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
+
+class _DesktopBottomVisualizerPainter extends CustomPainter {
+  final List<double> levels;
+  final Color accent;
+
+  const _DesktopBottomVisualizerPainter({
+    required this.levels,
+    required this.accent,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (levels.isEmpty || size.width <= 0 || size.height <= 0) return;
+
+    final count = levels.length;
+    const hPad = 16.0;
+    final totalW = size.width - hPad * 2;
+    final barW = totalW / (count * 1.55);
+    final gap = barW * 0.55;
+    final slotW = barW + gap;
+
+    final fieldW = slotW * count - gap;
+    final startX = (size.width - fieldW) / 2;
+
+    final maxH = size.height * 0.85;
+    const minH = 4.0;
+
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (int i = 0; i < count; i++) {
+      final val = levels[i].clamp(0.0, 1.0);
+      final h = (minH + (maxH - minH) * val).clamp(minH, maxH);
+      final x = startX + i * slotW;
+      final top = size.height - h;
+
+      final rect = Rect.fromLTWH(x, top, barW, h);
+      paint.shader = LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [
+          accent.withValues(alpha: 0.85),
+          accent.withValues(alpha: 0.65),
+          accent.withValues(alpha: 0.25),
+        ],
+        stops: const [0.0, 0.7, 1.0],
+      ).createShader(rect);
+
+      final rrect = RRect.fromRectAndRadius(
+        rect,
+        Radius.circular(barW / 2),
+      );
+      canvas.drawRRect(rrect, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DesktopBottomVisualizerPainter oldDelegate) => true;
 }

@@ -1097,7 +1097,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortYearOldest => 'Year (Oldest)';
 
   @override
-  String get sortMostSongs => 'Most Songs';
+  String get sortMostSongs => 'Number of Songs';
 
   @override
   String get sortLeastSongs => 'Least Songs';

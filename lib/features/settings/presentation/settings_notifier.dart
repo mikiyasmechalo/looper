@@ -269,6 +269,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..minimizeToTray = s.minimizeToTray
       ..nowPlayingFullscreen = s.nowPlayingFullscreen
       ..seekBarStyleIndex = s.seekBarStyleIndex
+      ..uniformLyricsFontSize = s.uniformLyricsFontSize
+      ..fullscreenVisualizerEnabled = s.fullscreenVisualizerEnabled
       ..fadePlayPauseStop = s.fadePlayPauseStop
       ..playPauseStopFadeLength = s.playPauseStopFadeLength
       ..resumeAfterCall = s.resumeAfterCall
@@ -455,6 +457,22 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateSeekBarStyle(int value) async {
     final newState = _clone(state)..seekBarStyleIndex = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateUniformLyricsFontSize(bool value) async {
+    final newState = _clone(state)..uniformLyricsFontSize = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateFullscreenVisualizerEnabled(bool value) async {
+    final newState = _clone(state)..fullscreenVisualizerEnabled = value;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

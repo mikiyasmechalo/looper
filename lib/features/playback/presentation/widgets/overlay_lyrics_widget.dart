@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../lyrics_notifier.dart';
 import '../playback_notifier.dart';
 import '../overlay_service.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 
 class OverlayLyricsWidget extends ConsumerStatefulWidget {
   const OverlayLyricsWidget({super.key});
@@ -71,12 +72,27 @@ class _OverlayLyricsWidgetState extends ConsumerState<OverlayLyricsWidget> {
                     }
                   }
 
+                  final lyricsAlignment = ref.watch(
+                    settingsProvider.select((s) => s.lyricsAlignment),
+                  );
+                  final textAlign = lyricsAlignment == 'left'
+                      ? TextAlign.left
+                      : lyricsAlignment == 'right'
+                          ? TextAlign.right
+                          : TextAlign.center;
+                  final crossAxis = lyricsAlignment == 'left'
+                      ? CrossAxisAlignment.start
+                      : lyricsAlignment == 'right'
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.center;
+
                   return Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: crossAxis,
                     children: [
                       Text(
                         currentLine,
-                        textAlign: TextAlign.center,
+                        textAlign: textAlign,
                         style: AppFonts.spaceGroteskStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -89,8 +105,8 @@ class _OverlayLyricsWidgetState extends ConsumerState<OverlayLyricsWidget> {
                         const SizedBox(height: 4),
                         Text(
                           nextLine,
-                          textAlign: TextAlign.center,
-                           style: AppFonts.spaceGroteskStyle(
+                          textAlign: textAlign,
+                          style: AppFonts.spaceGroteskStyle(
                             fontSize: 14,
                             color: Colors.white70,
                           ),
