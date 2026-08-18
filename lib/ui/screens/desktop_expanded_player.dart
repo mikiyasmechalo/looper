@@ -81,12 +81,6 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
     if (enable) {
       _autoEnteredFullscreen = true;
       await windowManager.setFullScreen(true);
-    } else {
-      final isMax = await windowManager.isMaximized();
-      if (!isMax) {
-        _autoMaximized = true;
-        await windowManager.maximize();
-      }
     }
     if (mounted) _syncFullscreen();
   }

@@ -10,6 +10,7 @@ import 'package:looper_player/ui/widgets/app_loading_indicator.dart';
 import 'package:looper_player/ui/widgets/color_maper.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:animations/animations.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:window_manager/window_manager.dart';
 import '../widgets/player_bar.dart';
 import '../widgets/expanded_player.dart';
@@ -52,6 +53,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _isDraggingOver = false;
   Timer? _enqueueToastTimer;
   int _pendingEnqueueCount = 0;
 
@@ -205,9 +207,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             )
           : null,
-      body: SafeArea(
-        child: Stack(
-          children: [
+      body: DropTarget(
+        onDragEntered: (detail) {
+          setState(() => _isDraggingOver = true);
+        },
+        onDragExited: (detail) {
+          setState(() => _isDraggingOver = false);
+        },
+        onDragDone: (detail) async {
+          setState(() => _isDraggingOver = false);
+          final rawPaths = detail.files.map((f) => f.path).toList();
+          final supportedExtensions = {
+            '.mp3', '.flac', '.wav', '.m4a', '.ogg', '.opus',
+            '.aac', '.alac', '.wma', '.aiff', '.ape',
+          };
+          final audioPaths = rawPaths.where((p) {
+            final lower = p.toLowerCase();
+            return supportedExtensions.any((ext) => lower.endsWith(ext));
+          }).toList();
+
+          if (audioPaths.isEmpty) return;
+
+          final notifier = ref.read(playbackProvider.notifier);
+          if (audioPaths.length == 1) {
+            await notifier.playFromFile(audioPaths.first);
+          } else {
+            await notifier.playFromFiles(audioPaths);
+          }
+        },
+        child: SafeArea(
+          child: Stack(
+            children: [
             // Global Background Art / persistent gradient
             if (!showWelcome &&
                 (settings.enableDynamicTheming ||
@@ -439,11 +469,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: const ExpandedPlayer(),
                 ),
               ),
+
+            // Drag & Drop visual overlay
+            if (_isDraggingOver)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.75),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 36,
+                        vertical: 28,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E1E),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.35),
+                            blurRadius: 24,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            LucideIcons.playCircle,
+                            size: 52,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Drop to Play in Looper',
+                            style: AppFonts.jostStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMainContent(
     NavigationState nav,

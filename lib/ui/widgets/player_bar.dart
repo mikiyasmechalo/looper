@@ -932,8 +932,14 @@ class _FullscreenButton extends ConsumerWidget {
         size: 16,
         color: Colors.white54,
       ),
-      onPressed: () {
+      onPressed: () async {
         ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
+        if (!(Platform.isAndroid || Platform.isIOS)) {
+          final isMax = await windowManager.isMaximized();
+          if (!isMax) {
+            await windowManager.maximize();
+          }
+        }
       },
       tooltip: 'Fullscreen Player',
     );

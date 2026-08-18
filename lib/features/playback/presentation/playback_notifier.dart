@@ -1389,6 +1389,37 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     await _saveQueueState();
   }
 
+  Future<void> playFromFiles(List<String> paths) async {
+    if (paths.isEmpty) return;
+    final List<Song> newSongs = [];
+    for (final path in paths) {
+      final song = await _getOrCreateSongForPath(path);
+      newSongs.add(song);
+    }
+    if (newSongs.isEmpty) return;
+
+    // Switch to or create dedicated "External" queue
+    if (_activeQueueName != 'External') {
+      if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
+        await _persistNamedQueue(_activeQueueName);
+      }
+      _activeQueueName = 'External';
+      ref.read(settingsProvider.notifier).updateActiveQueueName('External');
+    }
+
+    _manualQueueCount = 0;
+    _playlist = newSongs;
+    _originalPlaylist = List.from(newSongs);
+    _currentIndex = 0;
+    state = state.copyWith(
+      currentSong: newSongs.first,
+      queue: List.from(_playlist),
+      isRestoredSession: false,
+    );
+    await play(newSongs.first);
+    await _saveQueueState();
+  }
+
   Future<void> enqueueFromFile(String path) async {
     final song = await _getOrCreateSongForPath(path);
     addToQueue(song);
