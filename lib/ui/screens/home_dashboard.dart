@@ -138,10 +138,6 @@ class HomeDashboard extends ConsumerWidget {
           _buildRecentlyPlayed(context, ref, isNarrow, isDynamic),
         );
         orderedChildren.add(const SizedBox(height: 16));
-        orderedChildren.add(
-          _buildAlbumsIfSmall(context, ref, isNarrow, isDynamic),
-        );
-        orderedChildren.add(const SizedBox(height: 16));
 
         // Render sections dynamically in user's customized order
         for (final section in settings.homeSectionOrder) {
@@ -222,115 +218,6 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildAlbumsIfSmall(
-    BuildContext context,
-    WidgetRef ref,
-    bool isNarrow,
-    bool isDynamic,
-  ) {
-    final albums = ref.watch(albumsProvider).value ?? [];
-    if (albums.length >= 6 || albums.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(context, title: 'My Albums', isNarrow: isNarrow),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: isNarrow ? 174 : 196,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: albums.length,
-            itemBuilder: (context, index) {
-              final album = albums[index];
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
-                  onSecondaryTap: () => showAlbumOptionsBottomSheet(
-                    context: context,
-                    ref: ref,
-                    album: album,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    clipBehavior: Clip.hardEdge,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: InkWell(
-                      onTap: () async {
-                        final songs = await DbService.isar.songs
-                            .filter()
-                            .albumEqualTo(album.name)
-                            .findAll();
-                        ref
-                            .read(appNavigationProvider.notifier)
-                            .showCollection(
-                              title: album.name,
-                              subtitle: album.artist,
-                              art: album.artPath,
-                              songs: songs,
-                              highlightItem: NavItem.albums,
-                            );
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: isNarrow ? 120 : 140,
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            OptimizedImage(
-                              imagePath: album.artPath,
-                              height: isNarrow ? 104 : 124,
-                              width: isNarrow ? 104 : 124,
-                              borderRadius: BorderRadius.circular(12),
-                              placeholder: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(
-                                    alpha: isDynamic ? 0.8 : 0.1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Center(
-                                  child: Icon(LucideIcons.disc),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              album.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              album.artist ?? 'Unknown',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.white38,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildRecentlyPlayed(
     BuildContext context,

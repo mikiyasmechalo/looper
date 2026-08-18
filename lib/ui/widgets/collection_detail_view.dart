@@ -80,7 +80,25 @@ class CollectionDetailView extends ConsumerWidget {
         ? ref.watch(playlistProvider.select((list) => list.firstWhere((p) => p.id == playlist!.id, orElse: () => playlist!)))
         : null;
 
-    final titleToRender = reactivePlaylist != null ? reactivePlaylist.name : title;
+    final effectiveTitle = reactivePlaylist != null
+        ? reactivePlaylist.name
+        : (nav.activeItem == NavItem.collectionDetail && nav.collectionTitle != null
+            ? nav.collectionTitle!
+            : title);
+
+    final effectiveSubtitle = reactivePlaylist != null
+        ? subtitle
+        : (nav.activeItem == NavItem.collectionDetail
+            ? nav.collectionSubtitle
+            : subtitle);
+
+    final effectiveArtPath = reactivePlaylist != null
+        ? artPath
+        : (nav.activeItem == NavItem.collectionDetail
+            ? nav.collectionArt
+            : artPath);
+
+    final titleToRender = effectiveTitle;
 
     // Reactively watch songs of this playlist using playlistSongsProvider
     final playlistSongsAsync = playlist != null
@@ -89,7 +107,9 @@ class CollectionDetailView extends ConsumerWidget {
 
     final songsToRender = playlistSongsAsync != null
         ? (playlistSongsAsync.value ?? <Song>[])
-        : songs;
+        : (nav.activeItem == NavItem.collectionDetail && nav.collectionSongs.isNotEmpty
+            ? nav.collectionSongs
+            : songs);
 
     final int sortOptionIndex;
     final bool isAscending;
@@ -147,36 +167,29 @@ class CollectionDetailView extends ConsumerWidget {
         break;
     }
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: LayoutBuilder(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          ref.read(appNavigationProvider.notifier).goBack();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: LayoutBuilder(
           builder: (context, constraints) {
-            final isNarrow = constraints.maxWidth < 450;
+            final isNarrow = constraints.maxWidth < 600;
             return CustomScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
               slivers: [
                 SliverToBoxAdapter(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (isNarrow)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
-                          child: PremiumSection(
-                            useExpanded: false,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(32),
-                              bottomLeft: Radius.circular(32),
-                              topRight: Radius.circular(10),
-                              bottomRight: Radius.circular(10),
-                            ),
-                            width: 44,
-                            height: 44,
-                            onTap: () => ref.read(appNavigationProvider.notifier).goBack(),
-                            child: const Icon(LucideIcons.chevronLeft, color: Colors.white, size: 20),
-                          ),
-                        ),
+                      // Desktop Top Spacer to prevent header overlay issues
+                      if (!Platform.isAndroid && !Platform.isIOS)
+                        const SizedBox(height: 16),
                       // Header - Now always a Row for cover and name
                       Container(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -188,10 +201,21 @@ class CollectionDetailView extends ConsumerWidget {
                                     child: _buildArt(
                                       context,
                                       playlist != null ? songsToRender : null,
+                                      customArtPath: effectiveArtPath,
                                     ),
                                   ),
                                   const SizedBox(height: 20),
-                                  _buildInfo(context, ref, true, activeSong?.artPath, reactivePlaylist, titleToRender, sortedSongs),
+                                  _buildInfo(
+                                    context,
+                                    ref,
+                                    true,
+                                    activeSong?.artPath,
+                                    reactivePlaylist,
+                                    titleToRender,
+                                    effectiveSubtitle,
+                                    effectiveArtPath,
+                                    sortedSongs,
+                                  ),
                                 ],
                               )
                             : Row(
@@ -200,9 +224,22 @@ class CollectionDetailView extends ConsumerWidget {
                                   _buildArt(
                                     context,
                                     playlist != null ? songsToRender : null,
+                                    customArtPath: effectiveArtPath,
                                   ),
                                   const SizedBox(width: 20),
-                                  Expanded(child: _buildInfo(context, ref, true, activeSong?.artPath, reactivePlaylist, titleToRender, sortedSongs)),
+                                  Expanded(
+                                    child: _buildInfo(
+                                      context,
+                                      ref,
+                                      true,
+                                      activeSong?.artPath,
+                                      reactivePlaylist,
+                                      titleToRender,
+                                      effectiveSubtitle,
+                                      effectiveArtPath,
+                                      sortedSongs,
+                                    ),
+                                  ),
                                 ],
                               ),
                       ),
@@ -246,33 +283,33 @@ class CollectionDetailView extends ConsumerWidget {
   /// artist name and number of songs (e.g. "Artist Name · 12 Songs"). For artist
   /// collections it shows just the number of songs (e.g. "12 Songs"). Playlist
   /// and genre collections keep their plain type label.
-  String _subtitleWithCount(BuildContext context, WidgetRef ref, List<Song> collectionSongs) {
+  String _subtitleWithCount(BuildContext context, WidgetRef ref, String? effectiveSubtitle, List<Song> collectionSongs) {
     final l10n = AppLocalizations.of(context)!;
     final nav = ref.read(appNavigationProvider);
     final isArtistCollection = nav.highlightItem == NavItem.artists ||
-        subtitle == l10n.artists ||
-        subtitle == l10n.artist ||
-        subtitle?.toLowerCase() == 'artist' ||
-        subtitle?.toLowerCase() == 'artists';
+        effectiveSubtitle == l10n.artists ||
+        effectiveSubtitle == l10n.artist ||
+        effectiveSubtitle?.toLowerCase() == 'artist' ||
+        effectiveSubtitle?.toLowerCase() == 'artists';
 
     if (isArtistCollection) {
       return '${collectionSongs.length} ${l10n.songs}';
     }
 
     final isTypeLabel = playlist != null ||
-        subtitle == 'Playlist' ||
-        subtitle == l10n.genre ||
-        subtitle?.toLowerCase() == 'genre';
-    if (isTypeLabel || subtitle == null) return subtitle ?? '';
+        effectiveSubtitle == 'Playlist' ||
+        effectiveSubtitle == l10n.genre ||
+        effectiveSubtitle?.toLowerCase() == 'genre';
+    if (isTypeLabel || effectiveSubtitle == null) return effectiveSubtitle ?? '';
     // Artist detail: the subtitle is just the word "Artists", so show only the
     // song count instead of "Artists · N Songs".
-    if (subtitle == l10n.artists) {
+    if (effectiveSubtitle == l10n.artists) {
       return '${collectionSongs.length} ${l10n.songs}';
     }
-    return '${subtitle!} · ${collectionSongs.length} ${l10n.songs}';
+    return '$effectiveSubtitle · ${collectionSongs.length} ${l10n.songs}';
   }
 
-  Widget _buildArt(BuildContext context, List<Song>? playlistSongs) {
+  Widget _buildArt(BuildContext context, List<Song>? playlistSongs, {String? customArtPath}) {
     final double size = 140; // Unified size for a cleaner Row look
 
     if (playlistSongs != null) {
@@ -292,7 +329,7 @@ class CollectionDetailView extends ConsumerWidget {
 
     return ArtistImage(
       images: images,
-      imagePath: artPath,
+      imagePath: customArtPath ?? artPath,
       imageUrl: imageUrl,
       width: size,
       height: size,
@@ -311,14 +348,28 @@ class CollectionDetailView extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfo(BuildContext context, WidgetRef ref, bool isNarrow, String? activeArtworkPath, Playlist? reactivePlaylist, String titleToRender, List<Song> songsToRender) {
+  Widget _buildInfo(
+    BuildContext context,
+    WidgetRef ref,
+    bool isNarrow,
+    String? activeArtworkPath,
+    Playlist? reactivePlaylist,
+    String titleToRender,
+    String? subtitleToRender,
+    String? artPathToRender,
+    List<Song> songsToRender,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     final nav = ref.watch(appNavigationProvider);
     final isArtistCollection = nav.highlightItem == NavItem.artists ||
-        subtitle == l10n.artists ||
-        subtitle == l10n.artist ||
-        subtitle?.toLowerCase() == 'artist' ||
-        subtitle?.toLowerCase() == 'artists';
+        subtitleToRender == l10n.artists ||
+        subtitleToRender == l10n.artist ||
+        subtitleToRender?.toLowerCase() == 'artist' ||
+        subtitleToRender?.toLowerCase() == 'artists';
+    final bool isAlbumCollection = playlist == null &&
+        !isArtistCollection &&
+        subtitleToRender != l10n.genre &&
+        subtitleToRender?.toLowerCase() != 'genre';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,10 +384,10 @@ class CollectionDetailView extends ConsumerWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        if (subtitle != null || isArtistCollection) ...[
+        if (subtitleToRender != null || isArtistCollection) ...[
           const SizedBox(height: 4),
           Text(
-            _subtitleWithCount(context, ref, songsToRender),
+            _subtitleWithCount(context, ref, subtitleToRender, songsToRender),
             style: AppFonts.jostStyle(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.5),
@@ -415,13 +466,35 @@ class CollectionDetailView extends ConsumerWidget {
                     playlist: reactivePlaylist,
                     songs: songsToRender,
                   );
+                } else if (isAlbumCollection) {
+                  final album = Album()
+                    ..name = titleToRender
+                    ..artist = subtitleToRender
+                    ..artPath = artPathToRender ?? activeArtworkPath
+                    ..dateAdded = DateTime.now();
+                  showAlbumOptionsBottomSheet(
+                    context: context,
+                    ref: ref,
+                    album: album,
+                  );
+                } else if (isArtistCollection) {
+                  final artist = Artist()
+                    ..name = titleToRender
+                    ..artPath = artPathToRender ?? activeArtworkPath
+                    ..artistImageUrl = imageUrl
+                    ..artistImages = images;
+                  showArtistOptionsBottomSheet(
+                    context: context,
+                    ref: ref,
+                    artist: artist,
+                  );
                 } else {
                   showCollectionOptionsBottomSheet(
                     context: context,
                     ref: ref,
                     title: titleToRender,
-                    subtitle: subtitle,
-                    artPath: artPath,
+                    subtitle: subtitleToRender,
+                    artPath: artPathToRender,
                     imageUrl: imageUrl,
                     images: images,
                     songs: songsToRender,

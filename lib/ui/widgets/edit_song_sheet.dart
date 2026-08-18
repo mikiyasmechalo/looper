@@ -9,6 +9,7 @@ import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/core/artwork_save_helper.dart';
 import 'package:looper_player/ui/widgets/app_loading_indicator.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -373,6 +374,43 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
                                   color: Colors.black, size: 18),
                             ),
                           ),
+                          // Save artwork button at top right
+                          if (_currentArtPath.isNotEmpty)
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: Tooltip(
+                                message: 'Save artwork to file',
+                                child: GestureDetector(
+                                  onTap: () => ArtworkSaveHelper.saveArtworkToFile(
+                                    context: context,
+                                    sourceArtPath: _currentArtPath,
+                                    defaultFileName: _albumCtrl.text.trim().isNotEmpty
+                                        ? _albumCtrl.text.trim()
+                                        : _titleCtrl.text.trim(),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white24),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.4),
+                                          blurRadius: 6,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      LucideIcons.download,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),

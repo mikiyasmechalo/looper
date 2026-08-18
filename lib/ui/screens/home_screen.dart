@@ -650,16 +650,15 @@ class Sidebar extends ConsumerWidget {
                       onTap: () => navigateTo(NavItem.songs),
                       compact: compact,
                     ),
-                    if ((ref.watch(albumsProvider).value?.length ?? 0) >= 6)
-                      _SidebarItem(
-                        icon: LucideIcons.disc,
-                        label: l10n.albums,
-                        isSelected:
-                            activeItem == NavItem.albums ||
-                            highlightItem == NavItem.albums,
-                        onTap: () => navigateTo(NavItem.albums),
-                        compact: compact,
-                      ),
+                    _SidebarItem(
+                      icon: LucideIcons.disc,
+                      label: l10n.albums,
+                      isSelected:
+                          activeItem == NavItem.albums ||
+                          highlightItem == NavItem.albums,
+                      onTap: () => navigateTo(NavItem.albums),
+                      compact: compact,
+                    ),
                     _SidebarItem(
                       icon: LucideIcons.mic2,
                       label: l10n.artists,

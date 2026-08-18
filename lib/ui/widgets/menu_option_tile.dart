@@ -6,6 +6,7 @@ class MenuOptionTile extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color iconColor;
+  final Color? textColor;
   final VoidCallback onTap;
 
   const MenuOptionTile({
@@ -13,6 +14,7 @@ class MenuOptionTile extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.iconColor,
+    this.textColor,
     required this.onTap,
   });
 
@@ -35,7 +37,7 @@ class MenuOptionTile extends StatelessWidget {
               child: Text(
                 label,
                 style: AppFonts.jostStyle(
-                  color: Colors.white,
+                  color: textColor ?? Colors.white,
                   fontWeight: FontWeight.w500,
                   fontSize: 16,
                 ),

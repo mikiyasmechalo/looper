@@ -19,8 +19,10 @@ import 'package:looper_player/ui/widgets/playlist_selector.dart';
 import 'package:looper_player/core/import_export_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:looper_player/ui/widgets/edit_album_sheet.dart';
+
 /// Shows the context menu (Play / Shuffle / Play Next / Add to Queue / Add to
-/// Playlist) for an album collection.
+/// Playlist / Edit Album / Delete Album) for an album collection.
 Future<void> showAlbumOptionsBottomSheet({
   required BuildContext context,
   required WidgetRef ref,
@@ -38,6 +40,36 @@ Future<void> showAlbumOptionsBottomSheet({
     subtitle: album.artist,
     artPath: album.artPath,
     songs: songs,
+    editActionLabel: 'Edit Album',
+    onEditAction: () async {
+      Navigator.pop(context);
+      showEditAlbumSheet(context, album, songs);
+    },
+    deleteActionLabel: 'Delete Album',
+    onDeleteAction: () async {
+      Navigator.pop(context);
+      await showConfirmCollectionDeleteDialog(
+        context: context,
+        collectionType: 'Album',
+        name: album.name,
+        songCount: songs.length,
+        onConfirm: (deleteFromStorage) async {
+          final res = await ref.read(playbackProvider.notifier).deleteAlbum(
+            album,
+            songs,
+            deleteFromStorage: deleteFromStorage,
+          );
+          if (context.mounted) {
+            final msg = res == FileActionResult.success
+                ? (deleteFromStorage ? 'Album and files deleted from storage' : 'Album removed from library')
+                : 'Could not delete some files from storage';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+            );
+          }
+        },
+      );
+    },
   );
 }
 
@@ -72,6 +104,31 @@ Future<void> showArtistOptionsBottomSheet({
     onImageAction: () async {
       Navigator.pop(context);
       await _changeArtistImage(context, artist);
+    },
+    deleteActionLabel: 'Delete Artist',
+    onDeleteAction: () async {
+      Navigator.pop(context);
+      await showConfirmCollectionDeleteDialog(
+        context: context,
+        collectionType: 'Artist',
+        name: artist.name,
+        songCount: songs.length,
+        onConfirm: (deleteFromStorage) async {
+          final res = await ref.read(playbackProvider.notifier).deleteArtist(
+            artist,
+            songs,
+            deleteFromStorage: deleteFromStorage,
+          );
+          if (context.mounted) {
+            final msg = res == FileActionResult.success
+                ? (deleteFromStorage ? 'Artist and files deleted from storage' : 'Artist removed from library')
+                : 'Could not delete some files from storage';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+            );
+          }
+        },
+      );
     },
   );
 }
@@ -143,6 +200,10 @@ void showCollectionOptionsBottomSheet({
   List<List<Song>>? shuffleGroups,
   String? imageActionLabel,
   Future<void> Function()? onImageAction,
+  String? editActionLabel,
+  Future<void> Function()? onEditAction,
+  String? deleteActionLabel,
+  Future<void> Function()? onDeleteAction,
 }) {
   showModalBottomSheet(
     context: context,
@@ -161,6 +222,10 @@ void showCollectionOptionsBottomSheet({
       shuffleGroups: shuffleGroups,
       imageActionLabel: imageActionLabel,
       onImageAction: onImageAction,
+      editActionLabel: editActionLabel,
+      onEditAction: onEditAction,
+      deleteActionLabel: deleteActionLabel,
+      onDeleteAction: onDeleteAction,
     ),
   );
 }
@@ -176,6 +241,10 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   final List<List<Song>>? shuffleGroups;
   final String? imageActionLabel;
   final Future<void> Function()? onImageAction;
+  final String? editActionLabel;
+  final Future<void> Function()? onEditAction;
+  final String? deleteActionLabel;
+  final Future<void> Function()? onDeleteAction;
 
   const _CollectionOptionsSheetContent({
     required this.title,
@@ -188,6 +257,10 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
     this.shuffleGroups,
     this.imageActionLabel,
     this.onImageAction,
+    this.editActionLabel,
+    this.onEditAction,
+    this.deleteActionLabel,
+    this.onDeleteAction,
   });
 
   void _showPlaylistSelector(
@@ -460,6 +533,27 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                           onImageAction!();
                         },
                       ),
+                    if (editActionLabel != null && onEditAction != null)
+                      MenuOptionTile(
+                        label: editActionLabel!,
+                        icon: LucideIcons.pencil,
+                        iconColor: accentColor,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          onEditAction!();
+                        },
+                      ),
+                    if (deleteActionLabel != null && onDeleteAction != null)
+                      MenuOptionTile(
+                        label: deleteActionLabel!,
+                        icon: LucideIcons.trash2,
+                        iconColor: Colors.redAccent,
+                        textColor: Colors.redAccent,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          onDeleteAction!();
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -470,4 +564,86 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Confirmation dialog for mass deletion of Album or Artist collections.
+Future<void> showConfirmCollectionDeleteDialog({
+  required BuildContext context,
+  required String collectionType, // 'Album' or 'Artist'
+  required String name,
+  required int songCount,
+  required Future<void> Function(bool deleteFromStorage) onConfirm,
+}) async {
+  bool deleteFromStorage = false;
+  await showDialog(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'Delete $collectionType: $name',
+          style: AppFonts.jostStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to remove this $collectionType and its $songCount track${songCount == 1 ? '' : 's'} from your library?',
+              style: AppFonts.jostStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => setState(() => deleteFromStorage = !deleteFromStorage),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: deleteFromStorage,
+                      activeColor: Colors.redAccent,
+                      onChanged: (val) => setState(() => deleteFromStorage = val ?? false),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Also delete audio files from storage',
+                        style: AppFonts.jostStyle(
+                          color: deleteFromStorage ? Colors.redAccent : Colors.white70,
+                          fontSize: 13,
+                          fontWeight: deleteFromStorage ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await onConfirm(deleteFromStorage);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    ),
+  );
 }

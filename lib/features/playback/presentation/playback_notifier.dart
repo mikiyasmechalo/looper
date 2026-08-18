@@ -9,6 +9,7 @@ import 'package:looper_player/core/android_audio_focus_manager.dart';
 import 'package:mpv_audio_kit/mpv_audio_kit.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/features/library/data/scanner.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
@@ -23,6 +24,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:looper_player/core/tag_writer_service.dart';
 import 'package:looper_player/features/streaming/data/youtube_stream_service.dart';
 import 'package:looper_player/features/playback/data/queue_repository.dart';
 import 'package:looper_player/core/app_toast.dart';
@@ -2109,8 +2111,8 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
-  /// Edits song metadata in the database (title, artist, albumArtist, album, trackNumber, trackTotal, discNumber, discTotal, year, genre, artPath, lyrics).
-  /// Does NOT rename the physical file — only updates the DB record.
+  /// Edits song metadata directly in the physical audio file and synchronizes the database.
+  /// Strictly preserves existing artwork and all unedited tags.
   Future<bool> editSongMetadata(Song song, {
     String? title,
     String? artist,
@@ -2125,7 +2127,57 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     String? artPath,
     String? lyrics,
   }) async {
+    final isCurrent = state.currentSong?.id == song.id;
+    final wasPlaying = isCurrent && state.isPlaying;
+
     try {
+      // 1. Temporarily pause playback if actively playing to release Win32 file lock
+      if (wasPlaying) {
+        await player.pause();
+        await Future.delayed(const Duration(milliseconds: 150));
+      }
+
+      // 2. Write metadata and embed/preserve artwork directly to the file on disk
+      await TagWriterService.writeToFile(
+        filePath: song.path,
+        title: title,
+        artist: artist,
+        albumArtist: albumArtist,
+        album: album,
+        trackNumber: trackNumber,
+        trackTotal: trackTotal,
+        discNumber: discNumber,
+        discTotal: discTotal,
+        year: year,
+        genre: genre,
+        lyrics: lyrics,
+        newArtPath: artPath,
+        fallbackArtPath: song.artPath,
+      );
+
+      // 3. Process artwork cache if a new art file was picked
+      String? effectiveArtPath = song.artPath;
+      if (artPath != null) {
+        if (artPath.isEmpty) {
+          effectiveArtPath = null;
+        } else {
+          try {
+            final artFile = File(artPath);
+            if (await artFile.exists()) {
+              final bytes = await artFile.readAsBytes();
+              final scanner = LibraryScanner();
+              effectiveArtPath = await scanner.saveAlbumArt(
+                album ?? song.album ?? 'unknown',
+                bytes,
+              );
+            }
+          } catch (_) {
+            effectiveArtPath = artPath;
+          }
+        }
+      }
+
+      // 4. Update the database record
       await DbService.isar.writeTxn(() async {
         if (title != null && title.isNotEmpty) song.title = title.trim();
         if (artist != null) song.artist = artist.trim().isEmpty ? null : artist.trim();
@@ -2137,16 +2189,21 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         song.discTotal = (discTotal == null || discTotal <= 0) ? null : discTotal;
         if (year != null) song.year = year == 0 ? null : year;
         if (genre != null) song.genre = genre.trim().isEmpty ? null : genre.trim();
-        if (artPath != null) song.artPath = artPath.trim().isEmpty ? null : artPath.trim();
+        song.artPath = effectiveArtPath;
         song.lyrics = (lyrics == null || lyrics.trim().isEmpty) ? null : lyrics.trim();
         await DbService.isar.songs.put(song);
       });
 
-      // Update the in-memory playlist
+      // 5. Update the in-memory playlist
       final idx = _playlist.indexWhere((s) => s.id == song.id);
       if (idx != -1) _playlist[idx] = song;
 
-      // Reflect changes in live playback state if this is the current song
+      // 6. Resume playback if was playing
+      if (wasPlaying) {
+        await player.play();
+      }
+
+      // 7. Reflect changes in live playback state if this is the current song
       if (state.currentSong?.id == song.id) {
         state = state.copyWith(currentSong: song, queue: List.from(_playlist));
         _updateNotification();
@@ -2155,9 +2212,322 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         state = state.copyWith(queue: List.from(_playlist));
       }
       return true;
-    } catch (e) {
-
+    } catch (e, s) {
+      LoggerHelper.write('PlaybackNotifier: editSongMetadata error', e, s);
+      if (wasPlaying) {
+        try {
+          await player.play();
+        } catch (_) {}
+      }
       return false;
+    }
+  }
+
+  /// Mass edits all songs in an album and updates physical files on disk using FFmpeg.
+  Future<bool> editAlbumMetadata(
+    Album album, {
+    String? newAlbumTitle,
+    String? newAlbumArtist,
+    String? newArtist,
+    int? year,
+    String? genre,
+    int? trackTotal,
+    int? discTotal,
+    String? artPath,
+    void Function(int current, int total)? onProgress,
+  }) async {
+    try {
+      final songs = await DbService.isar.songs
+          .filter()
+          .albumEqualTo(album.name)
+          .findAll();
+
+      if (songs.isEmpty) return false;
+
+      // Handle file lock if current playing song belongs to the album
+      final currentSongInAlbum = songs.any((s) => s.id == state.currentSong?.id);
+      final wasPlaying = currentSongInAlbum && state.isPlaying;
+      if (wasPlaying) {
+        await player.pause();
+        await Future.delayed(const Duration(milliseconds: 150));
+      }
+
+      // Save/cache new album art if picked
+      String? effectiveArtPath = album.artPath;
+      if (artPath != null) {
+        if (artPath.isEmpty) {
+          effectiveArtPath = null;
+        } else {
+          try {
+            final artFile = File(artPath);
+            if (await artFile.exists()) {
+              final bytes = await artFile.readAsBytes();
+              final scanner = LibraryScanner();
+              effectiveArtPath = await scanner.saveAlbumArt(
+                newAlbumTitle ?? album.name,
+                bytes,
+              );
+            }
+          } catch (_) {
+            effectiveArtPath = artPath;
+          }
+        }
+      }
+
+      for (int i = 0; i < songs.length; i++) {
+        final song = songs[i];
+        if (onProgress != null) {
+          onProgress(i + 1, songs.length);
+        }
+
+        await TagWriterService.writeToFile(
+          filePath: song.path,
+          album: newAlbumTitle,
+          albumArtist: newAlbumArtist,
+          artist: newArtist,
+          year: year,
+          genre: genre,
+          trackTotal: trackTotal,
+          discTotal: discTotal,
+          newArtPath: artPath,
+          fallbackArtPath: song.artPath,
+        );
+
+        // Update in-memory song model
+        if (newAlbumTitle != null && newAlbumTitle.trim().isNotEmpty) {
+          song.album = newAlbumTitle.trim();
+        }
+        if (newAlbumArtist != null) {
+          song.albumArtist = newAlbumArtist.trim().isEmpty ? null : newAlbumArtist.trim();
+        }
+        if (newArtist != null && newArtist.trim().isNotEmpty) {
+          song.artist = newArtist.trim();
+        }
+        if (year != null) {
+          song.year = year == 0 ? null : year;
+        }
+        if (genre != null) {
+          song.genre = genre.trim().isEmpty ? null : genre.trim();
+        }
+        if (trackTotal != null) {
+          song.trackTotal = trackTotal <= 0 ? null : trackTotal;
+        }
+        if (discTotal != null) {
+          song.discTotal = discTotal <= 0 ? null : discTotal;
+        }
+        song.artPath = effectiveArtPath;
+      }
+
+      // Update songs in DB
+      await DbService.isar.writeTxn(() async {
+        await DbService.isar.songs.putAll(songs);
+
+        // Update or re-create Album in DB
+        await DbService.isar.albums.delete(album.id);
+        final updatedAlbum = Album()
+          ..name = newAlbumTitle?.trim().isNotEmpty == true ? newAlbumTitle!.trim() : album.name
+          ..artist = newAlbumArtist?.trim().isNotEmpty == true
+              ? newAlbumArtist!.trim()
+              : (newArtist?.trim().isNotEmpty == true ? newArtist!.trim() : album.artist)
+          ..artPath = effectiveArtPath
+          ..year = year ?? album.year
+          ..dateAdded = album.dateAdded;
+        await DbService.isar.albums.put(updatedAlbum);
+      });
+
+      // Update in-memory playlist
+      for (final song in songs) {
+        final idx = _playlist.indexWhere((s) => s.id == song.id);
+        if (idx != -1) _playlist[idx] = song;
+      }
+
+      // Resume playback if was playing
+      if (wasPlaying) {
+        await player.play();
+      }
+
+      // Update live playback state
+      if (currentSongInAlbum && state.currentSong != null) {
+        final updatedCurrent = songs.firstWhere((s) => s.id == state.currentSong!.id, orElse: () => state.currentSong!);
+        state = state.copyWith(currentSong: updatedCurrent, queue: List.from(_playlist));
+        _updateNotification();
+      } else {
+        state = state.copyWith(queue: List.from(_playlist));
+      }
+
+      // Update navigation state if currently looking at this album detail
+      final finalAlbumName = newAlbumTitle?.trim().isNotEmpty == true ? newAlbumTitle!.trim() : album.name;
+      final finalArtistName = newAlbumArtist?.trim().isNotEmpty == true
+          ? newAlbumArtist!.trim()
+          : (newArtist?.trim().isNotEmpty == true ? newArtist!.trim() : album.artist);
+
+      ref.read(appNavigationProvider.notifier).updateActiveCollection(
+        oldTitle: album.name,
+        newTitle: finalAlbumName,
+        newSubtitle: finalArtistName,
+        newArt: effectiveArtPath,
+        newSongs: songs,
+      );
+
+      await _cleanUpOrphanedArtistsAndAlbums();
+      return true;
+    } catch (e, s) {
+      LoggerHelper.write('PlaybackNotifier: editAlbumMetadata error', e, s);
+      return false;
+    }
+  }
+
+  Future<FileActionResult> deleteAlbum(Album album, List<Song> songs, {required bool deleteFromStorage}) async {
+    try {
+      if (deleteFromStorage) {
+        await _requestStoragePermissions();
+      }
+    } catch (_) {}
+
+    final currentInAlbum = songs.any((s) => s.id == state.currentSong?.id);
+    final wasPlaying = state.isPlaying;
+
+    if (currentInAlbum) {
+      await player.stop();
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    bool allDeleted = true;
+    if (deleteFromStorage) {
+      for (final song in songs) {
+        try {
+          final file = File(song.path);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (_) {
+          allDeleted = false;
+        }
+      }
+    }
+
+    final songIds = songs.map((s) => s.id).toList();
+    try {
+      await DbService.isar.writeTxn(() async {
+        await DbService.isar.songs.deleteAll(songIds);
+        await DbService.isar.albums.delete(album.id);
+      });
+
+      // Update in-memory playlist
+      _playlist.removeWhere((s) => songIds.contains(s.id));
+
+      if (currentInAlbum) {
+        if (_playlist.isNotEmpty) {
+          if (_currentIndex >= _playlist.length) {
+            _currentIndex = 0;
+          }
+          final nextSong = _playlist[_currentIndex];
+          state = state.copyWith(
+            currentSong: nextSong,
+            queue: List.from(_playlist),
+          );
+          await play(nextSong, play: wasPlaying);
+        } else {
+          _currentIndex = -1;
+          state = PlaybackState(
+            volume: state.volume,
+            isShuffle: state.isShuffle,
+            repeatMode: state.repeatMode,
+            queue: [],
+          );
+          ref.read(equalizerProvider.notifier).onSongChanged(null);
+          await ref.read(settingsProvider.notifier).updateLastPlayedSong(null);
+        }
+      } else {
+        if (state.currentSong != null) {
+          _currentIndex = _playlist.indexWhere((s) => s.id == state.currentSong!.id);
+        }
+        state = state.copyWith(queue: List.from(_playlist));
+      }
+
+      ref.read(appNavigationProvider.notifier).closeCollectionIfActive(album.name);
+      await _cleanUpOrphanedArtistsAndAlbums();
+      return deleteFromStorage ? (allDeleted ? FileActionResult.success : FileActionResult.dbOnly) : FileActionResult.success;
+    } catch (e, s) {
+      LoggerHelper.write('PlaybackNotifier: deleteAlbum error', e, s);
+      return FileActionResult.failure;
+    }
+  }
+
+  Future<FileActionResult> deleteArtist(Artist artist, List<Song> songs, {required bool deleteFromStorage}) async {
+    try {
+      if (deleteFromStorage) {
+        await _requestStoragePermissions();
+      }
+    } catch (_) {}
+
+    final currentInArtist = songs.any((s) => s.id == state.currentSong?.id);
+    final wasPlaying = state.isPlaying;
+
+    if (currentInArtist) {
+      await player.stop();
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    bool allDeleted = true;
+    if (deleteFromStorage) {
+      for (final song in songs) {
+        try {
+          final file = File(song.path);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (_) {
+          allDeleted = false;
+        }
+      }
+    }
+
+    final songIds = songs.map((s) => s.id).toList();
+    try {
+      await DbService.isar.writeTxn(() async {
+        await DbService.isar.songs.deleteAll(songIds);
+        await DbService.isar.artists.delete(artist.id);
+      });
+
+      // Update in-memory playlist
+      _playlist.removeWhere((s) => songIds.contains(s.id));
+
+      if (currentInArtist) {
+        if (_playlist.isNotEmpty) {
+          if (_currentIndex >= _playlist.length) {
+            _currentIndex = 0;
+          }
+          final nextSong = _playlist[_currentIndex];
+          state = state.copyWith(
+            currentSong: nextSong,
+            queue: List.from(_playlist),
+          );
+          await play(nextSong, play: wasPlaying);
+        } else {
+          _currentIndex = -1;
+          state = PlaybackState(
+            volume: state.volume,
+            isShuffle: state.isShuffle,
+            repeatMode: state.repeatMode,
+            queue: [],
+          );
+          ref.read(equalizerProvider.notifier).onSongChanged(null);
+          await ref.read(settingsProvider.notifier).updateLastPlayedSong(null);
+        }
+      } else {
+        if (state.currentSong != null) {
+          _currentIndex = _playlist.indexWhere((s) => s.id == state.currentSong!.id);
+        }
+        state = state.copyWith(queue: List.from(_playlist));
+      }
+
+      ref.read(appNavigationProvider.notifier).closeCollectionIfActive(artist.name);
+      await _cleanUpOrphanedArtistsAndAlbums();
+      return deleteFromStorage ? (allDeleted ? FileActionResult.success : FileActionResult.dbOnly) : FileActionResult.success;
+    } catch (e, s) {
+      LoggerHelper.write('PlaybackNotifier: deleteArtist error', e, s);
+      return FileActionResult.failure;
     }
   }
 

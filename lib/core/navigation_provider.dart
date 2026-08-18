@@ -165,6 +165,37 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
     );
   }
 
+  void updateActiveCollection({
+    required String oldTitle,
+    required String newTitle,
+    String? newSubtitle,
+    String? newArt,
+    List<Song>? newSongs,
+  }) {
+    if (state.activeItem == NavItem.collectionDetail && state.collectionTitle == oldTitle) {
+      state = NavigationState(
+        activeItem: state.activeItem,
+        highlightItem: state.highlightItem,
+        searchSourceTab: state.searchSourceTab,
+        collectionTitle: newTitle,
+        collectionSubtitle: newSubtitle ?? state.collectionSubtitle,
+        collectionArt: newArt ?? state.collectionArt,
+        collectionImageUrl: state.collectionImageUrl,
+        collectionImages: state.collectionImages,
+        collectionSongs: newSongs ?? state.collectionSongs,
+        activePlaylist: state.activePlaylist,
+        history: state.history,
+        isPlayerExpanded: state.isPlayerExpanded,
+      );
+    }
+  }
+
+  void closeCollectionIfActive(String title) {
+    if (state.activeItem == NavItem.collectionDetail && state.collectionTitle == title) {
+      goBack();
+    }
+  }
+
   void goBack() {
     if (state.history.isEmpty) {
       state = NavigationState(activeItem: NavItem.home);

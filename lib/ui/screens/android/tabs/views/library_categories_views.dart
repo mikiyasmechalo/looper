@@ -16,6 +16,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:isar/isar.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/core/app_fonts.dart';
+import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
 
 enum AlbumSortOption {
   name,
@@ -552,6 +553,14 @@ class AlbumsGridView extends ConsumerWidget {
           itemBuilder: (context, index) {
             final album = albums[index];
             return InkWell(
+              onLongPress: () {
+                HapticFeedback.mediumImpact();
+                showAlbumOptionsBottomSheet(
+                  context: context,
+                  ref: ref,
+                  album: album,
+                );
+              },
               onTap: () async {
                 final songs = await DbService.isar.songs
                     .filter()
@@ -629,6 +638,14 @@ class ArtistsGridView extends ConsumerWidget {
       itemBuilder: (context, index) {
         final artist = sortedArtists[index];
         return InkWell(
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            showArtistOptionsBottomSheet(
+              context: context,
+              ref: ref,
+              artist: artist,
+            );
+          },
           onTap: () async {
             final songs = await DbService.isar.songs
                 .filter()
