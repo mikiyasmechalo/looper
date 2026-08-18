@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/core/navigation_provider.dart';
+import 'package:looper_player/core/window_state_service.dart';
 
 // ─── Simple JSON persistence for mini player settings ──────────────────────
 
@@ -194,6 +196,10 @@ class MiniPlayerOverlayService {
 
       // 5. Switch UI back to full player (now that the window has full dimensions)
       ref.read(miniPlayerModeProvider.notifier).state = MiniPlayerMode.none;
+      final isExp = ref.read(appNavigationProvider).isPlayerExpanded;
+      WindowStateService.instance.saveSync(
+        WindowStateService.instance.currentState.copyWith(playerType: isExp ? 'full' : 'normal'),
+      );
 
       // 6. Restore minimum size once the window is back to full size
       await windowManager.setMinimumSize(const Size(800, 800));
@@ -226,8 +232,19 @@ class MiniPlayerOverlayService {
         _previousBounds = await windowManager.getBounds();
       }
 
+      if (_wasFullScreen) {
+        await windowManager.setFullScreen(false);
+      }
+      if (_wasMaximized) {
+        await windowManager.unmaximize();
+      }
+
       // 1. Switch UI immediately so full layout never tries to render inside 300x420
       ref.read(miniPlayerModeProvider.notifier).state = mode;
+      final pType = mode == MiniPlayerMode.miniPlayer ? 'miniPlayer' : 'cornerWidget';
+      WindowStateService.instance.saveSync(
+        WindowStateService.instance.currentState.copyWith(playerType: pType),
+      );
 
       // 2. Prepare frameless window styling
       await windowManager.setAlwaysOnTop(false);
@@ -235,13 +252,6 @@ class MiniPlayerOverlayService {
       await windowManager.setAsFrameless();
       await windowManager.setMaximizable(false);
       await windowManager.setHasShadow(false);
-
-      if (_wasFullScreen) {
-        await windowManager.setFullScreen(false);
-      }
-      if (_wasMaximized) {
-        await windowManager.unmaximize();
-      }
 
       // 3. Set mini player size and restore saved location
       await windowManager.setSize(size);

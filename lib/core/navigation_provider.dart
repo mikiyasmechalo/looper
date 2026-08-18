@@ -88,7 +88,8 @@ class NavigationState {
 }
 
 class NavigationNotifier extends StateNotifier<NavigationState> {
-  NavigationNotifier() : super(NavigationState(activeItem: NavItem.home));
+  NavigationNotifier([NavigationState? initialState])
+      : super(initialState ?? NavigationState(activeItem: NavItem.home));
 
   void setItem(NavItem item) {
     if (state.activeItem == item) return;

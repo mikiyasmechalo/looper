@@ -125,136 +125,143 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
       };
 
   void _showSortMenu(AppLocalizations l10n) {
-    final accentColor = Color(ref.read(settingsProvider).accentColor);
-    final currentSort = ref.read(albumSortProvider);
-    final currentAsc = ref.read(albumSortAscendingProvider);
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AppBottomSheetContainer(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Text(
-                    l10n.sortOrder,
-                    style: AppFonts.jostStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final accentColor = Color(ref.watch(settingsProvider).accentColor);
+            final currentSort = ref.watch(albumSortProvider);
+            final currentAsc = ref.watch(albumSortAscendingProvider);
+
+            return AppBottomSheetContainer(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Text(
+                          l10n.sortOrder,
+                          style: AppFonts.jostStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          ref.read(albumSortAscendingProvider.notifier).state = !currentAsc;
+                        },
+                        icon: Icon(
+                          currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
+                          size: 18,
+                        ),
+                        label: Text(
+                          currentAsc ? l10n.ascending : l10n.descending,
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: accentColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: Colors.white10, height: 24),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                        child: PremiumSection(
+                          borderRadius: BorderRadius.circular(20),
+                          padding: EdgeInsets.zero,
+                          useExpanded: false,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _GridSortOption(
+                                label: l10n.sortAlphabeticalAZ,
+                                icon: LucideIcons.type,
+                                isSelected: currentSort == AlbumSortOption.name,
+                                accentColor: accentColor,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref.read(albumSortProvider.notifier).state = AlbumSortOption.name;
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                              _GridSortOption(
+                                label: l10n.sortRecentlyAdded,
+                                icon: LucideIcons.calendar,
+                                isSelected: currentSort == AlbumSortOption.dateAdded,
+                                accentColor: accentColor,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref.read(albumSortProvider.notifier).state = AlbumSortOption.dateAdded;
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                              _GridSortOption(
+                                label: l10n.sortYearNewest,
+                                icon: LucideIcons.calendarDays,
+                                isSelected: currentSort == AlbumSortOption.year,
+                                accentColor: accentColor,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref.read(albumSortProvider.notifier).state = AlbumSortOption.year;
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                              _GridSortOption(
+                                label: l10n.sortMostSongs,
+                                icon: LucideIcons.music,
+                                isSelected: currentSort == AlbumSortOption.songCount,
+                                accentColor: accentColor,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref.read(albumSortProvider.notifier).state = AlbumSortOption.songCount;
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                              _GridSortOption(
+                                label: l10n.artist,
+                                icon: LucideIcons.mic2,
+                                isSelected: currentSort == AlbumSortOption.artistAlbumArtist,
+                                accentColor: accentColor,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref.read(albumSortProvider.notifier).state = AlbumSortOption.artistAlbumArtist;
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(albumSortAscendingProvider.notifier).state = !currentAsc;
-                  },
-                  icon: Icon(
-                    currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
-                    size: 18,
-                  ),
-                  label: Text(
-                    currentAsc ? l10n.ascending : l10n.descending,
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: accentColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(color: Colors.white10, height: 24),
-            Flexible(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                  child: PremiumSection(
-                    borderRadius: BorderRadius.circular(20),
-                    padding: EdgeInsets.zero,
-                    useExpanded: false,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _GridSortOption(
-                          label: l10n.sortAlphabeticalAZ,
-                          icon: LucideIcons.type,
-                          isSelected: currentSort == AlbumSortOption.name,
-                          accentColor: accentColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(albumSortProvider.notifier).state = AlbumSortOption.name;
-                            Navigator.pop(context);
-                          },
-                        ),
-                        const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                        _GridSortOption(
-                          label: l10n.sortRecentlyAdded,
-                          icon: LucideIcons.calendar,
-                          isSelected: currentSort == AlbumSortOption.dateAdded,
-                          accentColor: accentColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(albumSortProvider.notifier).state = AlbumSortOption.dateAdded;
-                            Navigator.pop(context);
-                          },
-                        ),
-                        const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                        _GridSortOption(
-                          label: l10n.sortYearNewest,
-                          icon: LucideIcons.calendarDays,
-                          isSelected: currentSort == AlbumSortOption.year,
-                          accentColor: accentColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(albumSortProvider.notifier).state = AlbumSortOption.year;
-                            Navigator.pop(context);
-                          },
-                        ),
-                        const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                        _GridSortOption(
-                          label: l10n.sortMostSongs,
-                          icon: LucideIcons.music,
-                          isSelected: currentSort == AlbumSortOption.songCount,
-                          accentColor: accentColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(albumSortProvider.notifier).state = AlbumSortOption.songCount;
-                            Navigator.pop(context);
-                          },
-                        ),
-                        const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                        _GridSortOption(
-                          label: l10n.artist,
-                          icon: LucideIcons.mic2,
-                          isSelected: currentSort == AlbumSortOption.artistAlbumArtist,
-                          accentColor: accentColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(albumSortProvider.notifier).state = AlbumSortOption.artistAlbumArtist;
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -597,100 +604,107 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
       };
 
   void _showSortMenu(AppLocalizations l10n) {
-    final accentColor = Color(ref.read(settingsProvider).accentColor);
-    final currentSort = ref.read(artistSortProvider);
-    final currentAsc = ref.read(artistSortAscendingProvider);
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AppBottomSheetContainer(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Text(
-                    l10n.sortOrder,
-                    style: AppFonts.jostStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(artistSortAscendingProvider.notifier).state = !currentAsc;
-                  },
-                  icon: Icon(
-                    currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
-                    size: 18,
-                  ),
-                  label: Text(
-                    currentAsc ? l10n.ascending : l10n.descending,
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: accentColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(color: Colors.white10, height: 24),
-            Flexible(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                  child: PremiumSection(
-                    borderRadius: BorderRadius.circular(20),
-                    padding: EdgeInsets.zero,
-                    useExpanded: false,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _GridSortOption(
-                          label: l10n.sortAlphabeticalAZ,
-                          icon: LucideIcons.type,
-                          isSelected: currentSort == ArtistSortOption.name,
-                          accentColor: accentColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(artistSortProvider.notifier).state = ArtistSortOption.name;
-                            Navigator.pop(context);
-                          },
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final accentColor = Color(ref.watch(settingsProvider).accentColor);
+            final currentSort = ref.watch(artistSortProvider);
+            final currentAsc = ref.watch(artistSortAscendingProvider);
+
+            return AppBottomSheetContainer(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Text(
+                          l10n.sortOrder,
+                          style: AppFonts.jostStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                        const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                        _GridSortOption(
-                          label: l10n.sortMostSongs,
-                          icon: LucideIcons.music,
-                          isSelected: currentSort == ArtistSortOption.songCount,
-                          accentColor: accentColor,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ref.read(artistSortProvider.notifier).state = ArtistSortOption.songCount;
-                            Navigator.pop(context);
-                          },
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          ref.read(artistSortAscendingProvider.notifier).state = !currentAsc;
+                        },
+                        icon: Icon(
+                          currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
+                          size: 18,
                         ),
-                      ],
+                        label: Text(
+                          currentAsc ? l10n.ascending : l10n.descending,
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: accentColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: Colors.white10, height: 24),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                        child: PremiumSection(
+                          borderRadius: BorderRadius.circular(20),
+                          padding: EdgeInsets.zero,
+                          useExpanded: false,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _GridSortOption(
+                                label: l10n.sortAlphabeticalAZ,
+                                icon: LucideIcons.type,
+                                isSelected: currentSort == ArtistSortOption.name,
+                                accentColor: accentColor,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref.read(artistSortProvider.notifier).state = ArtistSortOption.name;
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                              _GridSortOption(
+                                label: l10n.sortMostSongs,
+                                icon: LucideIcons.music,
+                                isSelected: currentSort == ArtistSortOption.songCount,
+                                accentColor: accentColor,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref.read(artistSortProvider.notifier).state = ArtistSortOption.songCount;
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 

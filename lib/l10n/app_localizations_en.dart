@@ -337,11 +337,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get internetMode => 'Internet Mode';
 
   @override
-  String get keepBackgroundGradient => 'Keep Background Gradient';
+  String get keepBackgroundGradient => 'Accent Gradient Background';
 
   @override
   String get keepBackgroundGradientDesc =>
-      'Keep the background gradient across all application screens';
+      'Apply dynamic accent gradient across all application screens';
 
   @override
   String get language => 'Language';

@@ -46,6 +46,8 @@ import 'android/widgets/empty_library_view.dart';
 import 'package:looper_player/ui/widgets/mini_player_standard.dart';
 import 'package:looper_player/ui/widgets/mini_player_corner_widget.dart';
 import 'package:looper_player/core/single_instance_service.dart';
+import 'package:looper_player/core/window_state_service.dart';
+import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -153,6 +155,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return const AndroidMainScreen();
     }
 
+    WindowStateService.instance.attach(ref);
+
     final library = ref.watch(libraryProvider);
     final nav = ref.watch(appNavigationProvider);
     final currentSongArtPath = ref.watch(
@@ -198,9 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         settings.enableDynamicTheming || settings.keepBackgroundGradient;
 
     return Scaffold(
-      backgroundColor: hasBgLayer
-          ? Colors.transparent
-          : Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: isNarrow
           ? Drawer(
               child: Container(
@@ -239,45 +241,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         child: SafeArea(
           child: Stack(
+            fit: StackFit.expand,
             children: [
+            // Solid Base Layer to guarantee 100% opacity against the OS desktop
+            Positioned.fill(
+              child: ColoredBox(
+                color: Theme.of(context).scaffoldBackgroundColor,
+              ),
+            ),
+
             // Global Background Art / persistent gradient
-            if (!showWelcome &&
-                (settings.enableDynamicTheming ||
-                    settings.keepBackgroundGradient)) ...[
-              if (currentSongArtPath != null &&
-                  settings.enableDynamicTheming &&
-                  (settings.keepBackgroundGradient ||
-                      nav.activeItem != NavItem.settings)) ...[
+            if (!showWelcome) ...[
+              if (currentSongArtPath != null && settings.enableDynamicTheming) ...[
                 Positioned.fill(
-                  child: RepaintBoundary(
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 1000),
-                            child: ImageFiltered(
-                              imageFilter: ImageFilter.blur(
-                                sigmaX: 16,
-                                sigmaY: 16,
-                              ),
-                              child: Image.file(
-                                File(currentSongArtPath),
-                                key: ValueKey(currentSongArtPath),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 800),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      );
+                    },
+                    child: _DesktopBlurredBackgroundArt(
+                      key: ValueKey(currentSongArtPath),
+                      artPath: currentSongArtPath,
                     ),
                   ),
                 ),
-              ] else ...[
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.78),
+                  ),
+                ),
+              ] else if (settings.keepBackgroundGradient) ...[
                 Positioned.fill(
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 600),
@@ -300,10 +296,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ],
 
-            Column(
-              children: [
-                // Custom Title Bar always at the top
-                SizedBox(height: 30, child: CustomTitleBar(showMenu: isNarrow)),
+            Positioned.fill(
+              child: Column(
+                children: [
+                  // Custom Title Bar always at the top
+                  SizedBox(height: 30, child: CustomTitleBar(showMenu: isNarrow)),
                 Expanded(
                   child: showWelcome
                       ? const WelcomeScreen()
@@ -470,6 +467,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
               ],
             ),
+          ),
             // Expanded Player View
             if (nav.isPlayerExpanded)
               Positioned.fill(
@@ -981,6 +979,36 @@ class _SidebarItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           onTap: onTap,
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopBlurredBackgroundArt extends StatelessWidget {
+  final String artPath;
+  const _DesktopBlurredBackgroundArt({required this.artPath, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: ClipRect(
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(
+            sigmaX: 18.0,
+            sigmaY: 18.0,
+          ),
+          child: Image.file(
+            File(artPath),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            filterQuality: FilterQuality.low,
+            cacheWidth: 64,
+            cacheHeight: 64,
+            gaplessPlayback: true,
+            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+          ),
         ),
       ),
     );

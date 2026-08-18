@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'audio_service.dart';
 import 'db_service.dart';
 import 'package:isar/isar.dart';
+import 'window_state_service.dart';
 
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -33,5 +34,22 @@ final forceWelcomeProvider = StateProvider<bool>((ref) => false);
 /// Which desktop mini-player mode is currently active.
 enum MiniPlayerMode { none, miniPlayer, cornerWidget }
 
+class MiniPlayerModeNotifier extends StateNotifier<MiniPlayerMode> {
+  MiniPlayerModeNotifier([super.initialMode = MiniPlayerMode.none]);
+
+  void setMode(MiniPlayerMode mode) => state = mode;
+  @override
+  set state(MiniPlayerMode value) => super.state = value;
+}
+
 final miniPlayerModeProvider =
-    StateProvider<MiniPlayerMode>((ref) => MiniPlayerMode.none);
+    StateNotifierProvider<MiniPlayerModeNotifier, MiniPlayerMode>((ref) {
+  final initialWindow = ref.watch(initialWindowStateProvider);
+  if (initialWindow.playerType == 'miniPlayer') {
+    return MiniPlayerModeNotifier(MiniPlayerMode.miniPlayer);
+  }
+  if (initialWindow.playerType == 'cornerWidget') {
+    return MiniPlayerModeNotifier(MiniPlayerMode.cornerWidget);
+  }
+  return MiniPlayerModeNotifier(MiniPlayerMode.none);
+});

@@ -49,16 +49,24 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
     final oldSettings = _settings;
     _settings = newSettings;
 
-    // Handle theme reset logic
+    // Handle theme reset / update logic
     if (!newSettings.enableDynamicTheming) {
-      if (oldSettings.enableDynamicTheming ||
-          oldSettings.darkTheme != newSettings.darkTheme ||
-          oldSettings.accentColor != newSettings.accentColor) {
-        _resetTheme();
-      } else if (!oldSettings.dynamicAccentColor &&
-          newSettings.dynamicAccentColor) {
+      if (newSettings.dynamicAccentColor) {
         final playback = _ref.read(playbackProvider);
-        updateFromImage(playback.currentSong?.artPath);
+        if (playback.currentSong?.artPath != null) {
+          updateFromImage(playback.currentSong?.artPath);
+        } else if (oldSettings.darkTheme != newSettings.darkTheme) {
+          _resetTheme();
+        }
+      } else {
+        // dynamicAccentColor is OFF
+        if (oldSettings.enableDynamicTheming) {
+          _resetTheme();
+        } else if (oldSettings.accentColor != newSettings.accentColor ||
+            oldSettings.darkTheme != newSettings.darkTheme) {
+          _resetTheme();
+        }
+        // When dynamicAccentColor is toggled from ON to OFF, keep current active accent color
       }
     } else {
       if (!oldSettings.enableDynamicTheming) {
@@ -67,6 +75,13 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
       } else if (oldSettings.accentColor != newSettings.accentColor) {
         final playback = _ref.read(playbackProvider);
         if (playback.currentSong == null) {
+          _resetTheme();
+        }
+      } else if (oldSettings.darkTheme != newSettings.darkTheme) {
+        final playback = _ref.read(playbackProvider);
+        if (playback.currentSong?.artPath != null) {
+          updateFromImage(playback.currentSong?.artPath);
+        } else {
           _resetTheme();
         }
       }

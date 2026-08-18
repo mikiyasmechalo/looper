@@ -25,6 +25,8 @@ import 'package:local_notifier/local_notifier.dart';
 import 'core/logger_helper.dart';
 import 'core/single_instance_service.dart';
 import 'core/windows_file_association_service.dart';
+import 'core/window_state_service.dart';
+import 'core/navigation_provider.dart';
 
 final dbInitializerProvider = FutureProvider<void>((ref) async {
   LoggerHelper.write('dbInitializerProvider: Initializing db and settings...');
@@ -86,6 +88,7 @@ void main(List<String> args) async {
   final String? initialFile = args.isNotEmpty ? args.first : null;
 
   // Initialize desktop/window setups in parallel
+  WindowState windowState = const WindowState();
   final Future<void> desktopInit = () async {
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       try {
@@ -94,20 +97,89 @@ void main(List<String> args) async {
         LoggerHelper.write('Failed to initialize LocalNotifier', e, s);
       }
       try {
+        windowState = await WindowStateService.load();
         await windowManager.ensureInitialized();
-        WindowOptions windowOptions = const WindowOptions(
-          size: Size(1150, 700),
-          center: true,
-          skipTaskbar: false,
-          titleBarStyle: TitleBarStyle.hidden,
-          title: 'Looper Player',
-          backgroundColor: Colors.transparent,
-        );
-        await windowManager.waitUntilReadyToShow(windowOptions, () async {
-          await windowManager.setMinimumSize(const Size(800, 800));
-          await windowManager.show();
-          await windowManager.focus();
-        });
+
+        if (windowState.playerType == 'miniPlayer') {
+          final miniMap = await WindowStateService.loadMiniSettings();
+          final rawX = (miniMap['miniPlayerX'] as num?)?.toDouble() ?? (miniMap['x'] as num?)?.toDouble();
+          final rawY = (miniMap['miniPlayerY'] as num?)?.toDouble() ?? (miniMap['y'] as num?)?.toDouble();
+          final alwaysOnTop = miniMap['alwaysOnTop'] as bool? ?? true;
+
+          WindowOptions windowOptions = WindowOptions(
+            size: const Size(300, 420),
+            center: rawX == null || rawX < 10 || rawY == null || rawY < 10,
+            skipTaskbar: false,
+            titleBarStyle: TitleBarStyle.hidden,
+            title: 'Looper Player',
+            backgroundColor: Colors.transparent,
+          );
+          await windowManager.waitUntilReadyToShow(windowOptions, () async {
+            await windowManager.setMinimumSize(const Size(0, 0));
+            await windowManager.setAsFrameless();
+            await windowManager.setMaximizable(false);
+            await windowManager.setHasShadow(false);
+            await windowManager.setSize(const Size(300, 420));
+            if (rawX != null && rawX > 10 && rawY != null && rawY > 10) {
+              await windowManager.setPosition(Offset(rawX, rawY));
+            }
+            await windowManager.setAlwaysOnTop(alwaysOnTop);
+            await windowManager.show();
+            await windowManager.focus();
+          });
+        } else if (windowState.playerType == 'cornerWidget') {
+          final miniMap = await WindowStateService.loadMiniSettings();
+          final rawX = (miniMap['cornerX'] as num?)?.toDouble() ?? (miniMap['x'] as num?)?.toDouble();
+          final rawY = (miniMap['cornerY'] as num?)?.toDouble() ?? (miniMap['y'] as num?)?.toDouble();
+          final alwaysOnTop = miniMap['alwaysOnTop'] as bool? ?? true;
+
+          WindowOptions windowOptions = WindowOptions(
+            size: const Size(330, 110),
+            center: rawX == null || rawX < 10 || rawY == null || rawY < 10,
+            skipTaskbar: false,
+            titleBarStyle: TitleBarStyle.hidden,
+            title: 'Looper Player',
+            backgroundColor: Colors.transparent,
+          );
+          await windowManager.waitUntilReadyToShow(windowOptions, () async {
+            await windowManager.setMinimumSize(const Size(0, 0));
+            await windowManager.setAsFrameless();
+            await windowManager.setMaximizable(false);
+            await windowManager.setHasShadow(false);
+            await windowManager.setSize(const Size(330, 110));
+            if (rawX != null && rawX > 10 && rawY != null && rawY > 10) {
+              await windowManager.setPosition(Offset(rawX, rawY));
+            }
+            await windowManager.setAlwaysOnTop(alwaysOnTop);
+            await windowManager.show();
+            await windowManager.focus();
+          });
+        } else {
+          final initialSize = Size(
+            windowState.width.clamp(800.0, 3840.0),
+            windowState.height.clamp(600.0, 2160.0),
+          );
+          WindowOptions windowOptions = WindowOptions(
+            size: initialSize,
+            center: windowState.x == null || windowState.y == null,
+            skipTaskbar: false,
+            titleBarStyle: TitleBarStyle.hidden,
+            title: 'Looper Player',
+            backgroundColor: Colors.transparent,
+          );
+          await windowManager.waitUntilReadyToShow(windowOptions, () async {
+            await windowManager.setAlwaysOnTop(false);
+            await windowManager.setMinimumSize(const Size(800, 800));
+            if (windowState.x != null && windowState.y != null) {
+              await windowManager.setPosition(Offset(windowState.x!, windowState.y!));
+            }
+            if (windowState.isMaximized) {
+              await windowManager.maximize();
+            }
+            await windowManager.show();
+            await windowManager.focus();
+          });
+        }
         await SystemTrayService.instance.init();
       } catch (e, s) {
         LoggerHelper.write('Failed to initialize Window Manager', e, s);
@@ -174,6 +246,13 @@ void main(List<String> args) async {
         startupFileProvider.overrideWithValue(initialFile),
         startupArgsProvider.overrideWithValue(args),
         forceWelcomeProvider.overrideWith((ref) => !permissionsGranted),
+        initialWindowStateProvider.overrideWithValue(windowState),
+        if (windowState.playerType == 'full')
+          appNavigationProvider.overrideWith(
+            (ref) => NavigationNotifier(
+              NavigationState(activeItem: NavItem.home, isPlayerExpanded: true),
+            ),
+          ),
       ],
       child: const MyApp(),
     ),
@@ -262,7 +341,7 @@ class MyApp extends ConsumerWidget {
       );
     }
 
-    if (settings == null || !settings.enableDynamicTheming) {
+    if (!Platform.isAndroid || settings == null || !settings.enableDynamicTheming) {
       return buildMaterialApp(colorScheme);
     }
 

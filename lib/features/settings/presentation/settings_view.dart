@@ -739,18 +739,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         widget: const ShowQualityBadgeTile(),
       ),
       SettingsSearchItem(
-        title: l10n.enablePlayerGradient,
-        subtitle: l10n.enablePlayerGradientDesc,
+        title: l10n.keepBackgroundGradient,
+        subtitle: l10n.keepBackgroundGradientDesc,
         category: l10n.theme,
-        widget: const EnablePlayerGradientTile(),
+        widget: const KeepBackgroundGradientTile(),
       ),
-      if (settings.enablePlayerGradient)
-        SettingsSearchItem(
-          title: l10n.keepBackgroundGradient,
-          subtitle: l10n.keepBackgroundGradientDesc,
-          category: l10n.theme,
-          widget: const KeepBackgroundGradientTile(),
-        ),
       SettingsSearchItem(
         title: 'Use Custom Font',
         subtitle: 'Use Jost or other custom fonts. Otherwise, DM Sans is used.',
@@ -1001,6 +994,8 @@ class SettingsCategoryScreen extends ConsumerWidget {
         ],
         if (!settings.enableDynamicTheming) ...[
           const Divider(height: 1, indent: 72, color: Colors.white10),
+          const KeepBackgroundGradientTile(),
+          const Divider(height: 1, indent: 72, color: Colors.white10),
           const DynamicAccentColorTile(),
           const Divider(height: 1, indent: 72, color: Colors.white10),
           const PureBlackOledTile(),
@@ -1031,12 +1026,6 @@ class SettingsCategoryScreen extends ConsumerWidget {
         const PlainTimestampsTile(),
         const Divider(height: 1, indent: 72, color: Colors.white10),
         const ShowQualityBadgeTile(),
-        const Divider(height: 1, indent: 72, color: Colors.white10),
-        const EnablePlayerGradientTile(),
-        if (settings.enablePlayerGradient) ...[
-          const Divider(height: 1, indent: 72, color: Colors.white10),
-          const KeepBackgroundGradientTile(),
-        ],
         const Divider(height: 1, indent: 72, color: Colors.white10),
         const UseNewFontTile(),
         if (settings.useNewFont) ...[

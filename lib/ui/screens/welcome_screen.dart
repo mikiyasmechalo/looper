@@ -16,28 +16,17 @@ import '../../features/settings/presentation/settings_notifier.dart';
 
 enum WelcomeState { initial, scanning, noSongs }
 
-final welcomeBypassedProvider = StateProvider<bool>((ref) {
+final welcomeBypassedProvider = Provider<bool>((ref) {
   final forceWelcome = ref.watch(forceWelcomeProvider);
   if (forceWelcome) return false;
 
   final songs = ref.watch(libraryProvider).songs;
   final settings = ref.watch(settingsProvider);
 
-  if (songs.isEmpty) {
-    return false;
+  if (songs.isNotEmpty) {
+    return true;
   }
-
-  try {
-    final checkCount = songs.length < 5 ? songs.length : 5;
-    for (int i = 0; i < checkCount; i++) {
-      if (File(songs[i].path).existsSync()) {
-        return true;
-      }
-    }
-    return false;
-  } catch (_) {
-    return false;
-  }
+  return settings.libraryFolders.isNotEmpty;
 });
 
 class WelcomeScreen extends ConsumerStatefulWidget {
@@ -150,7 +139,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       }
     } else {
       ref.read(forceWelcomeProvider.notifier).state = false;
-      ref.read(welcomeBypassedProvider.notifier).state = true;
     }
   }
 
@@ -1338,7 +1326,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       }
     } else {
       ref.read(forceWelcomeProvider.notifier).state = false;
-      ref.read(welcomeBypassedProvider.notifier).state = true;
     }
   }
 
@@ -1384,7 +1371,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         }
       } else {
         ref.read(forceWelcomeProvider.notifier).state = false;
-        ref.read(welcomeBypassedProvider.notifier).state = true;
       }
     }
   }

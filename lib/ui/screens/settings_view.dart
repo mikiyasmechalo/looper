@@ -85,6 +85,19 @@ class SettingsView extends ConsumerWidget {
                       ),
                     if (!settings.enableDynamicTheming) ...[
                       _PremiumSwitchRow(
+                        icon: LucideIcons.layers,
+                        title: l10n.keepBackgroundGradient,
+                        subtitle: l10n.keepBackgroundGradientDesc,
+                        value: settings.keepBackgroundGradient,
+                        onChanged: (value) {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateKeepBackgroundGradient(value);
+                        },
+                        isLast: false,
+                      ),
+                      _PremiumSwitchRow(
                         icon: LucideIcons.paintBucket,
                         title: l10n.dynamicAccentColor,
                         subtitle: l10n.dynamicAccentColorDesc,

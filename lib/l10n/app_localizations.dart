@@ -731,13 +731,13 @@ abstract class AppLocalizations {
   /// No description provided for @keepBackgroundGradient.
   ///
   /// In en, this message translates to:
-  /// **'Keep Background Gradient'**
+  /// **'Accent Gradient Background'**
   String get keepBackgroundGradient;
 
   /// No description provided for @keepBackgroundGradientDesc.
   ///
   /// In en, this message translates to:
-  /// **'Keep the background gradient across all application screens'**
+  /// **'Apply dynamic accent gradient across all application screens'**
   String get keepBackgroundGradientDesc;
 
   /// No description provided for @language.
