@@ -266,6 +266,9 @@ class AppSettings {
 
   // Playback: Crossfade Mode (0: Always, 1: Automatic Only, 2: Manual Only)
   int crossfadeMode = 0;
+
+  // Desktop: Discord Rich Presence (RPC)
+  bool enableDiscordRpc = false;
 }
 
 enum SeekBarStyle { visualizer, expressive, flat }

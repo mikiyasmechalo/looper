@@ -5,6 +5,7 @@ import '../../library/domain/models/models.dart';
 
 import '../../library/data/artwork_downloader_service.dart';
 import '../../../core/app_fonts.dart';
+import '../../../core/discord_rpc_service.dart';
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
   ref,
@@ -232,6 +233,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     AppFonts.lyricsFontWeightDelta = activeState.useNewFontLyrics
         ? activeState.customFontWeightLyricsDelta
         : 0;
+
+    // Initialize Discord RPC
+    DiscordRpcService.instance.initialize(enabled: activeState.enableDiscordRpc);
   }
 
   Future<void> updateLibraryFolders(List<String> folders) async {
@@ -382,7 +386,17 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..exclusiveHardwareMode = s.exclusiveHardwareMode
       ..lyricsProvider = s.lyricsProvider
       ..equalizerGlobalMode = s.equalizerGlobalMode
-      ..firstTimeEqualizer = s.firstTimeEqualizer;
+      ..firstTimeEqualizer = s.firstTimeEqualizer
+      ..enableDiscordRpc = s.enableDiscordRpc;
+  }
+
+  Future<void> updateEnableDiscordRpc(bool value) async {
+    final newState = _clone(state)..enableDiscordRpc = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+    await DiscordRpcService.instance.setEnabled(value);
   }
 
   Future<void> updateLyricsProvider(String value) async {

@@ -55,7 +55,6 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
   PlayerPanelTab _lastTab = PlayerPanelTab.queue;
   bool _fullscreen = false;
   bool _autoEnteredFullscreen = false;
-  bool _autoMaximized = false;
   ProviderSubscription<bool>? _fullscreenSettingSub;
 
   @override
@@ -92,8 +91,6 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
       windowManager.removeListener(this);
       if (_autoEnteredFullscreen) {
         windowManager.setFullScreen(false);
-      } else if (_autoMaximized) {
-        windowManager.unmaximize();
       }
     }
     super.dispose();

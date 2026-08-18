@@ -612,6 +612,33 @@ class SettingsView extends ConsumerWidget {
                 ),
               ),
 
+            // Discord Rich Presence Section (Desktop)
+            if (isDesktop)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: _Section(
+                    title: 'Discord Rich Presence',
+                    children: [
+                      _PremiumSwitchRow(
+                        icon: LucideIcons.messageSquare,
+                        title: 'Discord Rich Presence',
+                        subtitle:
+                            'Broadcast the currently playing song title, artist, album, and timeline to your Discord status',
+                        value: settings.enableDiscordRpc,
+                        onChanged: (value) {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateEnableDiscordRpc(value);
+                        },
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             // Fullscreen Player Section (Desktop)
             if (isDesktop)
               SliverToBoxAdapter(

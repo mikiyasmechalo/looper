@@ -10,6 +10,7 @@ import 'package:mpv_audio_kit/mpv_audio_kit.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/core/navigation_provider.dart';
+import 'package:looper_player/core/discord_rpc_service.dart';
 import 'package:looper_player/features/library/data/scanner.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
@@ -251,6 +252,14 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         duration: song.duration != null ? Duration(milliseconds: song.duration!) : null,
         isFavorite: song.isFavorite,
       );
+      DiscordRpcService.instance.updatePresence(
+        song: song,
+        position: state.position,
+        duration: state.duration,
+        isPlaying: state.isPlaying,
+      );
+    } else {
+      DiscordRpcService.instance.clearPresence();
     }
     _updateWidgetState();
   }
