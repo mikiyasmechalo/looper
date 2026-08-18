@@ -24,7 +24,7 @@ final welcomeBypassedProvider = StateProvider<bool>((ref) {
   final settings = ref.watch(settingsProvider);
 
   if (songs.isEmpty) {
-    return settings.libraryFolders.isNotEmpty;
+    return false;
   }
 
   try {
@@ -58,12 +58,100 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   bool _audioGranted = false;
   bool _allFilesGranted = false;
   bool _autoScanTriggered = false;
+  final List<String> _desktopFolders = [];
+
+  int _scannedSongsCount = 0;
+  int _processedBatchCount = 0;
+  int _totalBatchCount = 0;
+  String _currentScanningFolder = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkPermissionStatus();
+    final existingFolders = ref.read(settingsProvider).libraryFolders;
+    if (existingFolders.isNotEmpty) {
+      _desktopFolders.addAll(existingFolders);
+    }
+  }
+
+  Future<void> _addDesktopFolder() async {
+    final String? path = await FilePicker.platform.getDirectoryPath();
+    if (path != null && path.trim().isNotEmpty) {
+      final cleanPath = path.trim();
+      if (!_desktopFolders.contains(cleanPath)) {
+        setState(() {
+          _desktopFolders.add(cleanPath);
+        });
+      }
+    }
+  }
+
+  void _removeDesktopFolder(int index) {
+    setState(() {
+      _desktopFolders.removeAt(index);
+    });
+  }
+
+  Future<void> _startDesktopScanFlow() async {
+    if (_desktopFolders.isEmpty) return;
+
+    ref.read(forceWelcomeProvider.notifier).state = true;
+
+    if (mounted) {
+      setState(() {
+        _currentState = WelcomeState.scanning;
+        _scannedSongsCount = 0;
+        _processedBatchCount = 0;
+        _totalBatchCount = 0;
+        _currentScanningFolder = '';
+        _scanStatusMessage = "Saving selected folders...";
+      });
+    }
+
+    await ref
+        .read(settingsProvider.notifier)
+        .updateLibraryFolders(_desktopFolders);
+
+    int cumulativeBase = 0;
+    int totalSongsDiscovered = 0;
+    for (final path in _desktopFolders) {
+      if (Directory(path).existsSync()) {
+        final folderName = p.context.basename(path);
+        if (mounted) {
+          setState(() {
+            _currentScanningFolder = folderName;
+            _scanStatusMessage = "Analyzing path: $folderName...";
+          });
+        }
+        final count = await ref.read(libraryProvider.notifier).scanLibrary(
+          path,
+          onProgress: (found, processed, total) {
+            if (mounted) {
+              setState(() {
+                _scannedSongsCount = cumulativeBase + found;
+                _processedBatchCount = processed;
+                _totalBatchCount = total;
+              });
+            }
+          },
+        );
+        cumulativeBase += count;
+        totalSongsDiscovered += count;
+      }
+    }
+
+    if (totalSongsDiscovered == 0) {
+      if (mounted) {
+        setState(() {
+          _currentState = WelcomeState.noSongs;
+        });
+      }
+    } else {
+      ref.read(forceWelcomeProvider.notifier).state = false;
+      ref.read(welcomeBypassedProvider.notifier).state = true;
+    }
   }
 
   @override
@@ -313,7 +401,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         ),
         const SizedBox(height: 24),
 
-        // Interactive Permission Checklist (Sequential Setup)
+        // Interactive Permission Checklist (Android Setup)
         if (Platform.isAndroid) ...[
           Container(
             width: double.infinity,
@@ -396,19 +484,220 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
           const SizedBox(height: 32),
         ],
 
+        // Desktop Multi-Folder Selection UI
+        if (!Platform.isAndroid) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.02),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.05),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          LucideIcons.folderPlus,
+                          size: 16.s,
+                          color: Color(settings.accentColor),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'MUSIC DIRECTORIES',
+                          style: TextStyle(
+                            fontSize: 12.ts,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            Color(settings.accentColor).withValues(alpha: 0.15),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _addDesktopFolder,
+                      icon: Icon(
+                        LucideIcons.plus,
+                        size: 14,
+                        color: Color(settings.accentColor),
+                      ),
+                      label: Text(
+                        'Add Folder',
+                        style: TextStyle(
+                          fontSize: 12.ts,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Add the local directories where your music tracks are stored.',
+                  style: TextStyle(
+                    fontSize: 12.ts,
+                    color: Colors.white.withValues(alpha: 0.45),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Selected Folders List / Empty state
+                if (_desktopFolders.isEmpty)
+                  InkWell(
+                    onTap: _addDesktopFolder,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 24,
+                        horizontal: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.015),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            LucideIcons.folderSearch,
+                            size: 32.s,
+                            color: Color(settings.accentColor).withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'No folders selected yet',
+                            style: TextStyle(
+                              fontSize: 13.ts,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Click "+ Add Folder" to select your music directory',
+                            style: TextStyle(
+                              fontSize: 11.ts,
+                              color: Colors.white38,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _desktopFolders.length,
+                    separatorBuilder: (context, i) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final folderPath = _desktopFolders[index];
+                      final folderName = p.context.basename(folderPath);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.06),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              LucideIcons.folder,
+                              size: 18.s,
+                              color: Color(settings.accentColor),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    folderName.isNotEmpty
+                                        ? folderName
+                                        : folderPath,
+                                    style: TextStyle(
+                                      fontSize: 13.ts,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    folderPath,
+                                    style: TextStyle(
+                                      fontSize: 11.ts,
+                                      color: Colors.white38,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                LucideIcons.trash2,
+                                size: 16,
+                                color: Colors.white54,
+                              ),
+                              tooltip: 'Remove folder',
+                              onPressed: () => _removeDesktopFolder(index),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+
         // Modern Action Button area
         Column(
           children: [
-            // GO START Button (Colored when standard permission is granted, otherwise greyed)
+            // GO START Button (Activated when permission is granted on Android, or at least 1 folder is selected on Desktop)
             _PremiumButton(
-              onPressed: _permissionGranted
-                  ? () async {
-                      await _startStorageScanFlow();
-                    }
-                  : null,
+              onPressed: Platform.isAndroid
+                  ? (_permissionGranted ? _startStorageScanFlow : null)
+                  : (_desktopFolders.isNotEmpty ? _startDesktopScanFlow : null),
               label: l10n.goStart,
               icon: LucideIcons.playCircle,
-              gradientColors: _permissionGranted
+              gradientColors: (Platform.isAndroid
+                      ? _permissionGranted
+                      : _desktopFolders.isNotEmpty)
                   ? [
                       Color(settings.accentColor),
                       Color(settings.accentColor).withValues(alpha: 0.75),
@@ -459,23 +748,24 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               const SizedBox(height: 24),
             ],
 
-            TextButton.icon(
-              onPressed: _permissionGranted ? _selectCustomFolder : null,
-              icon: Icon(
-                LucideIcons.folderSearch,
-                size: 16.s,
-                color: _permissionGranted ? Colors.white60 : Colors.white24,
-              ),
-              label: Text(
-                l10n.selectSpecificFolder,
-                style: TextStyle(
-                  fontSize: 12.ts,
-                  color: _permissionGranted ? Colors.white70 : Colors.white24,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w600,
+            if (Platform.isAndroid)
+              TextButton.icon(
+                onPressed: _permissionGranted ? _selectCustomFolder : null,
+                icon: Icon(
+                  LucideIcons.folderSearch,
+                  size: 16.s,
+                  color: _permissionGranted ? Colors.white60 : Colors.white24,
+                ),
+                label: Text(
+                  l10n.selectSpecificFolder,
+                  style: TextStyle(
+                    fontSize: 12.ts,
+                    color: _permissionGranted ? Colors.white70 : Colors.white24,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ],
@@ -587,34 +877,142 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   // State 2: Deep Scanning State
   Widget _buildScanningState(ColorScheme colorScheme, AppLocalizations l10n) {
     final settings = ref.watch(settingsProvider);
+    final accentColor = Color(settings.accentColor);
+    final isExtracting = _totalBatchCount > 0;
+
     return Column(
       key: const ValueKey('scanning_state'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Custom interactive glowing spinner
         SizedBox(
-          width: 400.s,
-          height: 300.s,
+          width: 260.s,
+          height: 180.s,
           child: Lottie.asset('assets/loading.json', fit: BoxFit.contain),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         Text(
           l10n.deepStorageScanProgress,
           style: TextStyle(
-            fontSize: 16.ts,
+            fontSize: 15.ts,
             fontWeight: FontWeight.bold,
             color: Colors.white,
             letterSpacing: 2,
           ),
         ),
+        const SizedBox(height: 12),
+
+        // Current Folder Chip
+        if (_currentScanningFolder.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.folder, size: 14.s, color: accentColor),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    _currentScanningFolder,
+                    style: TextStyle(
+                      fontSize: 12.ts,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 20),
+
+        // Real-time Songs Found & Extraction Progress Card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: accentColor.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    LucideIcons.music,
+                    size: 20.s,
+                    color: accentColor,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '$_scannedSongsCount Songs Found',
+                    style: TextStyle(
+                      fontSize: 16.ts,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              if (isExtracting) ...[
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: _totalBatchCount > 0
+                        ? (_processedBatchCount / _totalBatchCount).clamp(0.0, 1.0)
+                        : null,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Reading metadata: $_processedBatchCount / $_totalBatchCount tracks',
+                  style: TextStyle(
+                    fontSize: 11.ts,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
+              ] else if (_scanStatusMessage.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _scanStatusMessage,
+                  style: TextStyle(
+                    fontSize: 11.ts,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          ),
+        ),
         const SizedBox(height: 16),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
             l10n.welcomeScanningFoldersDesc,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 13.ts,
+              fontSize: 12.ts,
               color: Colors.white.withValues(alpha: 0.4),
               height: 1.5,
             ),
@@ -790,16 +1188,25 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   // Scan & Permission Flow Functions
   Future<void> _startStorageScanFlow() async {
     _autoScanTriggered = true;
-    setState(() {
-      _currentState = WelcomeState.scanning;
-      _scanStatusMessage = "Clearing old data...";
-    });
+    ref.read(forceWelcomeProvider.notifier).state = true;
+    if (mounted) {
+      setState(() {
+        _currentState = WelcomeState.scanning;
+        _scannedSongsCount = 0;
+        _processedBatchCount = 0;
+        _totalBatchCount = 0;
+        _currentScanningFolder = '';
+        _scanStatusMessage = "Clearing old data...";
+      });
+    }
 
     await ref.read(libraryProvider.notifier).clearAllData();
 
-    setState(() {
-      _scanStatusMessage = "Checking system permissions...";
-    });
+    if (mounted) {
+      setState(() {
+        _scanStatusMessage = "Checking system permissions...";
+      });
+    }
 
     // Check again
     await _checkPermissionStatus();
@@ -817,10 +1224,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       return;
     }
 
-    setState(() {
-      _scanStatusMessage =
-          "Traversing standard device directories recursively...";
-    });
+    if (mounted) {
+      setState(() {
+        _scanStatusMessage =
+            "Traversing standard device directories recursively...";
+      });
+    }
 
     // Determine scan roots including all popular directories for maximum coverage
     final List<String> scanRoots = [];
@@ -891,25 +1300,42 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
       } catch (_) {}
     }
 
+    int cumulativeBase = 0;
     int totalSongsDiscovered = 0;
 
     // Run scans
     for (final path in scanRoots) {
       if (Directory(path).existsSync()) {
-        setState(() {
-          _scanStatusMessage = "Analyzing path: ${p.context.basename(path)}...";
-        });
-        final count = await ref
-            .read(libraryProvider.notifier)
-            .scanLibrary(path);
+        final folderName = p.context.basename(path);
+        if (mounted) {
+          setState(() {
+            _currentScanningFolder = folderName;
+            _scanStatusMessage = "Analyzing path: $folderName...";
+          });
+        }
+        final count = await ref.read(libraryProvider.notifier).scanLibrary(
+          path,
+          onProgress: (found, processed, total) {
+            if (mounted) {
+              setState(() {
+                _scannedSongsCount = cumulativeBase + found;
+                _processedBatchCount = processed;
+                _totalBatchCount = total;
+              });
+            }
+          },
+        );
+        cumulativeBase += count;
         totalSongsDiscovered += count;
       }
     }
 
     if (totalSongsDiscovered == 0) {
-      setState(() {
-        _currentState = WelcomeState.noSongs;
-      });
+      if (mounted) {
+        setState(() {
+          _currentState = WelcomeState.noSongs;
+        });
+      }
     } else {
       ref.read(forceWelcomeProvider.notifier).state = false;
       ref.read(welcomeBypassedProvider.notifier).state = true;
@@ -923,19 +1349,39 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
     final String? path = await FilePicker.platform.getDirectoryPath();
     if (path != null) {
+      ref.read(forceWelcomeProvider.notifier).state = true;
       await ref.read(libraryProvider.notifier).clearAllData();
 
-      setState(() {
-        _currentState = WelcomeState.scanning;
-        _scanStatusMessage = "Scanning selected path: $path...";
-      });
-
-      final count = await ref.read(libraryProvider.notifier).scanLibrary(path);
-      if (!mounted) return;
-      if (count == 0) {
+      final folderName = p.context.basename(path);
+      if (mounted) {
         setState(() {
-          _currentState = WelcomeState.noSongs;
+          _currentState = WelcomeState.scanning;
+          _scannedSongsCount = 0;
+          _processedBatchCount = 0;
+          _totalBatchCount = 0;
+          _currentScanningFolder = folderName;
+          _scanStatusMessage = "Scanning selected path: $folderName...";
         });
+      }
+
+      final count = await ref.read(libraryProvider.notifier).scanLibrary(
+        path,
+        onProgress: (found, processed, total) {
+          if (mounted) {
+            setState(() {
+              _scannedSongsCount = found;
+              _processedBatchCount = processed;
+              _totalBatchCount = total;
+            });
+          }
+        },
+      );
+      if (count == 0) {
+        if (mounted) {
+          setState(() {
+            _currentState = WelcomeState.noSongs;
+          });
+        }
       } else {
         ref.read(forceWelcomeProvider.notifier).state = false;
         ref.read(welcomeBypassedProvider.notifier).state = true;

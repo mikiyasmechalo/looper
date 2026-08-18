@@ -166,7 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.watch(lyricsProvider);
 
     final isSetupComplete = ref.watch(welcomeBypassedProvider);
-    final bool showWelcome = !isSetupComplete && !library.isScanning;
+    final bool showWelcome = !isSetupComplete;
     // Only below this width does the sidebar collapse into a drawer; above it
     // it always stays visible (just with reduced padding when compact).
     final bool isNarrow = MediaQuery.of(context).size.width < 560;

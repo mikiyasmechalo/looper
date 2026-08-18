@@ -567,7 +567,11 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
   String _normalizeArtistKey(String name) =>
       name.trim().toLowerCase().replaceAll(RegExp(r'[^\w\s]+'), '');
 
-  Future<int> scanLibrary(String path, {bool updateIsScanning = true}) async {
+  Future<int> scanLibrary(
+    String path, {
+    bool updateIsScanning = true,
+    void Function(int found, int processed, int total)? onProgress,
+  }) async {
     if (!await _requestPermissions()) return 0;
 
     if (updateIsScanning) {
@@ -578,8 +582,10 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     try {
       final dir = Directory(path);
       if (dir.existsSync()) {
-
-        final result = await LibraryScanner().scanDirectory(path);
+        final result = await LibraryScanner().scanDirectory(
+          path,
+          onProgress: onProgress,
+        );
         totalSongsFound = result.songsCount;
         
         // Always add the selected root folder path to saved library folders

@@ -212,40 +212,11 @@ class SongTile extends ConsumerWidget {
     super.key,
   });
 
-  /// "Artist Name · Album Name" subtitle where the artist navigates to the
-  /// artist and the album navigates to the album. Falls back to just the artist
-  /// when the album is hidden (e.g. on the album details page) or missing.
   Widget _buildSubtitle(BuildContext context, WidgetRef ref) {
-    final artist = song.artist ?? l10n.unknownArtist;
-    final album = song.album;
-    final hasAlbum = showAlbum && album != null && album.isNotEmpty;
-
-    final style = AppFonts.jostStyle(
-      color: Colors.white.withValues(alpha: 0.5),
-      fontSize: 13,
-    );
-
-    return Text.rich(
-      TextSpan(
-        style: style,
-        children: [
-          TextSpan(
-            text: artist,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => _navigateToArtist(context, ref, song, l10n),
-          ),
-          if (hasAlbum) ...[
-            const TextSpan(text: ' · '),
-            TextSpan(
-              text: album,
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => _navigateToAlbum(context, ref, song),
-            ),
-          ],
-        ],
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    return _HoverableSongSubtitle(
+      song: song,
+      showAlbum: showAlbum,
+      l10n: l10n,
     );
   }
 
@@ -943,4 +914,80 @@ Future<void> _navigateToAlbum(
         songs: albumSongs,
         highlightItem: NavItem.albums,
       );
+}
+
+class _HoverableSongSubtitle extends ConsumerStatefulWidget {
+  final Song song;
+  final bool showAlbum;
+  final AppLocalizations l10n;
+
+  const _HoverableSongSubtitle({
+    required this.song,
+    required this.showAlbum,
+    required this.l10n,
+  });
+
+  @override
+  ConsumerState<_HoverableSongSubtitle> createState() =>
+      _HoverableSongSubtitleState();
+}
+
+class _HoverableSongSubtitleState extends ConsumerState<_HoverableSongSubtitle> {
+  bool _hoverArtist = false;
+  bool _hoverAlbum = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final artist = widget.song.artist ?? widget.l10n.unknownArtist;
+    final album = widget.song.album;
+    final hasAlbum = widget.showAlbum && album != null && album.isNotEmpty;
+    final accentColor = Color(ref.watch(settingsProvider).accentColor);
+
+    final defaultStyle = AppFonts.jostStyle(
+      color: Colors.white.withValues(alpha: 0.5),
+      fontSize: 13,
+    );
+
+    return Text.rich(
+      TextSpan(
+        style: defaultStyle,
+        children: [
+          TextSpan(
+            text: artist,
+            style: defaultStyle.copyWith(
+              color: _hoverArtist ? accentColor : Colors.white.withValues(alpha: 0.5),
+              decoration: _hoverArtist ? TextDecoration.underline : TextDecoration.none,
+              decorationColor: accentColor,
+            ),
+            mouseCursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hoverArtist = true),
+            onExit: (_) => setState(() => _hoverArtist = false),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => _navigateToArtist(context, ref, widget.song, widget.l10n),
+          ),
+          if (hasAlbum) ...[
+            TextSpan(
+              text: ' · ',
+              style: defaultStyle,
+            ),
+            TextSpan(
+              text: album,
+              style: defaultStyle.copyWith(
+                color: _hoverAlbum ? accentColor : Colors.white.withValues(alpha: 0.5),
+                decoration: _hoverAlbum ? TextDecoration.underline : TextDecoration.none,
+                decorationColor: accentColor,
+              ),
+              mouseCursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hoverAlbum = true),
+              onExit: (_) => setState(() => _hoverAlbum = false),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () => _navigateToAlbum(context, ref, widget.song),
+            ),
+          ],
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 }

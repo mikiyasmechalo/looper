@@ -34,7 +34,7 @@ class LibraryScanner {
   Future<ScanResult> scanDirectory(
     String path, {
     bool addFolderToSettings = false,
-    void Function(int count)? onProgress,
+    void Function(int found, int processed, int total)? onProgress,
   }) async {
     final dir = Directory(path);
     if (!await dir.exists()) {
@@ -87,7 +87,7 @@ class LibraryScanner {
           if (supportedExtensions.contains(ext)) {
             filesToProcess.add(entity);
             musicFolders.add(p.dirname(entity.path));
-            onProgress?.call(filesToProcess.length);
+            onProgress?.call(filesToProcess.length, 0, filesToProcess.length);
           }
         } else if (entity is Directory) {
           await traverse(entity, depth + 1);
@@ -324,6 +324,8 @@ class LibraryScanner {
             }
           });
         }
+
+        onProgress?.call(filesToProcess.length, end, newFilesToProcess.length);
 
         // Small pause to allow Dart GC and UI thread to breathe
         await Future.delayed(const Duration(milliseconds: 20));
