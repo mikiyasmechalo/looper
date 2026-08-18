@@ -25,6 +25,7 @@ class DbService {
         PlaylistSchema,
         AppSettingsSchema,
         SavedQueueSchema,
+        PlaybackHistoryEntrySchema,
       ], directory: dir.path);
       LoggerHelper.write('DbService: Isar opened successfully.');
     } catch (e, stack) {

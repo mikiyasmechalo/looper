@@ -11,6 +11,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/core/discord_rpc_service.dart';
+import 'package:looper_player/core/scrobbler_service.dart';
 import 'package:looper_player/features/library/data/scanner.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
@@ -1090,6 +1091,13 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   void _armPlayCount(Song song) {
     _playCountTimer?.cancel();
     _playCountedPath = null;
+
+    final settings = ref.read(settingsProvider);
+    ScrobblerService.instance.updateNowPlaying(
+      song: song,
+      settings: settings,
+    );
+
     _playCountTimer = Timer(const Duration(seconds: 10), () {
       _commitPlayCount(song);
     });
@@ -1102,6 +1110,16 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     if (_playCountedPath == song.path) return;
     _playCountedPath = song.path;
 
+    final settings = ref.read(settingsProvider);
+    final now = DateTime.now();
+
+    ScrobblerService.instance.scrobble(
+      song: song,
+      settings: settings,
+      playTimestamp: now,
+      listenedMs: state.position.inMilliseconds > 0 ? state.position.inMilliseconds : 10000,
+    );
+
     DbService.isar.writeTxn(() async {
       final dbSong = (song.isOnlineStream && song.youtubeId != null && song.youtubeId!.isNotEmpty)
           ? await DbService.isar.songs
@@ -1113,7 +1131,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
               .pathEqualTo(song.path)
               .findFirst();
       if (dbSong == null) return;
-      dbSong.lastPlayed = DateTime.now();
+      dbSong.lastPlayed = now;
       dbSong.playCount++;
       await DbService.isar.songs.put(dbSong);
     });

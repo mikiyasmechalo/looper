@@ -151,6 +151,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.playlistDetailSortOptionIndex = 0;
         needsSave = true;
       }
+      if (settings.scrobbleThresholdPercent < 20 || settings.scrobbleThresholdPercent > 90) {
+        settings.scrobbleThresholdPercent = 50;
+        needsSave = true;
+      }
       if (!settings.settingsV2) {
         settings.showQualityBadge = true;
         settings.enablePlayerGradient = true;
@@ -387,7 +391,15 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..lyricsProvider = s.lyricsProvider
       ..equalizerGlobalMode = s.equalizerGlobalMode
       ..firstTimeEqualizer = s.firstTimeEqualizer
-      ..enableDiscordRpc = s.enableDiscordRpc;
+      ..enableDiscordRpc = s.enableDiscordRpc
+      ..enableLastFmScrobbling = s.enableLastFmScrobbling
+      ..lastFmUsername = s.lastFmUsername
+      ..lastFmSessionKey = s.lastFmSessionKey
+      ..lastFmApiKey = s.lastFmApiKey
+      ..lastFmSecret = s.lastFmSecret
+      ..enableListenBrainzScrobbling = s.enableListenBrainzScrobbling
+      ..listenBrainzUserToken = s.listenBrainzUserToken
+      ..scrobbleThresholdPercent = s.scrobbleThresholdPercent;
   }
 
   Future<void> updateEnableDiscordRpc(bool value) async {
@@ -397,6 +409,55 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     });
     state = newState;
     await DiscordRpcService.instance.setEnabled(value);
+  }
+
+  Future<void> updateEnableLastFmScrobbling(bool value) async {
+    final newState = _clone(state)..enableLastFmScrobbling = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateLastFmCredentials({
+    String? username,
+    String? sessionKey,
+    String? apiKey,
+    String? secret,
+  }) async {
+    final newState = _clone(state);
+    if (username != null) newState.lastFmUsername = username;
+    if (sessionKey != null) newState.lastFmSessionKey = sessionKey;
+    if (apiKey != null) newState.lastFmApiKey = apiKey;
+    if (secret != null) newState.lastFmSecret = secret;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateEnableListenBrainzScrobbling(bool value) async {
+    final newState = _clone(state)..enableListenBrainzScrobbling = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateListenBrainzUserToken(String token) async {
+    final newState = _clone(state)..listenBrainzUserToken = token;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateScrobbleThresholdPercent(int value) async {
+    final newState = _clone(state)..scrobbleThresholdPercent = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
   }
 
   Future<void> updateLyricsProvider(String value) async {

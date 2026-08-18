@@ -460,6 +460,14 @@ class AppShortcutAction {
       category: ShortcutCategory.displayAndUi,
       defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.slash, isShift: true),
     ),
+    const AppShortcutAction(
+      id: 'show_stats',
+      title: 'Listening Stats & Insights',
+      description: 'Open the floating Listening Stats & Insights dialog',
+      category: ShortcutCategory.displayAndUi,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyI, isCtrl: true),
+      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.keyS, isCtrl: true, isShift: true),
+    ),
   ];
 
   /// Find an action by its ID.

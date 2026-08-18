@@ -25,6 +25,8 @@ import 'package:looper_player/features/library/presentation/smart_views.dart';
 import 'package:looper_player/ui/screens/settings_view.dart';
 import 'package:looper_player/ui/screens/welcome_screen.dart';
 import 'package:looper_player/ui/widgets/folder_picker_helper.dart';
+import 'package:looper_player/features/stats/presentation/stats_dialog.dart';
+import 'package:looper_player/features/stats/presentation/stats_provider.dart';
 
 import 'package:looper_player/ui/widgets/collection_detail_view.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_view.dart';
@@ -409,6 +411,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                   ),
                                                 ),
                                                 const Spacer(),
+                                                if (nav.activeItem == NavItem.home) ...[
+                                                  _HeaderButton(
+                                                    onTap: () {
+                                                      ref.read(statsProvider.notifier).refresh();
+                                                      showStatsDialog(context);
+                                                    },
+                                                    icon: LucideIcons.barChart2,
+                                                    label: 'Stats',
+                                                    isDynamic: isDynamic,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                ],
                                                 _HeaderButton(
                                                   onTap: () {
                                                     FolderPickerHelper.pickFolder(

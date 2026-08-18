@@ -269,6 +269,37 @@ class AppSettings {
 
   // Desktop: Discord Rich Presence (RPC)
   bool enableDiscordRpc = false;
+
+  // Scrobbling: Last.fm
+  bool enableLastFmScrobbling = false;
+  String lastFmUsername = '';
+  String lastFmSessionKey = '';
+  String lastFmApiKey = '';
+  String lastFmSecret = '';
+
+  // Scrobbling: ListenBrainz
+  bool enableListenBrainzScrobbling = false;
+  String listenBrainzUserToken = '';
+
+  // Scrobbling Threshold Percentage (default 50%)
+  int scrobbleThresholdPercent = 50;
+}
+
+@collection
+class PlaybackHistoryEntry {
+  Id id = Isar.autoIncrement;
+
+  @Index()
+  late DateTime timestamp;
+
+  late String songPath;
+  late String title;
+  String? artist;
+  String? album;
+  String? genre;
+  int durationMs = 0;
+  int listenedMs = 0;
+  String? artPath;
 }
 
 enum SeekBarStyle { visualizer, expressive, flat }

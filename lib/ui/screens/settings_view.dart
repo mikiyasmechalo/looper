@@ -639,6 +639,100 @@ class SettingsView extends ConsumerWidget {
                 ),
               ),
 
+            // Scrobbling Section (Last.fm & ListenBrainz)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _Section(
+                  title: 'Scrobbling (Last.fm & ListenBrainz)',
+                  children: [
+                    _PremiumSwitchRow(
+                      icon: LucideIcons.radio,
+                      title: 'Last.fm Scrobbling',
+                      subtitle: settings.lastFmUsername.isNotEmpty
+                          ? 'Connected as ${settings.lastFmUsername}'
+                          : 'Automatically scrobble played tracks to your Last.fm profile',
+                      value: settings.enableLastFmScrobbling,
+                      onChanged: (value) {
+                        HapticFeedback.lightImpact();
+                        if (value && settings.lastFmSessionKey.isEmpty) {
+                          _showLastFmConfigDialog(context, ref, settings, isEnabling: true);
+                        } else {
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateEnableLastFmScrobbling(value);
+                        }
+                      },
+                      isLast: false,
+                    ),
+                    if (settings.enableLastFmScrobbling)
+                      _PremiumActionRow(
+                        icon: LucideIcons.key,
+                        title: 'Configure Last.fm Account',
+                        subtitle: settings.lastFmSessionKey.isNotEmpty
+                            ? 'Session Key configured'
+                            : 'Set your Last.fm Username & Session Key',
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _showLastFmConfigDialog(context, ref, settings);
+                        },
+                        isLast: false,
+                      ),
+                    _PremiumSwitchRow(
+                      icon: LucideIcons.brain,
+                      title: 'ListenBrainz Scrobbling',
+                      subtitle: settings.listenBrainzUserToken.isNotEmpty
+                          ? 'ListenBrainz User Token configured'
+                          : 'Submit listens directly to your ListenBrainz profile',
+                      value: settings.enableListenBrainzScrobbling,
+                      onChanged: (value) {
+                        HapticFeedback.lightImpact();
+                        if (value && settings.listenBrainzUserToken.isEmpty) {
+                          _showListenBrainzConfigDialog(context, ref, settings, isEnabling: true);
+                        } else {
+                          ref
+                              .read(settingsProvider.notifier)
+                              .updateEnableListenBrainzScrobbling(value);
+                        }
+                      },
+                      isLast: false,
+                    ),
+                    if (settings.enableListenBrainzScrobbling)
+                      _PremiumActionRow(
+                        icon: LucideIcons.keyRound,
+                        title: 'Configure ListenBrainz Token',
+                        subtitle: settings.listenBrainzUserToken.isNotEmpty
+                            ? 'Token configured'
+                            : 'Enter your ListenBrainz User Token',
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          _showListenBrainzConfigDialog(context, ref, settings);
+                        },
+                        isLast: false,
+                      ),
+                    _PremiumSliderRow(
+                      icon: LucideIcons.percent,
+                      title: 'Scrobble Threshold',
+                      subtitle: 'Track completion percentage required before sending a scrobble',
+                      value: (settings.scrobbleThresholdPercent < 20 || settings.scrobbleThresholdPercent > 90)
+                          ? 50.0
+                          : settings.scrobbleThresholdPercent.toDouble(),
+                      min: 20,
+                      max: 90,
+                      divisions: 7,
+                      suffix: '%',
+                      onChanged: (value) {
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateScrobbleThresholdPercent(value.round());
+                      },
+                      isLast: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             // Fullscreen Player Section (Desktop)
             if (isDesktop)
               SliverToBoxAdapter(
@@ -880,6 +974,177 @@ class SettingsView extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showLastFmConfigDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings, {
+    bool isEnabling = false,
+  }) {
+    final userController = TextEditingController(text: settings.lastFmUsername);
+    final keyController = TextEditingController(text: settings.lastFmSessionKey);
+    bool saved = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(LucideIcons.radio, color: Colors.redAccent, size: 20),
+            SizedBox(width: 10),
+            Text(
+              'Last.fm Account',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter your Last.fm username and session authentication key to scrobble tracks.',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: userController,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: 'Last.fm Username',
+                labelStyle: const TextStyle(color: Colors.white54),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.05),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: keyController,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: 'Session Key',
+                labelStyle: const TextStyle(color: Colors.white54),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.05),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+            },
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final user = userController.text.trim();
+              final key = keyController.text.trim();
+              if (user.isNotEmpty && key.isNotEmpty) {
+                saved = true;
+                await ref.read(settingsProvider.notifier).updateLastFmCredentials(
+                  username: user,
+                  sessionKey: key,
+                );
+                await ref.read(settingsProvider.notifier).updateEnableLastFmScrobbling(true);
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save', style: TextStyle(color: Colors.greenAccent)),
+          ),
+        ],
+      ),
+    ).then((_) {
+      if (!saved && isEnabling && ref.read(settingsProvider).lastFmSessionKey.isEmpty) {
+        ref.read(settingsProvider.notifier).updateEnableLastFmScrobbling(false);
+      }
+    });
+  }
+
+  void _showListenBrainzConfigDialog(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings, {
+    bool isEnabling = false,
+  }) {
+    final tokenController = TextEditingController(text: settings.listenBrainzUserToken);
+    bool saved = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(LucideIcons.brain, color: Colors.amberAccent, size: 20),
+            SizedBox(width: 10),
+            Text(
+              'ListenBrainz User Token',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Copy your User Token from listenbrainz.org/profile/ and paste it below:',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: tokenController,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                labelText: 'ListenBrainz User Token',
+                labelStyle: const TextStyle(color: Colors.white54),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.05),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+            },
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final token = tokenController.text.trim();
+              if (token.isNotEmpty) {
+                saved = true;
+                await ref
+                    .read(settingsProvider.notifier)
+                    .updateListenBrainzUserToken(token);
+                await ref
+                    .read(settingsProvider.notifier)
+                    .updateEnableListenBrainzScrobbling(true);
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save', style: TextStyle(color: Colors.greenAccent)),
+          ),
+        ],
+      ),
+    ).then((_) {
+      if (!saved && isEnabling && ref.read(settingsProvider).listenBrainzUserToken.isEmpty) {
+        ref.read(settingsProvider.notifier).updateEnableListenBrainzScrobbling(false);
+      }
+    });
   }
 }
 
