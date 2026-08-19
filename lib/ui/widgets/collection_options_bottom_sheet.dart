@@ -19,7 +19,51 @@ import 'package:looper_player/ui/widgets/playlist_selector.dart';
 import 'package:looper_player/core/import_export_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import 'package:looper_player/features/playlists/domain/smart_playlist.dart';
+import 'package:looper_player/ui/widgets/app_input_dialog.dart';
 import 'package:looper_player/ui/widgets/edit_album_sheet.dart';
+
+/// Shows the context menu (Play / Shuffle / Play Next / Add to Queue / Save as Custom Playlist) for a smart playlist.
+Future<void> showSmartPlaylistOptionsBottomSheet({
+  required BuildContext context,
+  required WidgetRef ref,
+  required SmartPlaylist smartPlaylist,
+}) async {
+  showCollectionOptionsBottomSheet(
+    context: context,
+    ref: ref,
+    title: smartPlaylist.title,
+    subtitle: smartPlaylist.subtitle,
+    songs: smartPlaylist.songs,
+    editActionLabel: 'Save as Custom Playlist',
+    onEditAction: () async {
+      Navigator.pop(context);
+      final l10n = AppLocalizations.of(context)!;
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AppInputDialog(
+          title: 'Save as Custom Playlist',
+          hint: 'Playlist name',
+          initialText: smartPlaylist.title,
+          confirmLabel: l10n.create,
+          onConfirm: (name) async {
+            final playlist = smartPlaylist.toUserPlaylist(name);
+            await DbService.isar.writeTxn(
+              () => DbService.isar.playlists.put(playlist),
+            );
+            scaffoldMessengerKey.currentState?.clearSnackBars();
+            scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                content: Text(l10n.addedTo(playlist.name)),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
+        ),
+      );
+    },
+  );
+}
 
 /// Shows the context menu (Play / Shuffle / Play Next / Add to Queue / Add to
 /// Playlist / Edit Album / Delete Album) for an album collection.

@@ -19,6 +19,7 @@ import 'package:looper_player/features/playlists/presentation/playlist_view.dart
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/app_fonts.dart';
+import 'package:looper_player/features/playlists/domain/smart_playlist.dart';
 
 // Persistent collection sorting is stored in settings.collectionSortOptionIndex
 
@@ -59,7 +60,11 @@ class CollectionDetailView extends ConsumerWidget {
 
     final nav = ref.watch(appNavigationProvider);
 
+    final bool isSmartPlaylist = subtitle == 'Smart Playlist' ||
+        (nav.activeItem == NavItem.collectionDetail && nav.collectionSubtitle == 'Smart Playlist');
+
     final bool isArtistCollection = playlist == null &&
+        !isSmartPlaylist &&
         (nav.highlightItem == NavItem.artists ||
             subtitle == l10n.artist ||
             subtitle?.toLowerCase() == 'artist' ||
@@ -67,7 +72,8 @@ class CollectionDetailView extends ConsumerWidget {
 
     final bool isPlaylistCollection = playlist != null ||
         nav.highlightItem == NavItem.playlists ||
-        subtitle == 'Playlist';
+        subtitle == 'Playlist' ||
+        isSmartPlaylist;
 
     final bool isAlbumCollection = playlist == null &&
         !isArtistCollection &&
@@ -128,6 +134,8 @@ class CollectionDetailView extends ConsumerWidget {
       isAscending = ref.watch(settingsProvider.select((s) => s.collectionSortAscending));
     }
     final sortOption = CollectionSortOption.values[sortOptionIndex.clamp(0, CollectionSortOption.values.length - 1)];
+
+    // Always sort a copy of the list so we don't mutate input state.
     final sortedSongs = List<Song>.from(songsToRender);
     switch (sortOption) {
       case CollectionSortOption.trackNumber:
@@ -167,22 +175,14 @@ class CollectionDetailView extends ConsumerWidget {
         break;
     }
 
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          ref.read(appNavigationProvider.notifier).goBack();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: LayoutBuilder(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: LayoutBuilder(
           builder: (context, constraints) {
             final isNarrow = constraints.maxWidth < 600;
             return CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
+              physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
                   child: Column(
@@ -200,7 +200,7 @@ class CollectionDetailView extends ConsumerWidget {
                                   Center(
                                     child: _buildArt(
                                       context,
-                                      playlist != null ? songsToRender : null,
+                                      (playlist != null || isPlaylistCollection) ? songsToRender : null,
                                       customArtPath: effectiveArtPath,
                                     ),
                                   ),
@@ -223,7 +223,7 @@ class CollectionDetailView extends ConsumerWidget {
                                 children: [
                                   _buildArt(
                                     context,
-                                    playlist != null ? songsToRender : null,
+                                    (playlist != null || isPlaylistCollection) ? songsToRender : null,
                                     customArtPath: effectiveArtPath,
                                   ),
                                   const SizedBox(width: 20),
@@ -361,12 +361,17 @@ class CollectionDetailView extends ConsumerWidget {
   ) {
     final l10n = AppLocalizations.of(context)!;
     final nav = ref.watch(appNavigationProvider);
-    final isArtistCollection = nav.highlightItem == NavItem.artists ||
-        subtitleToRender == l10n.artists ||
-        subtitleToRender == l10n.artist ||
-        subtitleToRender?.toLowerCase() == 'artist' ||
-        subtitleToRender?.toLowerCase() == 'artists';
+    final bool isSmartPlaylist = subtitleToRender == 'Smart Playlist' ||
+        subtitle == 'Smart Playlist' ||
+        (nav.activeItem == NavItem.collectionDetail && nav.collectionSubtitle == 'Smart Playlist');
+    final isArtistCollection = !isSmartPlaylist &&
+        (nav.highlightItem == NavItem.artists ||
+            subtitleToRender == l10n.artists ||
+            subtitleToRender == l10n.artist ||
+            subtitleToRender?.toLowerCase() == 'artist' ||
+            subtitleToRender?.toLowerCase() == 'artists');
     final bool isAlbumCollection = playlist == null &&
+        !isSmartPlaylist &&
         !isArtistCollection &&
         subtitleToRender != l10n.genre &&
         subtitleToRender?.toLowerCase() != 'genre';
@@ -466,6 +471,21 @@ class CollectionDetailView extends ConsumerWidget {
                     playlist: reactivePlaylist,
                     songs: songsToRender,
                   );
+                } else if (isSmartPlaylist) {
+                  final smart = SmartPlaylist(
+                    id: titleToRender.toLowerCase().replaceAll(' ', '_'),
+                    title: titleToRender,
+                    subtitle: 'Smart Playlist',
+                    description: '',
+                    icon: LucideIcons.sparkles,
+                    gradientColors: const [Color(0xFF7C4DFF), Color(0xFF536DFE)],
+                    songs: songsToRender,
+                  );
+                  showSmartPlaylistOptionsBottomSheet(
+                    context: context,
+                    ref: ref,
+                    smartPlaylist: smart,
+                  );
                 } else if (isAlbumCollection) {
                   final album = Album()
                     ..name = titleToRender
@@ -526,7 +546,11 @@ class CollectionDetailView extends ConsumerWidget {
 
         final nav = ref.read(appNavigationProvider);
 
+        final bool isSmartPlaylist = subtitle == 'Smart Playlist' ||
+            (nav.activeItem == NavItem.collectionDetail && nav.collectionSubtitle == 'Smart Playlist');
+
         final bool isArtistCollection = playlist == null &&
+            !isSmartPlaylist &&
             (nav.highlightItem == NavItem.artists ||
                 subtitle == l10n.artist ||
                 subtitle?.toLowerCase() == 'artist' ||
@@ -534,7 +558,8 @@ class CollectionDetailView extends ConsumerWidget {
 
         final bool isPlaylistCollection = playlist != null ||
             nav.highlightItem == NavItem.playlists ||
-            subtitle == 'Playlist';
+            subtitle == 'Playlist' ||
+            isSmartPlaylist;
 
         final bool isAlbumCollection = playlist == null &&
             !isArtistCollection &&

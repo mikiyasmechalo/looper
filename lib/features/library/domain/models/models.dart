@@ -286,6 +286,9 @@ class AppSettings {
 
   // Desktop: Windows Explorer Context Menu & File Associations
   bool enableWindowsFileAssociations = true;
+
+  // Playlists: Auto-updating Smart Playlists
+  bool enableSmartPlaylists = true;
 }
 
 @collection

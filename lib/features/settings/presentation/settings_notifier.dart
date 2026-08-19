@@ -401,7 +401,20 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..enableListenBrainzScrobbling = s.enableListenBrainzScrobbling
       ..listenBrainzUserToken = s.listenBrainzUserToken
       ..scrobbleThresholdPercent = s.scrobbleThresholdPercent
-      ..enableWindowsFileAssociations = s.enableWindowsFileAssociations;
+      ..enableWindowsFileAssociations = s.enableWindowsFileAssociations
+      ..enableSmartPlaylists = s.enableSmartPlaylists;
+  }
+
+  Future<void> updateEnableSmartPlaylists(bool value) async {
+    final newState = _clone(state)..enableSmartPlaylists = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> toggleSmartPlaylists() async {
+    await updateEnableSmartPlaylists(!state.enableSmartPlaylists);
   }
 
   Future<void> updateEnableWindowsFileAssociations(bool value) async {

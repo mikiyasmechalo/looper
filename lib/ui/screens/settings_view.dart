@@ -550,6 +550,18 @@ class SettingsView extends ConsumerWidget {
       ),
       _SearchItem(
         category: 'Library & Files',
+        title: 'Smart Playlists',
+        subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
+        widget: _PremiumSwitchRow(
+          icon: LucideIcons.sparkles,
+          title: 'Smart Playlists',
+          subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
+          value: settings.enableSmartPlaylists,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(v),
+        ),
+      ),
+      _SearchItem(
+        category: 'Library & Files',
         title: l10n.internetMode,
         subtitle: l10n.enableNetworkLyricsArt,
         widget: _PremiumSwitchRow(
@@ -1093,6 +1105,17 @@ class SettingsView extends ConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.scanningLibrary)),
             );
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.sparkles,
+          title: 'Smart Playlists',
+          subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
+          value: settings.enableSmartPlaylists,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(value);
           },
           isLast: false,
         ),
