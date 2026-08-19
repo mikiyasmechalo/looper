@@ -6,6 +6,7 @@ import '../../library/domain/models/models.dart';
 import '../../library/data/artwork_downloader_service.dart';
 import '../../../core/app_fonts.dart';
 import '../../../core/discord_rpc_service.dart';
+import '../../../core/windows_file_association_service.dart';
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
   ref,
@@ -399,7 +400,23 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..lastFmSecret = s.lastFmSecret
       ..enableListenBrainzScrobbling = s.enableListenBrainzScrobbling
       ..listenBrainzUserToken = s.listenBrainzUserToken
-      ..scrobbleThresholdPercent = s.scrobbleThresholdPercent;
+      ..scrobbleThresholdPercent = s.scrobbleThresholdPercent
+      ..enableWindowsFileAssociations = s.enableWindowsFileAssociations;
+  }
+
+  Future<void> updateEnableWindowsFileAssociations(bool value) async {
+    final newState = _clone(state)..enableWindowsFileAssociations = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+    if (Platform.isWindows) {
+      if (value) {
+        await WindowsFileAssociationService.register();
+      } else {
+        await WindowsFileAssociationService.unregister();
+      }
+    }
   }
 
   Future<void> updateEnableDiscordRpc(bool value) async {

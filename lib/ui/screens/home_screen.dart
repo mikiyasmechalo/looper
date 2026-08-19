@@ -314,7 +314,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               children: [
                                 // Sidebar - hidden only on very narrow screens
                                 if (!isNarrowLayout)
-                                  Container(
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOutCubic,
+                                    clipBehavior: Clip.hardEdge,
                                     width: (constraints.maxWidth < 1000
                                             ? 200
                                             : 240)
@@ -659,7 +662,6 @@ class Sidebar extends ConsumerWidget {
     final nav = ref.watch(appNavigationProvider);
     final activeItem = nav.activeItem;
     final highlightItem = nav.highlightItem;
-    final compact = MediaQuery.sizeOf(context).width < 1000;
 
     void navigateTo(NavItem item) {
       if (item != NavItem.search) {
@@ -672,18 +674,13 @@ class Sidebar extends ConsumerWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        compact ? 6 : 12,
-        compact ? 12 : 16,
-        compact ? 6 : 12,
-        compact ? 12 : 16,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
       child: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: (constraints.maxHeight - (compact ? 24 : 32)).clamp(
+                minHeight: (constraints.maxHeight - 32).clamp(
                   0.0,
                   double.infinity,
                 ),
@@ -693,14 +690,11 @@ class Sidebar extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: EdgeInsets.only(
-                        left: 15,
-                        right: compact ? 6 : 5,
-                      ),
+                      padding: const EdgeInsets.only(left: 12),
                       child: Row(
                         children: [
                           SizedBox(
-                            height: compact ? 38 : 42,
+                            height: 42,
                             child: SvgPicture.asset(
                               'assets/main_logo_transparent.svg',
                               fit: BoxFit.contain,
@@ -712,7 +706,7 @@ class Sidebar extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    SizedBox(height: compact ? 18 : 24),
+                    const SizedBox(height: 24),
                     _SidebarItem(
                       customIcon: AppIcons.home,
                       label: 'Home',
@@ -720,7 +714,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.home ||
                           highlightItem == NavItem.home,
                       onTap: () => navigateTo(NavItem.home),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       icon: LucideIcons.headphones,
@@ -734,7 +727,6 @@ class Sidebar extends ConsumerWidget {
                           Navigator.of(context).pop();
                         }
                       },
-                      compact: compact,
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.songs,
@@ -743,7 +735,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.songs ||
                           highlightItem == NavItem.songs,
                       onTap: () => navigateTo(NavItem.songs),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       icon: LucideIcons.disc,
@@ -752,7 +743,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.albums ||
                           highlightItem == NavItem.albums,
                       onTap: () => navigateTo(NavItem.albums),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       icon: LucideIcons.mic2,
@@ -761,7 +751,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.artists ||
                           highlightItem == NavItem.artists,
                       onTap: () => navigateTo(NavItem.artists),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.library,
@@ -770,7 +759,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.playlists ||
                           highlightItem == NavItem.playlists,
                       onTap: () => navigateTo(NavItem.playlists),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       icon: LucideIcons.clock,
@@ -779,7 +767,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.recentlyPlayed ||
                           highlightItem == NavItem.recentlyPlayed,
                       onTap: () => navigateTo(NavItem.recentlyPlayed),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.heart,
@@ -788,7 +775,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.favorites ||
                           highlightItem == NavItem.favorites,
                       onTap: () => navigateTo(NavItem.favorites),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       icon: LucideIcons.listOrdered,
@@ -797,7 +783,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.queue ||
                           highlightItem == NavItem.queue,
                       onTap: () => navigateTo(NavItem.queue),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       icon: LucideIcons.radio,
@@ -806,7 +791,6 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.genres ||
                           highlightItem == NavItem.genres,
                       onTap: () => navigateTo(NavItem.genres),
-                      compact: compact,
                     ),
                     _SidebarItem(
                       customIcon: AppIcons.settings,
@@ -815,14 +799,13 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.settings ||
                           highlightItem == NavItem.settings,
                       onTap: () => navigateTo(NavItem.settings),
-                      compact: compact,
                     ),
                     const SizedBox(height: 16),
                     Container(
                       height: 1,
                       width: double.infinity,
-                      margin: EdgeInsets.symmetric(
-                        horizontal: compact ? 8 : 12,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 10,
                       ),
                       color: Colors.white10,
                     ),
@@ -914,7 +897,6 @@ class _SidebarItem extends StatelessWidget {
   final String? customIcon;
   final String label;
   final bool isSelected;
-  final bool compact;
   final VoidCallback onTap;
 
   const _SidebarItem({
@@ -923,7 +905,6 @@ class _SidebarItem extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.isSelected = false,
-    this.compact = false,
   });
 
   @override
@@ -933,21 +914,11 @@ class _SidebarItem extends StatelessWidget {
     final Color unselectedColor = Colors.white.withValues(alpha: 0.4);
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        compact ? 6 : 8,
-        2,
-        compact ? 6 : 8,
-        2,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Material(
         color: Colors.transparent,
         child: ListTile(
-          contentPadding: EdgeInsets.fromLTRB(
-            compact ? 10 : 10,
-            0,
-            compact ? 10 : 10,
-            0,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
           leading: customIcon != null
               ? SvgPicture.asset(
                   customIcon!,
@@ -966,7 +937,7 @@ class _SidebarItem extends StatelessWidget {
           title: Text(
             label,
             style: AppFonts.jostStyle(
-              fontSize: compact ? 12.5.ts : 14.ts,
+              fontSize: 14.ts,
               color: isSelected ? selectedColor : unselectedColor,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),

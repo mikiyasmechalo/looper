@@ -283,6 +283,9 @@ class AppSettings {
 
   // Scrobbling Threshold Percentage (default 50%)
   int scrobbleThresholdPercent = 50;
+
+  // Desktop: Windows Explorer Context Menu & File Associations
+  bool enableWindowsFileAssociations = true;
 }
 
 @collection

@@ -203,7 +203,7 @@ class InfoSubTile extends StatelessWidget {
 class AboutMaintainerRow extends StatelessWidget {
   final String name;
   final String role;
-  final String avatar;
+  final String? avatar;
   final String github;
   final String telegram;
 
@@ -211,13 +211,15 @@ class AboutMaintainerRow extends StatelessWidget {
     super.key,
     required this.name,
     required this.role,
-    required this.avatar,
+    this.avatar,
     required this.github,
     required this.telegram,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasAvatar = avatar != null && avatar!.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
@@ -225,7 +227,10 @@ class AboutMaintainerRow extends StatelessWidget {
           CircleAvatar(
             radius: 24,
             backgroundColor: Colors.white10,
-            backgroundImage: AssetImage(avatar),
+            backgroundImage: hasAvatar ? AssetImage(avatar!) : null,
+            child: hasAvatar
+                ? null
+                : const Icon(LucideIcons.user, color: Colors.white60, size: 22),
           ),
           const SizedBox(width: 16),
           Expanded(

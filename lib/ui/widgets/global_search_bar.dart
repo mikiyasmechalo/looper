@@ -79,6 +79,9 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
       case NavItem.genres:
         hintText = 'Search genres...';
         break;
+      case NavItem.settings:
+        hintText = 'Search settings...';
+        break;
       default:
         hintText = l10n.searchSongsHint;
         break;
@@ -174,7 +177,8 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
                           );
 
                           if (val.isNotEmpty &&
-                              nav.activeItem != NavItem.search) {
+                              nav.activeItem != NavItem.search &&
+                              sourceTab != NavItem.settings) {
                             ref
                                 .read(appNavigationProvider.notifier)
                                 .setItem(NavItem.search);

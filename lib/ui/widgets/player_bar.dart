@@ -64,6 +64,7 @@ class _PremiumPlayerBar extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isVeryNarrow = constraints.maxWidth < 600;
+        final bool isTightActions = constraints.maxWidth < 900;
         final bool stackControls = constraints.maxWidth < 1100;
         final bool wideVolume = constraints.maxWidth > 1100;
         final bool hoverVolume = !isVeryNarrow && !wideVolume;
@@ -97,7 +98,7 @@ class _PremiumPlayerBar extends ConsumerWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Row(
                     children: [
                       Expanded(
@@ -214,6 +215,7 @@ class _PremiumPlayerBar extends ConsumerWidget {
                         isLyricsActive,
                         isQueueActive,
                         isVeryNarrow,
+                        isTightActions,
                       ),
                     ],
                   ),
@@ -426,59 +428,81 @@ class _PremiumPlayerBar extends ConsumerWidget {
     bool isLyricsActive,
     bool isQueueActive,
     bool isVeryNarrow,
+    bool isTightActions,
   ) {
+    final bool isDesktop = !Platform.isAndroid && !Platform.isIOS;
+    final bool isCompact = isTightActions || isVeryNarrow;
+    final double buttonSize = isCompact ? 28.0 : 34.0;
+    final double iconSize = isCompact ? 14.0 : 16.0;
+    final double spacing = isCompact ? 2.0 : 4.0;
+
     return Row(
+      key: const ValueKey('player_actions_row'),
+      mainAxisSize: MainAxisSize.min,
       children: [
-        if (!isVeryNarrow)
-          IconButton(
+        if (!isVeryNarrow) ...[
+          Tooltip(
+            message: 'Favorite',
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints.tightFor(width: buttonSize, height: buttonSize),
+              icon: SvgPicture.asset(
+                isFavorite
+                    ? 'assets/music_bar_Icons/liked.svg'
+                    : 'assets/music_bar_Icons/like.svg',
+                width: iconSize,
+                height: iconSize,
+                colorFilter: ColorFilter.mode(
+                  isFavorite ? Colors.red : Colors.white54,
+                  BlendMode.srcIn,
+                ),
+              ),
+              onPressed: () =>
+                  ref.read(playbackProvider.notifier).toggleFavorite(),
+            ),
+          ),
+          SizedBox(width: spacing),
+        ],
+        Tooltip(
+          message: 'Lyrics',
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints.tightFor(width: buttonSize, height: buttonSize),
             icon: SvgPicture.asset(
-              isFavorite
-                  ? 'assets/music_bar_Icons/liked.svg'
-                  : 'assets/music_bar_Icons/like.svg',
-              width: 16,
-              height: 16,
+              'assets/music_bar_Icons/lyrics.svg',
+              width: iconSize,
+              height: iconSize,
               colorFilter: ColorFilter.mode(
-                isFavorite ? Colors.red : Colors.white54,
+                isLyricsActive ? colorScheme.primary : Colors.white54,
                 BlendMode.srcIn,
               ),
             ),
-            onPressed: () =>
-                ref.read(playbackProvider.notifier).toggleFavorite(),
-            tooltip: 'Favorite',
+            onPressed: () => ref
+                .read(appNavigationProvider.notifier)
+                .toggleItem(NavItem.lyrics),
           ),
-        const SizedBox(width: 4),
-        IconButton(
-          icon: SvgPicture.asset(
-            'assets/music_bar_Icons/lyrics.svg',
-            width: 16,
-            height: 16,
-            colorFilter: ColorFilter.mode(
-              isLyricsActive ? colorScheme.primary : Colors.white54,
-              BlendMode.srcIn,
+        ),
+        SizedBox(width: spacing),
+        Tooltip(
+          message: 'Queue',
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints.tightFor(width: buttonSize, height: buttonSize),
+            icon: Icon(
+              LucideIcons.listMusic,
+              size: iconSize,
+              color: isQueueActive ? colorScheme.primary : Colors.white54,
             ),
+            onPressed: () => ref
+                .read(appNavigationProvider.notifier)
+                .toggleItem(NavItem.queue),
           ),
-          onPressed: () => ref
-              .read(appNavigationProvider.notifier)
-              .toggleItem(NavItem.lyrics),
-          tooltip: 'Lyrics',
         ),
-        const SizedBox(width: 4),
-        IconButton(
-          icon: Icon(
-            LucideIcons.listMusic,
-            size: 16,
-            color: isQueueActive ? colorScheme.primary : Colors.white54,
-          ),
-          onPressed: () => ref
-              .read(appNavigationProvider.notifier)
-              .toggleItem(NavItem.queue),
-          tooltip: 'Queue',
-        ),
-        if (!Platform.isAndroid && !Platform.isIOS) ...<Widget>[
-          const SizedBox(width: 4),
-          const _FullscreenButton(),
-          const SizedBox(width: 4),
-          const _MiniPlayerMenuButton(),
+        if (isDesktop) ...[
+          SizedBox(width: spacing),
+          _FullscreenButton(size: buttonSize, iconSize: iconSize),
+          SizedBox(width: spacing),
+          _MiniPlayerMenuButton(size: buttonSize, iconSize: iconSize),
         ],
       ],
     );
@@ -820,7 +844,13 @@ class _BouncyTapState extends State<_BouncyTap>
 /// Button shown at the far right of the player bar on desktop. Opens a small
 /// popup menu that lets the user switch to either mini-player mode.
 class _MiniPlayerMenuButton extends ConsumerWidget {
-  const _MiniPlayerMenuButton();
+  final double? size;
+  final double? iconSize;
+
+  const _MiniPlayerMenuButton({
+    this.size,
+    this.iconSize,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -831,9 +861,11 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
     return Tooltip(
       message: 'Mini player',
       child: IconButton(
+        padding: size != null ? EdgeInsets.zero : null,
+        constraints: size != null ? BoxConstraints.tightFor(width: size, height: size) : null,
         icon: Icon(
           LucideIcons.minimize2,
-          size: 16,
+          size: iconSize ?? 16,
           color: isActive ? colorScheme.primary : Colors.white54,
         ),
         onPressed: () async {
@@ -842,7 +874,7 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
           final renderBox = context.findRenderObject() as RenderBox?;
           if (renderBox == null) return;
           final offset = renderBox.localToGlobal(Offset.zero);
-          final size = renderBox.size;
+          final rSize = renderBox.size;
 
           final result = await showMenu<String>(
             context: context,
@@ -854,7 +886,7 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
             position: RelativeRect.fromLTRB(
               offset.dx,
               offset.dy - 90,
-              offset.dx + size.width,
+              offset.dx + rSize.width,
               offset.dy,
             ),
             items: [
@@ -922,26 +954,36 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
 }
 
 class _FullscreenButton extends ConsumerWidget {
-  const _FullscreenButton();
+  final double? size;
+  final double? iconSize;
+
+  const _FullscreenButton({
+    this.size,
+    this.iconSize,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return IconButton(
-      icon: const Icon(
-        LucideIcons.maximize,
-        size: 16,
-        color: Colors.white54,
-      ),
-      onPressed: () async {
-        ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
-        if (!(Platform.isAndroid || Platform.isIOS)) {
-          final isMax = await windowManager.isMaximized();
-          if (!isMax) {
-            await windowManager.maximize();
+    return Tooltip(
+      message: 'Fullscreen Player',
+      child: IconButton(
+        padding: size != null ? EdgeInsets.zero : null,
+        constraints: size != null ? BoxConstraints.tightFor(width: size, height: size) : null,
+        icon: Icon(
+          LucideIcons.maximize,
+          size: iconSize ?? 16,
+          color: Colors.white54,
+        ),
+        onPressed: () async {
+          ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
+          if (!(Platform.isAndroid || Platform.isIOS)) {
+            final isMax = await windowManager.isMaximized();
+            if (!isMax) {
+              await windowManager.maximize();
+            }
           }
-        }
-      },
-      tooltip: 'Fullscreen Player',
+        },
+      ),
     );
   }
 }

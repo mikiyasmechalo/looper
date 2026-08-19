@@ -1147,27 +1147,32 @@ class SettingsCategoryScreen extends ConsumerWidget {
         const LooperVersionTile(), //1
         const Divider(height: 1, indent: 72, color: Colors.white10), //2
         const LyricsProviderTile(), //3
-        const Divider(height: 1, indent: 72, color: Colors.white10),//4
-        AboutMaintainerRow( //5
+        AboutMaintainerRow(
+          name: 'John Doe',
+          role: 'Active Contributor',
+          github: 'https://github.com/johndoe',
+          telegram: 'https://t.me/johndoe',
+        ),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        AboutMaintainerRow(
           name: 'Nilesh Suthar',
           role: l10n.creatorAndMaintainer,
           avatar: 'assets/about/maintainer_avatar.png',
           github: 'https://github.com/SthrNilshaaa',
           telegram: 'https://t.me/neelshy',
         ),
-        const Divider(height: 1, indent: 72, color: Colors.white10), //6
-        AboutMaintainerRow( //7
-          name: 'Krn.',
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        AboutMaintainerRow(
+          name: 'Karan Suthar',
           role: l10n.designerAndMaintainer,
           avatar: 'assets/about/designer_avatar.png',
           github: 'https://github.com/sthrkaran',
           telegram: 'https://t.me/karanwhy',
         ),
-        const Divider(height: 1, indent: 72, color: Colors.white10), //8
-        AboutMaintainerRow( //9
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        AboutMaintainerRow(
           name: 'Madan Suthar',
           role: 'Active Contributor',
-          avatar: 'assets/about/designer_avatar.png',
           github: 'https://github.com/',
           telegram: 'https://t.me/madansthr',
         ),

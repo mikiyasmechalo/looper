@@ -107,7 +107,7 @@ class HomeDashboard extends ConsumerWidget {
       builder: (context, constraints) {
         final bool isNarrow = constraints.maxWidth < 600;
         final bool isMedium = constraints.maxWidth < 1000;
-        final bool showLogo = MediaQuery.of(context).size.width < 800;
+        final bool showLogo = MediaQuery.of(context).size.width < 560;
 
         final orderedChildren = <Widget>[];
 
