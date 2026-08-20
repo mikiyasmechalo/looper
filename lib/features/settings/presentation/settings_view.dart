@@ -148,7 +148,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
-    final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
+    final isDynamic = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+    final useBlur = isDynamic && !settings.disableBlur;
 
     return RepaintBoundary(
       child: Material(
@@ -178,7 +179,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                               height: 48,
                               useBlur: useBlur,
                               useExpanded: false,
-                              forceNoBlur: true,
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 setState(() {
@@ -267,7 +267,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                               width: 48,
                               height: 48,
                               useBlur: useBlur,
-                              forceNoBlur: true,
                               useExpanded: false,
                               onTap: () {
                                 HapticFeedback.lightImpact();
@@ -299,7 +298,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                               width: 48,
                               height: 48,
                               useExpanded: false,
-                              forceNoBlur: true,
                               useBlur: useBlur,
                               onTap: () {
                                 HapticFeedback.lightImpact();
@@ -453,7 +451,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       children: [
         PremiumSection(
           useBlur: useBlur,
-          forceNoBlur: true,
           borderRadius: BorderRadius.circular(20),
           useExpanded: false,
           padding: EdgeInsets.zero,
@@ -605,13 +602,13 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       itemCount: filteredItems.length,
       itemBuilder: (context, index) {
         final item = filteredItems[index];
-        final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
+        final isDynamic = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+        final useBlur = isDynamic && !settings.disableBlur;
 
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           child: PremiumSection(
             useBlur: useBlur,
-            forceNoBlur: true,
             borderRadius: BorderRadius.circular(16),
             useExpanded: false,
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -982,7 +979,8 @@ class SettingsCategoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final l10n = AppLocalizations.of(context)!;
-    final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
+    final isDynamic = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+    final useBlur = isDynamic && !settings.disableBlur;
 
     List<Widget> children = [];
     if (categoryId == 'theme') {
@@ -1241,7 +1239,6 @@ class SettingsCategoryScreen extends ConsumerWidget {
                     width: 48,
                     height: 48,
                     useBlur: useBlur,
-                    forceNoBlur: true,
                     useExpanded: false,
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -1283,7 +1280,6 @@ class SettingsCategoryScreen extends ConsumerWidget {
                         // Top Section Card
                         PremiumSection(
                           useBlur: useBlur,
-                          forceNoBlur: true,
                           borderRadius: BorderRadius.circular(14),
                           useExpanded: false,
                           padding: const EdgeInsets.symmetric(
@@ -1381,7 +1377,6 @@ class SettingsCategoryScreen extends ConsumerWidget {
                         // Maintainers Card
                         PremiumSection(
                           useBlur: useBlur,
-                          forceNoBlur: true,
                           borderRadius: BorderRadius.circular(14),
                           useExpanded: false,
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1393,7 +1388,6 @@ class SettingsCategoryScreen extends ConsumerWidget {
                         // App Info & Privacy Card
                         PremiumSection(
                           useBlur: useBlur,
-                          forceNoBlur: true,
                           borderRadius: BorderRadius.circular(14),
                           useExpanded: false,
                           padding: const EdgeInsets.symmetric(
@@ -1405,7 +1399,6 @@ class SettingsCategoryScreen extends ConsumerWidget {
                     : [
                         PremiumSection(
                           useBlur: useBlur,
-                          forceNoBlur: true,
                           borderRadius: BorderRadius.circular(24),
                           useExpanded: false,
                           padding: const EdgeInsets.symmetric(vertical: 8),

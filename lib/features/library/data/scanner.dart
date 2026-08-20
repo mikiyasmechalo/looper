@@ -7,6 +7,7 @@ import '../domain/models/models.dart';
 import 'package:isar/isar.dart';
 import '../../playback/data/metadata_service.dart';
 import 'artwork_downloader_service.dart';
+import 'artist_repository.dart';
 import "package:audiotags/audiotags.dart" as audiotags;
 
 class ScanResult {
@@ -314,7 +315,7 @@ class LibraryScanner {
               if (targetArtistName != null) {
                 final existingArtist = await DbService.isar.artists
                     .filter()
-                    .nameEqualTo(targetArtistName)
+                    .nameEqualTo(targetArtistName, caseSensitive: false)
                     .findFirst();
                 if (existingArtist == null) {
                   final artist = Artist()..name = targetArtistName;
@@ -331,6 +332,9 @@ class LibraryScanner {
         await Future.delayed(const Duration(milliseconds: 20));
       }
     }
+
+    // Consolidate duplicate artist entities across case variations
+    await ArtistRepository.consolidateArtists();
 
     return ScanResult(
       songsCount: filesToProcess.length,

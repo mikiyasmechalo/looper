@@ -211,6 +211,8 @@ class WindowStateService extends WindowListener {
             isMaximized: false,
           ));
         }
+      } else {
+        save(_currentState.copyWith(isMaximized: true));
       }
     } catch (_) {}
   }
@@ -225,13 +227,17 @@ class WindowStateService extends WindowListener {
       final isMax = await windowManager.isMaximized();
       if (!isMax) {
         final pos = await windowManager.getPosition();
-        if (pos.dx > -500 && pos.dy > -500) {
+        // On Windows, maximized windows report negative offsets (e.g. -8, -8).
+        // Only save valid normal window positions.
+        if (pos.dx >= 0 && pos.dy >= 0) {
           save(_currentState.copyWith(
             x: pos.dx,
             y: pos.dy,
             isMaximized: false,
           ));
         }
+      } else {
+        save(_currentState.copyWith(isMaximized: true));
       }
     } catch (_) {}
   }

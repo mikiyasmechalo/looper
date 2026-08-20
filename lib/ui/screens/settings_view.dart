@@ -16,6 +16,9 @@ import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_
 import 'package:looper_player/core/windows_file_association_service.dart';
 import 'package:looper_player/features/search/presentation/search_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:looper_player/core/app_fonts.dart';
+import 'package:looper_player/core/app_icons.dart';
+import 'package:looper_player/core/ui_utils.dart';
 
 enum SettingsCategory {
   appearance,
@@ -332,6 +335,9 @@ class SettingsView extends ConsumerWidget {
       );
     }
 
+    final isDynamic = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+    final useBlur = isDynamic && !settings.disableBlur;
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: padding,
@@ -352,6 +358,7 @@ class SettingsView extends ConsumerWidget {
           PremiumSection(
             borderRadius: BorderRadius.circular(20),
             padding: EdgeInsets.zero,
+            useBlur: useBlur,
             useExpanded: false,
             child: Column(
               children: results.asMap().entries.map((entry) {
@@ -558,6 +565,48 @@ class SettingsView extends ConsumerWidget {
           subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
           value: settings.enableSmartPlaylists,
           onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(v),
+        ),
+      ),
+      _SearchItem(
+        category: 'Library & Files',
+        title: 'Album Card Style',
+        subtitle: 'Choose visual layout for album grid items',
+        widget: _PremiumDropdownRow<int>(
+          icon: LucideIcons.disc,
+          title: 'Album Card Style',
+          subtitle: 'Choose visual layout for album grid items',
+          value: settings.albumCardStyleIndex.clamp(0, 4),
+          items: const [
+            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
+            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(value: 2, child: Text('Card')),
+            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
+            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+          ],
+          onChanged: (v) {
+            if (v != null) ref.read(settingsProvider.notifier).updateAlbumCardStyle(v);
+          },
+        ),
+      ),
+      _SearchItem(
+        category: 'Library & Files',
+        title: 'Artist Card Style',
+        subtitle: 'Choose visual layout for artist grid items',
+        widget: _PremiumDropdownRow<int>(
+          icon: LucideIcons.mic2,
+          title: 'Artist Card Style',
+          subtitle: 'Choose visual layout for artist grid items',
+          value: settings.artistCardStyleIndex.clamp(0, 4),
+          items: const [
+            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
+            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(value: 2, child: Text('Card')),
+            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
+            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+          ],
+          onChanged: (v) {
+            if (v != null) ref.read(settingsProvider.notifier).updateArtistCardStyle(v);
+          },
         ),
       ),
       _SearchItem(
@@ -1116,6 +1165,46 @@ class SettingsView extends ConsumerWidget {
           onChanged: (value) {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(value);
+          },
+          isLast: false,
+        ),
+        _PremiumDropdownRow<int>(
+          icon: LucideIcons.disc,
+          title: 'Album Card Style',
+          subtitle: 'Choose visual layout for album grid items',
+          value: settings.albumCardStyleIndex.clamp(0, 4),
+          items: const [
+            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
+            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(value: 2, child: Text('Card')),
+            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
+            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              HapticFeedback.lightImpact();
+              ref.read(settingsProvider.notifier).updateAlbumCardStyle(value);
+            }
+          },
+          isLast: false,
+        ),
+        _PremiumDropdownRow<int>(
+          icon: LucideIcons.mic2,
+          title: 'Artist Card Style',
+          subtitle: 'Choose visual layout for artist grid items',
+          value: settings.artistCardStyleIndex.clamp(0, 4),
+          items: const [
+            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
+            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(value: 2, child: Text('Card')),
+            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
+            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              HapticFeedback.lightImpact();
+              ref.read(settingsProvider.notifier).updateArtistCardStyle(value);
+            }
           },
           isLast: false,
         ),
@@ -1811,7 +1900,8 @@ class _CategorySidebarTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary;
+    final selectedColor = theme.colorScheme.primary;
+    final unselectedColor = Colors.white.withValues(alpha: 0.4);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -1819,7 +1909,7 @@ class _CategorySidebarTile extends StatelessWidget {
         message: label,
         waitDuration: const Duration(milliseconds: 400),
         child: Material(
-          color: isSelected ? accent.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected ? selectedColor.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             onTap: onTap,
@@ -1838,8 +1928,8 @@ class _CategorySidebarTile extends StatelessWidget {
                         child: Center(
                           child: Icon(
                             icon,
-                            size: 20,
-                            color: isSelected ? accent : Colors.white70,
+                            size: AppIcons.sidebarIcon.s,
+                            color: isSelected ? selectedColor : unselectedColor,
                           ),
                         ),
                       ),
@@ -1856,10 +1946,10 @@ class _CategorySidebarTile extends StatelessWidget {
                                 maxLines: 1,
                                 softWrap: false,
                                 overflow: TextOverflow.clip,
-                                style: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.8),
-                                  fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                style: AppFonts.jostStyle(
+                                  fontSize: 14.ts,
+                                  color: isSelected ? selectedColor : unselectedColor,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -1879,7 +1969,7 @@ class _CategorySidebarTile extends StatelessWidget {
                           width: 4,
                           height: 16,
                           decoration: BoxDecoration(
-                            color: accent,
+                            color: selectedColor,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -1895,14 +1985,18 @@ class _CategorySidebarTile extends StatelessWidget {
   }
 }
 
-class _Section extends StatelessWidget {
+class _Section extends ConsumerWidget {
   final String title;
   final List<Widget> children;
 
   const _Section({required this.title, required this.children});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final isDynamic = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+    final useBlur = isDynamic && !settings.disableBlur;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1916,6 +2010,7 @@ class _Section extends StatelessWidget {
                 bottomRight: Radius.circular(8),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              useBlur: useBlur,
               useExpanded: false,
               child: Text(
                 title,
@@ -1933,6 +2028,7 @@ class _Section extends StatelessWidget {
         PremiumSection(
           borderRadius: BorderRadius.circular(20),
           padding: EdgeInsets.zero,
+          useBlur: useBlur,
           useExpanded: false,
           child: Column(children: children),
         ),

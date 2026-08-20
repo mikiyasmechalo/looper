@@ -343,22 +343,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     ),
                                   ),
 
-                                // Main Content Area
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (nav.activeItem != NavItem.lyrics)
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 24,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                AnimatedContainer(
+                                 // Main Content Area
+                                 Expanded(
+                                   child: Column(
+                                     crossAxisAlignment:
+                                         CrossAxisAlignment.start,
+                                     children: [
+                                       if (nav.activeItem != NavItem.lyrics)
+                                         Padding(
+                                           padding: const EdgeInsets.symmetric(
+                                             horizontal: 24,
+                                           ),
+                                           child: Row(
+                                             children: [
+                                               AnimatedContainer(
                                                   duration: const Duration(
                                                     milliseconds: 300,
                                                   ),
@@ -448,7 +446,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       ],
                                     ),
                                   ),
-                                ),
                               ],
                             );
                           },

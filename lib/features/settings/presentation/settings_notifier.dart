@@ -245,38 +245,27 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateLibraryFolders(List<String> folders) async {
     final newState = _clone(state)..libraryFolders = folders;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateLanguage(String lang) async {
     final newState = _clone(state)..language = lang;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateShuffle(bool shuffle) async {
     final newState = _clone(state)..shuffle = shuffle;
     await _save(newState);
-    state = newState;
   }
 
   Future<void> updateRepeatMode(int mode) async {
     final newState = _clone(state)..repeatMode = mode;
     await _save(newState);
-    state = newState;
   }
 
   Future<void> updateHomeSectionOrder(List<String> newOrder) async {
     final newState = _clone(state)..homeSectionOrder = newOrder;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   AppSettings _clone(AppSettings s) {
@@ -402,7 +391,25 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..listenBrainzUserToken = s.listenBrainzUserToken
       ..scrobbleThresholdPercent = s.scrobbleThresholdPercent
       ..enableWindowsFileAssociations = s.enableWindowsFileAssociations
-      ..enableSmartPlaylists = s.enableSmartPlaylists;
+      ..enableSmartPlaylists = s.enableSmartPlaylists
+      ..albumCardStyleIndex = s.albumCardStyleIndex
+      ..artistCardStyleIndex = s.artistCardStyleIndex;
+  }
+
+  Future<void> updateAlbumCardStyle(int style) async {
+    final newState = _clone(state)..albumCardStyleIndex = style;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateArtistCardStyle(int style) async {
+    final newState = _clone(state)..artistCardStyleIndex = style;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
   }
 
   Future<void> updateEnableSmartPlaylists(bool value) async {
@@ -898,7 +905,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> updateLastPlayedSong(int? songId) async {
     final newState = _clone(state)..lastPlayedSongId = songId;
     await _save(newState);
-    state = newState;
   }
 
   Future<void> updateLastQueueState(
@@ -917,25 +923,21 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       newState.activeQueueName = activeQueueName;
     }
     await _save(newState);
-    state = newState;
   }
 
   Future<void> updateActiveQueueName(String name) async {
     final newState = _clone(state)..activeQueueName = name;
     await _save(newState);
-    state = newState;
   }
 
   Future<void> updateLastPosition(int positionMs) async {
     final newState = _clone(state)..lastPositionMs = positionMs;
     await _save(newState);
-    state = newState;
   }
 
   Future<void> updateVolume(double volume) async {
     final newState = _clone(state)..volume = volume;
     await _save(newState);
-    state = newState;
   }
 
   Future<void> updateDynamicColorActiveLyrics(bool enabled) async {
@@ -1194,6 +1196,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> _save(AppSettings settings) async {
+    state = settings;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(settings);
     });

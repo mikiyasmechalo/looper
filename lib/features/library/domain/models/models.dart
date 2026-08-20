@@ -289,7 +289,13 @@ class AppSettings {
 
   // Playlists: Auto-updating Smart Playlists
   bool enableSmartPlaylists = true;
+
+  // Library Card Styles (0: normal, 1: circle, 2: card, 3: image, 4: imageGapless)
+  int albumCardStyleIndex = 2;
+  int artistCardStyleIndex = 1;
 }
+
+enum CardStyle { normal, circle, card, image, imageGapless }
 
 @collection
 class PlaybackHistoryEntry {

@@ -632,7 +632,13 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   void setPlaylist(List<Song> songs, {int initialIndex = 0, String? queueName}) {
     if (queueName != null && queueName != _activeQueueName) {
       if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
-        _persistNamedQueue(_activeQueueName);
+        _persistNamedQueue(
+          _activeQueueName,
+          songs: List.from(_playlist),
+          currentIndex: _currentIndex,
+          positionMs: state.position.inMilliseconds,
+          isShuffle: state.isShuffle,
+        );
       }
       _activeQueueName = queueName;
       ref.read(settingsProvider.notifier).updateActiveQueueName(queueName);
@@ -688,7 +694,13 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     final wasPlaying = state.isPlaying;
 
     if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
-      await _persistNamedQueue(_activeQueueName);
+      await _persistNamedQueue(
+        _activeQueueName,
+        songs: List.from(_playlist),
+        currentIndex: _currentIndex,
+        positionMs: state.position.inMilliseconds,
+        isShuffle: state.isShuffle,
+      );
     }
 
     final rawSongs = await DbService.isar.songs.getAll(savedQueue.songIds);
@@ -739,7 +751,13 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     if (queueName != null && queueName != _activeQueueName) {
       if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
-        await _persistNamedQueue(_activeQueueName);
+        await _persistNamedQueue(
+          _activeQueueName,
+          songs: List.from(_playlist),
+          currentIndex: _currentIndex,
+          positionMs: state.position.inMilliseconds,
+          isShuffle: state.isShuffle,
+        );
       }
       _activeQueueName = queueName;
       await ref.read(settingsProvider.notifier).updateActiveQueueName(queueName);
@@ -769,7 +787,13 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     if (queueName != null && queueName != _activeQueueName) {
       if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
-        await _persistNamedQueue(_activeQueueName);
+        await _persistNamedQueue(
+          _activeQueueName,
+          songs: List.from(_playlist),
+          currentIndex: _currentIndex,
+          positionMs: state.position.inMilliseconds,
+          isShuffle: state.isShuffle,
+        );
       }
       _activeQueueName = queueName;
       await ref.read(settingsProvider.notifier).updateActiveQueueName(queueName);
@@ -3106,13 +3130,20 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
-  Future<void> _persistNamedQueue(String name) async {
+  Future<void> _persistNamedQueue(
+    String name, {
+    List<Song>? songs,
+    int? currentIndex,
+    int? positionMs,
+    bool? isShuffle,
+  }) async {
+    final targetSongs = songs ?? _playlist;
     final q = SavedQueue()
       ..name = name
-      ..songIds = _playlist.map((s) => s.id).toList()
-      ..currentIndex = _currentIndex
-      ..positionMs = state.position.inMilliseconds
-      ..isShuffle = state.isShuffle
+      ..songIds = targetSongs.map((s) => s.id).toList()
+      ..currentIndex = currentIndex ?? _currentIndex
+      ..positionMs = positionMs ?? state.position.inMilliseconds
+      ..isShuffle = isShuffle ?? state.isShuffle
       ..lastPlayed = DateTime.now()
       ..isPermanent = (name == QueueRepository.allSongsQueueName);
     await _queueRepo.save(q);

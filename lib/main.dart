@@ -161,16 +161,16 @@ void main(List<String> args) async {
           );
           WindowOptions windowOptions = WindowOptions(
             size: initialSize,
-            center: windowState.x == null || windowState.y == null,
+            center: windowState.x == null || windowState.y == null || windowState.x! < 0 || windowState.y! < 0,
             skipTaskbar: false,
             titleBarStyle: TitleBarStyle.hidden,
             title: 'Looper Player',
-            backgroundColor: Colors.transparent,
+            backgroundColor: const Color(0xFF111111),
           );
           await windowManager.waitUntilReadyToShow(windowOptions, () async {
             await windowManager.setAlwaysOnTop(false);
-            await windowManager.setMinimumSize(const Size(800, 800));
-            if (windowState.x != null && windowState.y != null) {
+            await windowManager.setMinimumSize(const Size(800, 600));
+            if (windowState.x != null && windowState.y != null && windowState.x! >= 0 && windowState.y! >= 0) {
               await windowManager.setPosition(Offset(windowState.x!, windowState.y!));
             }
             if (windowState.isMaximized) {
@@ -311,10 +311,11 @@ class MyApp extends ConsumerWidget {
         scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         title: 'Looper Player',
-        color: Colors.transparent,
+        color: const Color(0xFF111111),
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: colorScheme,
+          scaffoldBackgroundColor: colorScheme.surface,
           fontFamily: fontFamily,
           textTheme: textTheme,
         ),
@@ -330,6 +331,7 @@ class MyApp extends ConsumerWidget {
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) {
           final showPerformanceOptimizer = settings?.showPerformanceOptimizer ?? false;
+          if (!showPerformanceOptimizer) return child!;
           return PerformanceOptimizer(
             enabled: showPerformanceOptimizer,
             showDashboard: showPerformanceOptimizer,

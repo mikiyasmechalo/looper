@@ -412,7 +412,7 @@ class CollectionDetailView extends ConsumerWidget {
               useExpanded: false,
               onTap: () {
                 HapticFeedback.mediumImpact();
-                ref.read(playbackProvider.notifier).setPlaylist(songsToRender, queueName: title);
+                ref.read(playbackProvider.notifier).setPlaylist(songsToRender, queueName: titleToRender);
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,

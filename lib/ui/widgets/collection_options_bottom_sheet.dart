@@ -22,6 +22,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/playlists/domain/smart_playlist.dart';
 import 'package:looper_player/ui/widgets/app_input_dialog.dart';
 import 'package:looper_player/ui/widgets/edit_album_sheet.dart';
+import 'package:looper_player/ui/widgets/edit_artist_sheet.dart';
+import 'package:looper_player/core/artwork_save_helper.dart';
+import 'package:looper_player/core/ui_utils.dart';
+import 'package:looper_player/core/navigation_provider.dart';
 
 /// Shows the context menu (Play / Shuffle / Play Next / Add to Queue / Save as Custom Playlist) for a smart playlist.
 Future<void> showSmartPlaylistOptionsBottomSheet({
@@ -84,6 +88,7 @@ Future<void> showAlbumOptionsBottomSheet({
     subtitle: album.artist,
     artPath: album.artPath,
     songs: songs,
+    album: album,
     editActionLabel: 'Edit Album',
     onEditAction: () async {
       Navigator.pop(context);
@@ -144,6 +149,12 @@ Future<void> showArtistOptionsBottomSheet({
     imageUrl: isNetworkImage ? artist.artistImageUrl : null,
     images: artist.artistImages,
     songs: songs,
+    artist: artist,
+    editActionLabel: 'Edit Artist',
+    onEditAction: () async {
+      Navigator.pop(context);
+      showEditArtistSheet(context, artist, songs);
+    },
     imageActionLabel: 'Set Artist Image',
     onImageAction: () async {
       Navigator.pop(context);
@@ -241,6 +252,8 @@ void showCollectionOptionsBottomSheet({
   List<String>? images,
   required List<Song> songs,
   Playlist? playlist,
+  Album? album,
+  Artist? artist,
   List<List<Song>>? shuffleGroups,
   String? imageActionLabel,
   Future<void> Function()? onImageAction,
@@ -263,6 +276,8 @@ void showCollectionOptionsBottomSheet({
       images: images,
       songs: songs,
       playlist: playlist,
+      album: album,
+      artist: artist,
       shuffleGroups: shuffleGroups,
       imageActionLabel: imageActionLabel,
       onImageAction: onImageAction,
@@ -282,6 +297,8 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   final List<String>? images;
   final List<Song> songs;
   final Playlist? playlist;
+  final Album? album;
+  final Artist? artist;
   final List<List<Song>>? shuffleGroups;
   final String? imageActionLabel;
   final Future<void> Function()? onImageAction;
@@ -298,6 +315,8 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
     this.images,
     required this.songs,
     this.playlist,
+    this.album,
+    this.artist,
     this.shuffleGroups,
     this.imageActionLabel,
     this.onImageAction,
@@ -399,6 +418,9 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final accentColor = Theme.of(context).colorScheme.primary;
+    final int totalSeconds = songs.fold(0, (acc, s) => acc + (s.duration ?? 0));
+    final String durationStr = UiUtils.formatDuration(Duration(seconds: totalSeconds));
+    final String defaultSubtitle = '${songs.length} ${l10n.songs} • $durationStr';
 
     return Container(
       decoration: const BoxDecoration(
@@ -458,7 +480,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        subtitle ?? '${songs.length} ${l10n.songs}',
+                        subtitle != null ? '$subtitle • $defaultSubtitle' : defaultSubtitle,
                         style: AppFonts.jostStyle(
                           fontSize: 13,
                           color: Colors.white54,
@@ -503,9 +525,9 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                             ref.read(playbackProvider.notifier);
                         if (shuffleGroups != null &&
                             shuffleGroups!.isNotEmpty) {
-                          notifier.playShuffledGrouped(shuffleGroups!);
+                          notifier.playShuffledGrouped(shuffleGroups!, queueName: title);
                         } else {
-                          notifier.playShuffled(songs);
+                          notifier.playShuffled(songs, queueName: title);
                         }
                         Navigator.pop(context);
                       },
@@ -556,6 +578,73 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                         _showPlaylistSelector(context, ref);
                       },
                     ),
+                    MenuOptionTile(
+                      label: 'Favorite All Songs',
+                      icon: LucideIcons.heart,
+                      iconColor: accentColor,
+                      onTap: () async {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                        for (final s in songs) {
+                          s.isFavorite = true;
+                        }
+                        await DbService.isar.writeTxn(() => DbService.isar.songs.putAll(songs));
+                        scaffoldMessengerKey.currentState?.clearSnackBars();
+                        scaffoldMessengerKey.currentState?.showSnackBar(
+                          SnackBar(
+                            content: Text('Favorited all ${songs.length} songs'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                    ),
+                    if (artPath != null || imageUrl != null)
+                      MenuOptionTile(
+                        label: 'Save Artwork to Pictures',
+                        icon: LucideIcons.download,
+                        iconColor: accentColor,
+                        onTap: () async {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                          await ArtworkSaveHelper.exportArtworkToPicturesFolder(
+                            context: context,
+                            sourceArtPath: artPath ?? imageUrl,
+                            defaultFileName: title,
+                          );
+                        },
+                      ),
+                    if (album != null && album!.artist != null && album!.artist!.isNotEmpty)
+                      MenuOptionTile(
+                        label: 'Go to Artist (${album!.artist})',
+                        icon: LucideIcons.user,
+                        iconColor: accentColor,
+                        onTap: () async {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                          final artistSongs = await DbService.isar.songs
+                              .filter()
+                              .artistEqualTo(album!.artist!)
+                              .or()
+                              .albumArtistEqualTo(album!.artist!)
+                              .findAll();
+                          final artistRecord = await DbService.isar.artists
+                              .filter()
+                              .nameEqualTo(album!.artist!, caseSensitive: false)
+                              .findFirst();
+                          final artistArt = artistRecord?.artistImageUrl;
+                          final isLocal = artistArt != null && !artistArt.startsWith('http');
+                          final isNetwork = artistArt != null && artistArt.startsWith('http');
+                          ref.read(appNavigationProvider.notifier).showCollection(
+                                title: album!.artist!,
+                                subtitle: 'Artist',
+                                art: isLocal ? artistArt : artistRecord?.artPath,
+                                imageUrl: isNetwork ? artistArt : null,
+                                images: artistRecord?.artistImages,
+                                songs: artistSongs,
+                                highlightItem: NavItem.artists,
+                              );
+                        },
+                      ),
                     if (playlist != null)
                       MenuOptionTile(
                         label: 'Export Playlist',

@@ -127,7 +127,7 @@ Future<void> showPlaylistOptionsBottomSheet({
                           HapticFeedback.lightImpact();
                           ref
                               .read(playbackProvider.notifier)
-                              .playShuffled(songs);
+                              .playShuffled(songs, queueName: playlist.name);
                           Navigator.pop(context);
                         },
                       ),

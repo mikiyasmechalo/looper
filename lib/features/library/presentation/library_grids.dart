@@ -295,7 +295,10 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
                             HapticFeedback.lightImpact();
                             ref
                                 .read(playbackProvider.notifier)
-                                .playShuffledGrouped(_allAlbumsGroups(ref, albums));
+                                .playShuffledGrouped(
+                                  _allAlbumsGroups(ref, albums),
+                                  queueName: 'All Albums',
+                                );
                           },
                     icon: const Icon(LucideIcons.shuffle, size: 18),
                     tooltip: l10n.shuffleTitle,
@@ -317,6 +320,15 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
                     ),
                   ),
                   IconButton(
+                    onPressed: () => _showCardStyleMenu(context, ref, isAlbum: true),
+                    icon: const Icon(LucideIcons.layoutGrid, size: 16),
+                    tooltip: 'Card Style',
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                  ),
+                  IconButton(
                     onPressed: () => _showAllAlbumsOptions(context, ref, albums, l10n),
                     icon: const Icon(LucideIcons.moreHorizontal, size: 16),
                     tooltip: 'Options',
@@ -330,18 +342,43 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
             ),
             Expanded(
               child: ClipRect(
-                child: GridView.builder(
-                  controller: _scrollController,
-                  padding: EdgeInsets.all(24.s),
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 200.s,
-                    childAspectRatio: 0.80,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 20,
-                  ),
-                  itemCount: albums.length,
-                  itemBuilder: (context, index) =>
-                      _AlbumCard(album: albums[index]),
+                child: Builder(
+                  builder: (context) {
+                    final albumCardStyle = CardStyle.values[ref
+                        .watch(settingsProvider.select((s) => s.albumCardStyleIndex))
+                        .clamp(0, CardStyle.values.length - 1)];
+
+                    final double maxExtent = (albumCardStyle == CardStyle.card || albumCardStyle == CardStyle.image)
+                        ? 175.s
+                        : 185.s;
+                    final double spacing = albumCardStyle == CardStyle.imageGapless
+                        ? 0
+                        : ((albumCardStyle == CardStyle.card || albumCardStyle == CardStyle.image) ? 12 : 14);
+                    final double aspectRatio = switch (albumCardStyle) {
+                      CardStyle.normal => 0.74,
+                      CardStyle.circle => 0.81,
+                      CardStyle.card => 0.78,
+                      CardStyle.image => 1.0,
+                      CardStyle.imageGapless => 1.0,
+                    };
+                    final EdgeInsets padding = albumCardStyle == CardStyle.imageGapless
+                        ? EdgeInsets.zero
+                        : EdgeInsets.all(20.s);
+
+                    return GridView.builder(
+                      controller: _scrollController,
+                      padding: padding,
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: maxExtent,
+                        childAspectRatio: aspectRatio,
+                        crossAxisSpacing: spacing,
+                        mainAxisSpacing: spacing,
+                      ),
+                      itemCount: albums.length,
+                      itemBuilder: (context, index) =>
+                          _AlbumCard(album: albums[index]),
+                    );
+                  },
                 ),
               ),
             ),
@@ -364,8 +401,8 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
     showCollectionOptionsBottomSheet(
       context: context,
       ref: ref,
-      title: '${albums.length} ${l10n.albums}',
-      subtitle: '${songs.length} ${l10n.songs}',
+      title: 'All Albums',
+      subtitle: '${albums.length} ${l10n.albums} • ${songs.length} ${l10n.songs}',
       songs: songs,
       shuffleGroups: groups,
     );
@@ -393,12 +430,23 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
   }
 }
 
-class _AlbumCard extends ConsumerWidget {
+class _AlbumCard extends ConsumerStatefulWidget {
   final Album album;
   const _AlbumCard({required this.album});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AlbumCard> createState() => _AlbumCardState();
+}
+
+class _AlbumCardState extends ConsumerState<_AlbumCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final album = widget.album;
+    final cardStyle = CardStyle.values[ref
+        .watch(settingsProvider.select((s) => s.albumCardStyleIndex))
+        .clamp(0, CardStyle.values.length - 1)];
     final isDynamic = ref.watch(settingsProvider).enableDynamicTheming;
     final isCurrentAlbum = ref.watch(
       playbackProvider.select((s) => s.currentSong?.album == album.name),
@@ -409,119 +457,104 @@ class _AlbumCard extends ConsumerWidget {
         nav.activeItem == NavItem.collectionDetail &&
         nav.collectionTitle == album.name;
 
-    return GestureDetector(
-      onSecondaryTap: () => showAlbumOptionsBottomSheet(
-        context: context,
-        ref: ref,
-        album: album,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.hardEdge,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: InkWell(
-          onTap: () async {
-            final songs = await DbService.isar.songs
-                .filter()
-                .albumEqualTo(album.name)
-                .findAll();
-            ref
-                .read(appNavigationProvider.notifier)
-                .showCollection(
-                  title: album.name,
-                  subtitle: album.artist,
-                  art: album.artPath,
-                  songs: songs,
-                  highlightItem: NavItem.albums,
-                );
-          },
-          borderRadius: BorderRadius.circular(24),
-          child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(12.s),
+    Widget buildArtwork({
+      BorderRadius? borderRadius,
+      BoxShape shape = BoxShape.rectangle,
+      bool isOverlay = false,
+    }) {
+      final effectiveRadius = shape == BoxShape.circle
+          ? BorderRadius.zero
+          : (borderRadius ?? BorderRadius.circular(14));
+
+      return Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: isSelected
-              ? const Color.fromARGB(
-                  255,
-                  53,
-                  53,
-                  53,
-                ).withValues(alpha: isDynamic ? 0.3 : 0.1)
-              : Colors.transparent,
-          border: isSelected
-              ? Border.all(
-                  color: Colors.white10.withValues(alpha: 0.1),
-                  width: 1,
-                )
-              : null,
+          shape: shape,
+          borderRadius: shape == BoxShape.circle ? null : effectiveRadius,
+          color: isOverlay ? Colors.transparent : Colors.white.withValues(alpha: 0.05),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-                child: PlayingOverlay(
-                  isPlaying: isCurrentAlbum && isPlaying,
-                  borderRadius: 16,
-                  child: album.artPath != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: OptimizedImage(
-                            imagePath: album.artPath,
-                            fit: BoxFit.cover,
-                            placeholder: const Center(
-                              child: Icon(
-                                LucideIcons.disc,
-                                size: 48,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                        )
-                      : const Center(
-                          child: Icon(
-                            LucideIcons.disc,
-                            size: 48,
-                            color: Colors.grey,
-                          ),
+        child: PlayingOverlay(
+          isPlaying: isCurrentAlbum && isPlaying,
+          borderRadius:
+              shape == BoxShape.circle ? 999 : effectiveRadius.topLeft.x,
+          child: album.artPath != null
+              ? (shape == BoxShape.circle
+                  ? ClipOval(
+                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                      child: OptimizedImage(
+                        imagePath: album.artPath,
+                        fit: BoxFit.cover,
+                        placeholder: const Center(
+                          child: Icon(LucideIcons.disc, size: 48, color: Colors.grey),
                         ),
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: effectiveRadius,
+                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                      child: OptimizedImage(
+                        imagePath: album.artPath,
+                        fit: BoxFit.cover,
+                        placeholder: const Center(
+                          child: Icon(LucideIcons.disc, size: 48, color: Colors.grey),
+                        ),
+                      ),
+                    ))
+              : const Center(
+                  child: Icon(LucideIcons.disc, size: 48, color: Colors.grey),
                 ),
-              ),
+        ),
+      );
+    }
+
+    Future<void> onCardTap() async {
+      final songs = await DbService.isar.songs
+          .filter()
+          .albumEqualTo(album.name)
+          .findAll();
+      ref.read(appNavigationProvider.notifier).showCollection(
+            title: album.name,
+            subtitle: album.artist,
+            art: album.artPath,
+            songs: songs,
+            highlightItem: NavItem.albums,
+          );
+    }
+
+    Widget cardContent;
+
+    switch (cardStyle) {
+      case CardStyle.normal:
+        cardContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: buildArtwork(borderRadius: BorderRadius.circular(14)),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     album.name,
                     style: AppFonts.jostStyle(
-                      fontWeight: FontWeight.normal,
+                      fontWeight: FontWeight.w600,
                       fontSize: 14.ts,
+                      color: Colors.white,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    album.artist ?? 'Unknown Artist',
+                    album.artist ?? AppLocalizations.of(context)!.unknownArtist,
                     style: AppFonts.jostStyle(
-                      color: Colors.grey[400],
                       fontSize: 12.ts,
+                      color: Colors.white60,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -530,8 +563,324 @@ class _AlbumCard extends ConsumerWidget {
               ),
             ),
           ],
+        );
+        break;
+
+      case CardStyle.circle:
+        cardContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
+              child: AspectRatio(
+                aspectRatio: 1.0,
+                child: buildArtwork(shape: BoxShape.circle),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    album.name,
+                    style: AppFonts.jostStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14.ts,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    album.artist ?? AppLocalizations.of(context)!.unknownArtist,
+                    style: AppFonts.jostStyle(
+                      fontSize: 12.ts,
+                      color: Colors.white60,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+        break;
+
+      case CardStyle.card:
+        cardContent = AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: _isHovered
+                ? const Color(0xFF282828)
+                : const Color(0xFF181818),
+          ),
+          padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AspectRatio(
+                aspectRatio: 1.0,
+                child: buildArtwork(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                album.name,
+                style: AppFonts.jostStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.ts,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+              Text(
+                album.artist ?? AppLocalizations.of(context)!.unknownArtist,
+                style: AppFonts.jostStyle(
+                  fontSize: 12.ts,
+                  color: Colors.white60,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        );
+        break;
+
+      case CardStyle.image:
+        cardContent = ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              buildArtwork(
+                borderRadius: BorderRadius.zero,
+                isOverlay: true,
+              ),
+              Positioned(
+                left: -1,
+                right: -1,
+                top: 0,
+                bottom: -2,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Color.fromARGB(60, 0, 0, 0),
+                        Color.fromARGB(220, 0, 0, 0),
+                        Colors.black,
+                        Colors.black,
+                      ],
+                      stops: [0.15, 0.45, 0.72, 0.88, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 6,
+                child: const ColoredBox(color: Colors.black),
+              ),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 8,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      album.name,
+                      style: AppFonts.jostStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.ts,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      album.artist ?? AppLocalizations.of(context)!.unknownArtist,
+                      style: AppFonts.jostStyle(
+                        fontSize: 12.ts,
+                        color: Colors.white70,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Positioned.fill(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: _isHovered
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: _isHovered
+                          ? Colors.white.withValues(alpha: 0.22)
+                          : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        break;
+
+      case CardStyle.imageGapless:
+        cardContent = FractionallySizedBox(
+          widthFactor: 1.004,
+          heightFactor: 1.004,
+          alignment: Alignment.center,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              buildArtwork(
+                borderRadius: BorderRadius.zero,
+                isOverlay: true,
+              ),
+              Positioned(
+                left: -1,
+                right: -1,
+                top: 0,
+                bottom: -2,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Color.fromARGB(60, 0, 0, 0),
+                        Color.fromARGB(220, 0, 0, 0),
+                        Colors.black,
+                        Colors.black,
+                      ],
+                      stops: [0.15, 0.45, 0.72, 0.88, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 6,
+                child: const ColoredBox(color: Colors.black),
+              ),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 8,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      album.name,
+                      style: AppFonts.jostStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.ts,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      album.artist ?? AppLocalizations.of(context)!.unknownArtist,
+                      style: AppFonts.jostStyle(
+                        fontSize: 12.ts,
+                        color: Colors.white70,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Positioned.fill(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  color: _isHovered
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                ),
+              ),
+            ],
+          ),
+        );
+        break;
+    }
+
+    final BorderRadius cardRadius = cardStyle == CardStyle.imageGapless
+        ? BorderRadius.zero
+        : BorderRadius.circular(
+            (cardStyle == CardStyle.card || cardStyle == CardStyle.image)
+                ? 14
+                : 18);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onSecondaryTap: () => showAlbumOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          album: album,
         ),
-        ),
+        child: Material(
+          color: Colors.transparent,
+          clipBehavior: Clip.none,
+          shape: RoundedRectangleBorder(borderRadius: cardRadius),
+          child: InkWell(
+            onTap: onCardTap,
+            borderRadius: cardRadius,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                borderRadius: cardRadius,
+                color: isSelected
+                    ? const Color.fromARGB(255, 53, 53, 53).withValues(alpha: isDynamic ? 0.3 : 0.1)
+                    : Colors.transparent,
+                border: isSelected &&
+                        cardStyle != CardStyle.imageGapless &&
+                        cardStyle != CardStyle.card
+                    ? Border.all(
+                        color: Colors.white10.withValues(alpha: 0.1),
+                        width: 1,
+                      )
+                    : null,
+              ),
+              child: cardContent,
+            ),
+          ),
         ),
       ),
     );
@@ -739,7 +1088,10 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
                             HapticFeedback.lightImpact();
                             ref
                                 .read(playbackProvider.notifier)
-                                .playShuffledGrouped(_allArtistsGroups(ref, artists));
+                                .playShuffledGrouped(
+                                  _allArtistsGroups(ref, artists),
+                                  queueName: 'All Artists',
+                                );
                           },
                     icon: const Icon(LucideIcons.shuffle, size: 18),
                     tooltip: l10n.shuffleTitle,
@@ -761,6 +1113,15 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
                     ),
                   ),
                   IconButton(
+                    onPressed: () => _showCardStyleMenu(context, ref, isAlbum: false),
+                    icon: const Icon(LucideIcons.layoutGrid, size: 16),
+                    tooltip: 'Card Style',
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                  ),
+                  IconButton(
                     onPressed: () => _showAllArtistsOptions(context, ref, artists, l10n),
                     icon: const Icon(LucideIcons.moreHorizontal, size: 16),
                     tooltip: 'Options',
@@ -774,17 +1135,42 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
             ),
             Expanded(
               child: ClipRect(
-                child: GridView.builder(
-                  controller: _scrollController,
-                  padding: EdgeInsets.all(24.s),
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 180.s,
-                    childAspectRatio: 0.8,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 20,
-                  ),
-                  itemCount: artists.length,
-                  itemBuilder: (context, index) => _ArtistCard(artist: artists[index]),
+                child: Builder(
+                  builder: (context) {
+                    final artistCardStyle = CardStyle.values[ref
+                        .watch(settingsProvider.select((s) => s.artistCardStyleIndex))
+                        .clamp(0, CardStyle.values.length - 1)];
+
+                    final double maxExtent = (artistCardStyle == CardStyle.card || artistCardStyle == CardStyle.image)
+                        ? 175.s
+                        : 185.s;
+                    final double spacing = artistCardStyle == CardStyle.imageGapless
+                        ? 0
+                        : ((artistCardStyle == CardStyle.card || artistCardStyle == CardStyle.image) ? 12 : 14);
+                    final double aspectRatio = switch (artistCardStyle) {
+                      CardStyle.normal => 0.82,
+                      CardStyle.circle => 0.88,
+                      CardStyle.card => 0.86,
+                      CardStyle.image => 1.0,
+                      CardStyle.imageGapless => 1.0,
+                    };
+                    final EdgeInsets padding = artistCardStyle == CardStyle.imageGapless
+                        ? EdgeInsets.zero
+                        : EdgeInsets.all(20.s);
+
+                    return GridView.builder(
+                      controller: _scrollController,
+                      padding: padding,
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: maxExtent,
+                        childAspectRatio: aspectRatio,
+                        crossAxisSpacing: spacing,
+                        mainAxisSpacing: spacing,
+                      ),
+                      itemCount: artists.length,
+                      itemBuilder: (context, index) => _ArtistCard(artist: artists[index]),
+                    );
+                  },
                 ),
               ),
             ),
@@ -807,8 +1193,8 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
     showCollectionOptionsBottomSheet(
       context: context,
       ref: ref,
-      title: '${artists.length} ${l10n.artists}',
-      subtitle: '${songs.length} ${l10n.songs}',
+      title: 'All Artists',
+      subtitle: '${artists.length} ${l10n.artists} • ${songs.length} ${l10n.songs}',
       songs: songs,
       shuffleGroups: groups,
     );
@@ -840,128 +1226,468 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
   }
 }
 
-class _ArtistCard extends ConsumerWidget {
+void _showCardStyleMenu(BuildContext context, WidgetRef ref, {required bool isAlbum}) {
+  final l10n = AppLocalizations.of(context)!;
+  final currentStyleIndex = ref.read(settingsProvider.select(
+    (s) => isAlbum ? s.albumCardStyleIndex : s.artistCardStyleIndex,
+  ));
+
+  final options = [
+    (CardStyle.normal, 'Normal', LucideIcons.square),
+    (CardStyle.circle, 'Circle', LucideIcons.circle),
+    (CardStyle.card, 'Card', LucideIcons.panelTop),
+    (CardStyle.image, 'Overlay Image', LucideIcons.image),
+    (CardStyle.imageGapless, 'Gapless Grid', LucideIcons.layoutGrid),
+  ];
+
+  showModalBottomSheet(
+    context: context,
+    useRootNavigator: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => Consumer(
+      builder: (context, ref, _) {
+        final accent = Theme.of(context).colorScheme.primary;
+        return AppBottomSheetContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  '${isAlbum ? l10n.albums : l10n.artists} Card Style',
+                  style: AppFonts.jostStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const Divider(color: Colors.white10, height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  children: [
+                    for (final (style, label, icon) in options)
+                      _GridSortOption(
+                        label: label,
+                        icon: icon,
+                        isSelected: currentStyleIndex == style.index,
+                        accentColor: accent,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          if (isAlbum) {
+                            ref.read(settingsProvider.notifier).updateAlbumCardStyle(style.index);
+                          } else {
+                            ref.read(settingsProvider.notifier).updateArtistCardStyle(style.index);
+                          }
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
+class _ArtistCard extends ConsumerStatefulWidget {
   final Artist artist;
   const _ArtistCard({required this.artist});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ArtistCard> createState() => _ArtistCardState();
+}
+
+class _ArtistCardState extends ConsumerState<_ArtistCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final artist = widget.artist;
+    final cardStyle = CardStyle.values[ref
+        .watch(settingsProvider.select((s) => s.artistCardStyleIndex))
+        .clamp(0, CardStyle.values.length - 1)];
     final isDynamic = ref.watch(settingsProvider).enableDynamicTheming;
     final nav = ref.watch(appNavigationProvider);
     final isSelected =
         nav.activeItem == NavItem.collectionDetail &&
         nav.collectionTitle == artist.name;
 
-    return GestureDetector(
-      onSecondaryTap: () => showArtistOptionsBottomSheet(
-        context: context,
-        ref: ref,
-        artist: artist,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.hardEdge,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: InkWell(
-          onTap: () async {
-            final songs = await DbService.isar.songs
-                .filter()
-                .artistEqualTo(artist.name)
-                .or()
-                .albumArtistEqualTo(artist.name)
-                .findAll();
-            final isLocalImage =
-                artist.artistImageUrl != null &&
-                !artist.artistImageUrl!.startsWith('http');
-            final isNetworkImage =
-                artist.artistImageUrl != null &&
-                artist.artistImageUrl!.startsWith('http');
+    Widget buildArtwork({
+      BorderRadius? borderRadius,
+      BoxShape shape = BoxShape.rectangle,
+      bool isOverlay = false,
+    }) {
+      final effectiveRadius = shape == BoxShape.circle
+          ? BorderRadius.zero
+          : (borderRadius ?? BorderRadius.circular(14));
 
-            ref
-                .read(appNavigationProvider.notifier)
-                .showCollection(
-                  title: artist.name,
-                  subtitle: AppLocalizations.of(context)!.artists,
-                  art: isLocalImage ? artist.artistImageUrl : artist.artPath,
-                  imageUrl: isNetworkImage ? artist.artistImageUrl : null,
-                  images: artist.artistImages,
-                  songs: songs,
-                  highlightItem: NavItem.artists,
-                );
-          },
-          borderRadius: BorderRadius.circular(24),
-          child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(12.s),
+      final isLocalImage =
+          artist.artistImageUrl != null &&
+          !artist.artistImageUrl!.startsWith('http');
+      final isNetworkImage =
+          artist.artistImageUrl != null &&
+          artist.artistImageUrl!.startsWith('http');
+
+      return Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: isSelected
-              ? const Color.fromARGB(
-                  255,
-                  53,
-                  53,
-                  53,
-                ).withValues(alpha: isDynamic ? 0.3 : 0.1)
-              : Colors.transparent,
-          border: isSelected
-              ? Border.all(
-                  color: Colors.white10.withValues(alpha: 0.1),
-                  width: 1,
-                )
-              : null,
+          shape: shape,
+          borderRadius: shape == BoxShape.circle ? null : effectiveRadius,
+          color: isOverlay ? Colors.transparent : Colors.white.withValues(alpha: 0.05),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                      color: Colors.white.withValues(alpha: 0.05),
+        child: shape == BoxShape.circle
+            ? ClipOval(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                child: ArtistImage(
+                  images: artist.artistImages,
+                  imageUrl: isNetworkImage ? artist.artistImageUrl : null,
+                  imagePath: isLocalImage ? artist.artistImageUrl : artist.artPath,
+                  fit: BoxFit.cover,
+                  placeholder: const Center(
+                    child: Icon(
+                      LucideIcons.user,
+                      size: 48,
+                      color: Colors.grey,
                     ),
-                    child: ClipOval(
-                      child: ArtistImage(
-                        images: artist.artistImages,
-                        imageUrl: artist.artistImageUrl,
-                        imagePath: artist.artPath,
-                        fit: BoxFit.cover,
-                        placeholder: const Center(
-                          child: Icon(
-                            LucideIcons.user,
-                            size: 48,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
+                  ),
+                ),
+              )
+            : ClipRRect(
+                borderRadius: effectiveRadius,
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                child: ArtistImage(
+                  images: artist.artistImages,
+                  imageUrl: isNetworkImage ? artist.artistImageUrl : null,
+                  imagePath: isLocalImage ? artist.artistImageUrl : artist.artPath,
+                  fit: BoxFit.cover,
+                  placeholder: const Center(
+                    child: Icon(
+                      LucideIcons.user,
+                      size: 48,
+                      color: Colors.grey,
                     ),
                   ),
                 ),
               ),
+      );
+    }
+
+    Future<void> onCardTap() async {
+      final songs = await DbService.isar.songs
+          .filter()
+          .artistEqualTo(artist.name)
+          .or()
+          .albumArtistEqualTo(artist.name)
+          .findAll();
+      final isLocalImage =
+          artist.artistImageUrl != null &&
+          !artist.artistImageUrl!.startsWith('http');
+      final isNetworkImage =
+          artist.artistImageUrl != null &&
+          artist.artistImageUrl!.startsWith('http');
+
+      ref.read(appNavigationProvider.notifier).showCollection(
+            title: artist.name,
+            subtitle: AppLocalizations.of(context)!.artists,
+            art: isLocalImage ? artist.artistImageUrl : artist.artPath,
+            imageUrl: isNetworkImage ? artist.artistImageUrl : null,
+            images: artist.artistImages,
+            songs: songs,
+            highlightItem: NavItem.artists,
+          );
+    }
+
+    Widget cardContent;
+
+    switch (cardStyle) {
+      case CardStyle.normal:
+        cardContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: buildArtwork(borderRadius: BorderRadius.circular(14)),
             ),
-            const SizedBox(height: 12),
-            Text(
-              artist.name,
-              style: AppFonts.jostStyle(
-                fontWeight: FontWeight.normal,
-                fontSize: 14.ts,
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                artist.name,
+                style: AppFonts.jostStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.ts,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
+        );
+        break;
+
+      case CardStyle.circle:
+        cardContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
+              child: AspectRatio(
+                aspectRatio: 1.0,
+                child: buildArtwork(shape: BoxShape.circle),
+              ),
+            ),
+            const SizedBox(height: 3),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                artist.name,
+                style: AppFonts.jostStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.ts,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        );
+        break;
+
+      case CardStyle.card:
+        cardContent = AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: _isHovered
+                ? const Color(0xFF282828)
+                : const Color(0xFF181818),
+          ),
+          padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AspectRatio(
+                aspectRatio: 1.0,
+                child: buildArtwork(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                artist.name,
+                style: AppFonts.jostStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.ts,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        );
+        break;
+
+      case CardStyle.image:
+        cardContent = ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              buildArtwork(
+                borderRadius: BorderRadius.zero,
+                isOverlay: true,
+              ),
+              Positioned(
+                left: -1,
+                right: -1,
+                top: 0,
+                bottom: -2,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Color.fromARGB(60, 0, 0, 0),
+                        Color.fromARGB(220, 0, 0, 0),
+                        Colors.black,
+                        Colors.black,
+                      ],
+                      stops: [0.15, 0.45, 0.72, 0.88, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 6,
+                child: const ColoredBox(color: Colors.black),
+              ),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 8,
+                child: Text(
+                  artist.name,
+                  style: AppFonts.jostStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.ts,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Positioned.fill(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: _isHovered
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: _isHovered
+                          ? Colors.white.withValues(alpha: 0.22)
+                          : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        break;
+
+      case CardStyle.imageGapless:
+        cardContent = FractionallySizedBox(
+          widthFactor: 1.004,
+          heightFactor: 1.004,
+          alignment: Alignment.center,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              buildArtwork(
+                borderRadius: BorderRadius.zero,
+                isOverlay: true,
+              ),
+              Positioned(
+                left: -1,
+                right: -1,
+                top: 0,
+                bottom: -2,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Color.fromARGB(60, 0, 0, 0),
+                        Color.fromARGB(220, 0, 0, 0),
+                        Colors.black,
+                        Colors.black,
+                      ],
+                      stops: [0.15, 0.45, 0.72, 0.88, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 6,
+                child: const ColoredBox(color: Colors.black),
+              ),
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 8,
+                child: Text(
+                  artist.name,
+                  style: AppFonts.jostStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.ts,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Positioned.fill(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  color: _isHovered
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                ),
+              ),
+            ],
+          ),
+        );
+        break;
+    }
+
+    final BorderRadius cardRadius = cardStyle == CardStyle.imageGapless
+        ? BorderRadius.zero
+        : BorderRadius.circular(
+            (cardStyle == CardStyle.card || cardStyle == CardStyle.image)
+                ? 14
+                : 18);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onSecondaryTap: () => showArtistOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          artist: artist,
         ),
-        ),
+        child: Material(
+          color: Colors.transparent,
+          clipBehavior: Clip.none,
+          shape: RoundedRectangleBorder(borderRadius: cardRadius),
+          child: InkWell(
+            onTap: onCardTap,
+            borderRadius: cardRadius,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                borderRadius: cardRadius,
+                color: isSelected
+                    ? const Color.fromARGB(255, 53, 53, 53).withValues(alpha: isDynamic ? 0.3 : 0.1)
+                    : Colors.transparent,
+                border: isSelected &&
+                        cardStyle != CardStyle.imageGapless &&
+                        cardStyle != CardStyle.card
+                    ? Border.all(
+                        color: Colors.white10.withValues(alpha: 0.1),
+                        width: 1,
+                      )
+                    : null,
+              ),
+              child: cardContent,
+            ),
+          ),
         ),
       ),
     );
