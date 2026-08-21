@@ -569,6 +569,26 @@ class SettingsView extends ConsumerWidget {
       ),
       _SearchItem(
         category: 'Library & Files',
+        title: 'Song View Style',
+        subtitle: 'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
+        widget: _PremiumDropdownRow<int>(
+          icon: LucideIcons.layoutList,
+          title: 'Song View Style',
+          subtitle: 'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
+          value: settings.songViewStyleIndex.clamp(0, 3),
+          items: const [
+            DropdownMenuItem(value: 0, child: Text('Normal List')),
+            DropdownMenuItem(value: 1, child: Text('Compact List')),
+            DropdownMenuItem(value: 2, child: Text('Text Only')),
+            DropdownMenuItem(value: 3, child: Text('Grid Cards')),
+          ],
+          onChanged: (v) {
+            if (v != null) ref.read(settingsProvider.notifier).updateSongViewStyle(v);
+          },
+        ),
+      ),
+      _SearchItem(
+        category: 'Library & Files',
         title: 'Album Card Style',
         subtitle: 'Choose visual layout for album grid items',
         widget: _PremiumDropdownRow<int>(
@@ -1165,6 +1185,25 @@ class SettingsView extends ConsumerWidget {
           onChanged: (value) {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(value);
+          },
+          isLast: false,
+        ),
+        _PremiumDropdownRow<int>(
+          icon: LucideIcons.layoutList,
+          title: 'Song View Style',
+          subtitle: 'Choose visual layout for songs list',
+          value: settings.songViewStyleIndex.clamp(0, 3),
+          items: const [
+            DropdownMenuItem(value: 0, child: Text('Normal List')),
+            DropdownMenuItem(value: 1, child: Text('Compact List')),
+            DropdownMenuItem(value: 2, child: Text('Text Only')),
+            DropdownMenuItem(value: 3, child: Text('Grid Cards')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              HapticFeedback.lightImpact();
+              ref.read(settingsProvider.notifier).updateSongViewStyle(value);
+            }
           },
           isLast: false,
         ),

@@ -2487,6 +2487,7 @@ class _QueueListState extends ConsumerState<_QueueList> {
               ref: ref,
               song: song,
               queueIndex: originalIndex,
+              isFromQueue: true,
             ),
             child: Opacity(
               opacity: isPlayed ? 0.38 : 1.0,

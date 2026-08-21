@@ -1131,6 +1131,8 @@ class SettingsCategoryScreen extends ConsumerWidget {
       children = [
         const LibraryFoldersList(),
         const Divider(height: 1, indent: 72, color: Colors.white10),
+        const SongViewStyleTile(),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
         const AddFolderTile(),
         const Divider(height: 1, indent: 72, color: Colors.white10),
         const SyncLyricsOfflineTile(),

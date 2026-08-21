@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,7 @@ import 'package:isar/isar.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/features/library/data/artist_image_service.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
@@ -417,15 +419,23 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final settings = ref.watch(settingsProvider);
+    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) && !settings.disableBlur;
+    final isPureBlack = settings.darkTheme;
     final accentColor = Theme.of(context).colorScheme.primary;
-    final int totalSeconds = songs.fold(0, (acc, s) => acc + (s.duration ?? 0));
-    final String durationStr = UiUtils.formatDuration(Duration(seconds: totalSeconds));
+
+    final int totalMs = songs.fold(0, (acc, s) => acc + (s.duration ?? 0));
+    final String durationStr = UiUtils.formatDuration(Duration(milliseconds: totalMs));
     final String defaultSubtitle = '${songs.length} ${l10n.songs} • $durationStr';
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    final sheetBg = isPureBlack
+        ? Colors.black
+        : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
+
+    Widget sheetContent = Container(
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -696,6 +706,20 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
         ],
       ),
     );
+
+    if (useBlur && !isPureBlack) {
+      return RepaintBoundary(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: sheetContent,
+          ),
+        ),
+      );
+    }
+
+    return sheetContent;
   }
 }
 

@@ -22,6 +22,8 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 
+import 'package:looper_player/core/ui_utils.dart';
+
 class SongsList extends ConsumerWidget {
   final List<Song> songs;
   final bool shrinkWrap;
@@ -47,6 +49,48 @@ class SongsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final songViewStyle = SongViewStyle.values[ref
+        .watch(settingsProvider.select((s) => s.songViewStyleIndex))
+        .clamp(0, SongViewStyle.values.length - 1)];
+
+    Widget buildSongItem(int index) {
+      final song = songs[index];
+      return switch (songViewStyle) {
+        SongViewStyle.normal => SongTile(
+            song: song,
+            l10n: l10n,
+            songs: songs,
+            searchQuery: searchQuery,
+            playlist: playlist,
+            queueName: queueName,
+          ),
+        SongViewStyle.compact => _SongCompactTile(
+            song: song,
+            l10n: l10n,
+            songs: songs,
+            searchQuery: searchQuery,
+            playlist: playlist,
+            queueName: queueName,
+          ),
+        SongViewStyle.textOnly => _SongTextOnlyTile(
+            song: song,
+            index: index,
+            l10n: l10n,
+            songs: songs,
+            searchQuery: searchQuery,
+            playlist: playlist,
+            queueName: queueName,
+          ),
+        SongViewStyle.grid => _SongGridCard(
+            song: song,
+            songs: songs,
+            l10n: l10n,
+            playlist: playlist,
+            queueName: queueName,
+          ),
+      };
+    }
+
     return Column(
       children: [
         Padding(
@@ -88,6 +132,22 @@ class SongsList extends ConsumerWidget {
               Row(
                 children: [
                   IconButton(
+                    onPressed: () => _showSongViewStyleMenu(context, ref),
+                    icon: Icon(
+                      switch (songViewStyle) {
+                        SongViewStyle.normal => LucideIcons.list,
+                        SongViewStyle.compact => LucideIcons.alignJustify,
+                        SongViewStyle.textOnly => LucideIcons.fileText,
+                        SongViewStyle.grid => LucideIcons.layoutGrid,
+                      },
+                      size: 18,
+                    ),
+                    tooltip: 'Song View Style',
+                    style: IconButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  IconButton(
                     onPressed: () => _showSortBottomSheet(context, ref, l10n),
                     icon: const Icon(LucideIcons.listFilter, size: 18),
                     tooltip: l10n.sortBy,
@@ -120,8 +180,8 @@ class SongsList extends ConsumerWidget {
                         );
                         if (confirm == true) {
                           await ref
-                              .read(libraryProvider.notifier)
-                              .resetAndRescan();
+                                .read(libraryProvider.notifier)
+                                .resetAndRescan();
                         }
                       },
                       icon: const Icon(LucideIcons.refreshCw, size: 16),
@@ -140,51 +200,64 @@ class SongsList extends ConsumerWidget {
           ),
         ),
         if (shrinkWrap)
-          ListView.builder(
-            controller: controller,
-            shrinkWrap: true,
-            physics: physics ?? const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(0, 8, 0, 180),
-            itemCount: songs.length,
-            itemBuilder: (context, index) {
-              final song = songs[index];
-              return SongTile(
-                song: song,
-                l10n: l10n,
-                songs: songs,
-                searchQuery: searchQuery,
-                playlist: playlist,
-                queueName: queueName,
-              );
-            },
-          )
+          songViewStyle == SongViewStyle.grid
+              ? GridView.builder(
+                  controller: controller,
+                  shrinkWrap: true,
+                  physics: physics ?? const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 180,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.78,
+                  ),
+                  itemCount: songs.length,
+                  itemBuilder: (context, index) => buildSongItem(index),
+                )
+              : ListView.builder(
+                  controller: controller,
+                  shrinkWrap: true,
+                  physics: physics ?? const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 180),
+                  itemCount: songs.length,
+                  itemBuilder: (context, index) => buildSongItem(index),
+                )
         else
           Expanded(
             child: AppRefreshIndicator(
               onRefresh: () =>
                   ref.read(libraryProvider.notifier).scanSavedFolders(),
-              child: ListView.builder(
-                controller: controller,
-                shrinkWrap: false,
-                physics:
-                    physics ??
-                    const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
+              child: songViewStyle == SongViewStyle.grid
+                  ? GridView.builder(
+                      controller: controller,
+                      shrinkWrap: false,
+                      physics: physics ??
+                          const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 180,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.78,
+                      ),
+                      itemCount: songs.length,
+                      itemBuilder: (context, index) => buildSongItem(index),
+                    )
+                  : ListView.builder(
+                      controller: controller,
+                      shrinkWrap: false,
+                      physics: physics ??
+                          const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 180),
+                      itemCount: songs.length,
+                      itemBuilder: (context, index) => buildSongItem(index),
                     ),
-                padding: const EdgeInsets.fromLTRB(0, 8, 0, 180),
-                itemCount: songs.length,
-                itemBuilder: (context, index) {
-                  final song = songs[index];
-                  return SongTile(
-                    song: song,
-                    l10n: l10n,
-                    songs: songs,
-                    searchQuery: searchQuery,
-                    playlist: playlist,
-                    queueName: queueName,
-                  );
-                },
-              ),
             ),
           ),
       ],
@@ -496,16 +569,16 @@ void _showSortBottomSheet(
           final accentColor = Color(settings.accentColor);
 
           return AppBottomSheetContainer(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.zero,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Text(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 16, 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
                         l10n.sortOrder,
                         style: AppFonts.jostStyle(
                           fontSize: 18,
@@ -513,41 +586,41 @@ void _showSortBottomSheet(
                           color: Colors.white,
                         ),
                       ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        ref.read(libraryProvider.notifier).toggleSortOrder();
-                      },
-                      icon: Icon(
-                        state.isAscending
-                            ? LucideIcons.arrowUpAZ
-                            : LucideIcons.arrowDownAZ,
-                        size: 18,
-                      ),
-                      label: Text(
-                        state.isAscending ? l10n.ascending : l10n.descending,
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: accentColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                      TextButton.icon(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          ref.read(libraryProvider.notifier).toggleSortOrder();
+                        },
+                        icon: Icon(
+                          state.isAscending
+                              ? LucideIcons.arrowUpAZ
+                              : LucideIcons.arrowDownAZ,
+                          size: 18,
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        label: Text(
+                          state.isAscending ? l10n.ascending : l10n.descending,
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: accentColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const Divider(color: Colors.white10, height: 24),
+                const Divider(color: Colors.white10, height: 1),
                 Flexible(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
+                        horizontal: 8.0,
                         vertical: 8.0,
                       ),
                       child: PremiumSection(
@@ -988,6 +1061,607 @@ class _HoverableSongSubtitleState extends ConsumerState<_HoverableSongSubtitle> 
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+void _showSongViewStyleMenu(BuildContext context, WidgetRef ref) {
+  final currentStyleIndex = ref.read(settingsProvider.select(
+    (s) => s.songViewStyleIndex,
+  ));
+
+  final options = [
+    (SongViewStyle.normal, 'Normal List', LucideIcons.list, 'Standard list with artwork and details'),
+    (SongViewStyle.compact, 'Compact List', LucideIcons.alignJustify, 'Dense list with smaller artwork'),
+    (SongViewStyle.textOnly, 'Text Only', LucideIcons.fileText, 'Small text only list without artwork'),
+    (SongViewStyle.grid, 'Grid Cards', LucideIcons.layoutGrid, 'Visual grid with album cover cards'),
+  ];
+
+  showModalBottomSheet(
+    context: context,
+    useRootNavigator: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black54,
+    builder: (ctx) => Consumer(
+      builder: (context, ref, _) {
+        final accent = Theme.of(context).colorScheme.primary;
+        return AppBottomSheetContainer(
+          padding: EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                child: Row(
+                  children: [
+                    Text(
+                      'Song View Style',
+                      style: AppFonts.jostStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Colors.white10, height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                child: PremiumSection(
+                  borderRadius: BorderRadius.circular(20),
+                  padding: EdgeInsets.zero,
+                  useExpanded: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < options.length; i++) ...[
+                        if (i > 0)
+                          Divider(
+                            height: 1,
+                            thickness: 0.8,
+                            color: Colors.white.withValues(alpha: 0.04),
+                            indent: 20,
+                            endIndent: 20,
+                          ),
+                        _SongStyleOption(
+                          label: options[i].$2,
+                          subtitle: options[i].$4,
+                          icon: options[i].$3,
+                          isSelected: currentStyleIndex == options[i].$1.index,
+                          accentColor: accent,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            ref
+                                .read(settingsProvider.notifier)
+                                .updateSongViewStyle(options[i].$1.index);
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
+class _SongStyleOption extends StatelessWidget {
+  final String label;
+  final String subtitle;
+  final IconData icon;
+  final bool isSelected;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  const _SongStyleOption({
+    required this.label,
+    required this.subtitle,
+    required this.icon,
+    required this.isSelected,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 22,
+              color: isSelected ? accentColor : Colors.white70,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: AppFonts.jostStyle(
+                      fontSize: 15.5,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppFonts.jostStyle(
+                      fontSize: 12.5,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                LucideIcons.check,
+                color: accentColor,
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SongCompactTile extends ConsumerWidget {
+  final Song song;
+  final List<Song> songs;
+  final AppLocalizations l10n;
+  final String? searchQuery;
+  final Playlist? playlist;
+  final String? queueName;
+
+  const _SongCompactTile({
+    required this.song,
+    required this.songs,
+    required this.l10n,
+    this.searchQuery,
+    this.playlist,
+    this.queueName,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isCurrent = ref.watch(
+      playbackProvider.select((s) => s.currentSong?.path == song.path),
+    );
+    final isPlaying = ref.watch(
+      playbackProvider.select(
+        (s) => s.currentSong?.path == song.path && s.isPlaying,
+      ),
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: _SongTileBouncyTap(
+        onTap: () {
+          final index = songs.indexWhere((s) => s.path == song.path);
+          if (index != -1) {
+            ref.read(playbackProvider.notifier).setPlaylist(
+                  songs,
+                  initialIndex: index,
+                  queueName: queueName ?? QueueRepository.allSongsQueueName,
+                );
+          } else {
+            ref.read(playbackProvider.notifier).play(song);
+          }
+        },
+        onSecondaryTap: () => showSongOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          song: song,
+          playlist: playlist,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: SizedBox(
+                  width: 38,
+                  height: 38,
+                  child: Stack(
+                    children: [
+                      OptimizedImage(
+                        imagePath: song.artPath,
+                        width: 38,
+                        height: 38,
+                        fit: BoxFit.contain,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      if (isCurrent)
+                        Positioned.fill(
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 300),
+                            opacity: isPlaying ? 1.0 : 0.0,
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              child: Center(
+                                child: Image.asset(
+                                  'assets/android_icons/Playing.gif',
+                                  width: 18,
+                                  height: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      song.title,
+                      style: AppFonts.jostStyle(
+                        color: isCurrent
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    _HoverableSongSubtitle(
+                      song: song,
+                      showAlbum: true,
+                      l10n: l10n,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (song.duration != null && song.duration! > 0)
+                Text(
+                  UiUtils.formatDurationMs(song.duration),
+                  style: AppFonts.jostStyle(
+                    color: Colors.white38,
+                    fontSize: 12,
+                  ),
+                ),
+              IconButton(
+                icon: const Icon(Icons.more_vert, color: Colors.grey, size: 18),
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(),
+                onPressed: () => showSongOptionsBottomSheet(
+                  context: context,
+                  ref: ref,
+                  song: song,
+                  playlist: playlist,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SongTextOnlyTile extends ConsumerWidget {
+  final Song song;
+  final int index;
+  final List<Song> songs;
+  final AppLocalizations l10n;
+  final String? searchQuery;
+  final Playlist? playlist;
+  final String? queueName;
+
+  const _SongTextOnlyTile({
+    required this.song,
+    required this.index,
+    required this.songs,
+    required this.l10n,
+    this.searchQuery,
+    this.playlist,
+    this.queueName,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isCurrent = ref.watch(
+      playbackProvider.select((s) => s.currentSong?.path == song.path),
+    );
+    final isPlaying = ref.watch(
+      playbackProvider.select(
+        (s) => s.currentSong?.path == song.path && s.isPlaying,
+      ),
+    );
+    final accent = Theme.of(context).colorScheme.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: _SongTileBouncyTap(
+        onTap: () {
+          final targetIndex = songs.indexWhere((s) => s.path == song.path);
+          if (targetIndex != -1) {
+            ref.read(playbackProvider.notifier).setPlaylist(
+                  songs,
+                  initialIndex: targetIndex,
+                  queueName: queueName ?? QueueRepository.allSongsQueueName,
+                );
+          } else {
+            ref.read(playbackProvider.notifier).play(song);
+          }
+        },
+        onSecondaryTap: () => showSongOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          song: song,
+          playlist: playlist,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 28,
+                child: isCurrent && isPlaying
+                    ? Center(
+                        child: Image.asset(
+                          'assets/android_icons/Playing.gif',
+                          width: 14,
+                          height: 14,
+                          color: accent,
+                        ),
+                      )
+                    : Text(
+                        '${index + 1}',
+                        textAlign: TextAlign.center,
+                        style: AppFonts.jostStyle(
+                          color: isCurrent ? accent : Colors.white38,
+                          fontSize: 12,
+                          fontWeight:
+                              isCurrent ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        song.title,
+                        style: AppFonts.jostStyle(
+                          color: isCurrent ? accent : Colors.white,
+                          fontWeight:
+                              isCurrent ? FontWeight.w600 : FontWeight.w500,
+                          fontSize: 13.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (song.artist != null && song.artist!.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          '• ${song.artist!}',
+                          style: AppFonts.jostStyle(
+                            color: Colors.white.withValues(alpha: 0.45),
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (song.duration != null && song.duration! > 0)
+                Text(
+                  UiUtils.formatDurationMs(song.duration),
+                  style: AppFonts.jostStyle(
+                    color: Colors.white38,
+                    fontSize: 11.5,
+                  ),
+                ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.more_vert, color: Colors.grey, size: 16),
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(),
+                onPressed: () => showSongOptionsBottomSheet(
+                  context: context,
+                  ref: ref,
+                  song: song,
+                  playlist: playlist,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SongGridCard extends ConsumerStatefulWidget {
+  final Song song;
+  final List<Song> songs;
+  final AppLocalizations l10n;
+  final Playlist? playlist;
+  final String? queueName;
+
+  const _SongGridCard({
+    required this.song,
+    required this.songs,
+    required this.l10n,
+    this.playlist,
+    this.queueName,
+  });
+
+  @override
+  ConsumerState<_SongGridCard> createState() => _SongGridCardState();
+}
+
+class _SongGridCardState extends ConsumerState<_SongGridCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final song = widget.song;
+    final isCurrent = ref.watch(
+      playbackProvider.select((s) => s.currentSong?.path == song.path),
+    );
+    final isPlaying = ref.watch(
+      playbackProvider.select(
+        (s) => s.currentSong?.path == song.path && s.isPlaying,
+      ),
+    );
+    final accent = Theme.of(context).colorScheme.primary;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: () {
+          final index = widget.songs.indexWhere((s) => s.path == song.path);
+          if (index != -1) {
+            ref.read(playbackProvider.notifier).setPlaylist(
+                  widget.songs,
+                  initialIndex: index,
+                  queueName: widget.queueName ?? QueueRepository.allSongsQueueName,
+                );
+          } else {
+            ref.read(playbackProvider.notifier).play(song);
+          }
+        },
+        onSecondaryTap: () => showSongOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          song: song,
+          playlist: widget.playlist,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.white.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isCurrent
+                  ? accent.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.05),
+              width: isCurrent ? 1.5 : 1,
+            ),
+          ),
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    OptimizedImage(
+                      imagePath: song.artPath,
+                      fit: BoxFit.cover,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    if (isCurrent)
+                      Positioned.fill(
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 300),
+                          opacity: isPlaying ? 1.0 : 0.0,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Image.asset(
+                                'assets/android_icons/Playing.gif',
+                                width: 28,
+                                height: 28,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => showSongOptionsBottomSheet(
+                          context: context,
+                          ref: ref,
+                          song: song,
+                          playlist: widget.playlist,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.more_vert,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                song.title,
+                style: AppFonts.jostStyle(
+                  color: isCurrent ? accent : Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                song.artist ?? widget.l10n.unknownArtist,
+                style: AppFonts.jostStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 12,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

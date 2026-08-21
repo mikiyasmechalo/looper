@@ -138,16 +138,16 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
             final currentAsc = ref.watch(albumSortAscendingProvider);
 
             return AppBottomSheetContainer(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.zero,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Text(
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 16, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
                           l10n.sortOrder,
                           style: AppFonts.jostStyle(
                             fontSize: 18,
@@ -155,35 +155,35 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
                             color: Colors.white,
                           ),
                         ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          ref.read(albumSortAscendingProvider.notifier).state = !currentAsc;
-                        },
-                        icon: Icon(
-                          currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
-                          size: 18,
-                        ),
-                        label: Text(
-                          currentAsc ? l10n.ascending : l10n.descending,
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: accentColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                        TextButton.icon(
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            ref.read(albumSortAscendingProvider.notifier).state = !currentAsc;
+                          },
+                          icon: Icon(
+                            currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
+                            size: 18,
+                          ),
+                          label: Text(
+                            currentAsc ? l10n.ascending : l10n.descending,
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: accentColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const Divider(color: Colors.white10, height: 24),
+                  const Divider(color: Colors.white10, height: 1),
                   Flexible(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                         child: PremiumSection(
                           borderRadius: BorderRadius.circular(20),
                           padding: EdgeInsets.zero,
@@ -966,16 +966,16 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
             final currentAsc = ref.watch(artistSortAscendingProvider);
 
             return AppBottomSheetContainer(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.zero,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Text(
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 16, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
                           l10n.sortOrder,
                           style: AppFonts.jostStyle(
                             fontSize: 18,
@@ -983,35 +983,35 @@ class _ArtistsGridState extends ConsumerState<ArtistsGrid> {
                             color: Colors.white,
                           ),
                         ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          ref.read(artistSortAscendingProvider.notifier).state = !currentAsc;
-                        },
-                        icon: Icon(
-                          currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
-                          size: 18,
-                        ),
-                        label: Text(
-                          currentAsc ? l10n.ascending : l10n.descending,
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: accentColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                        TextButton.icon(
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            ref.read(artistSortAscendingProvider.notifier).state = !currentAsc;
+                          },
+                          icon: Icon(
+                            currentAsc ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
+                            size: 18,
+                          ),
+                          label: Text(
+                            currentAsc ? l10n.ascending : l10n.descending,
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: accentColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const Divider(color: Colors.white10, height: 24),
+                  const Divider(color: Colors.white10, height: 1),
                   Flexible(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                         child: PremiumSection(
                           borderRadius: BorderRadius.circular(20),
                           padding: EdgeInsets.zero,
@@ -1244,49 +1244,70 @@ void _showCardStyleMenu(BuildContext context, WidgetRef ref, {required bool isAl
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black54,
     builder: (ctx) => Consumer(
       builder: (context, ref, _) {
         final accent = Theme.of(context).colorScheme.primary;
         return AppBottomSheetContainer(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.zero,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  '${isAlbum ? l10n.albums : l10n.artists} Card Style',
-                  style: AppFonts.jostStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                child: Row(
+                  children: [
+                    Text(
+                      '${isAlbum ? l10n.albums : l10n.artists} Card Style',
+                      style: AppFonts.jostStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const Divider(color: Colors.white10, height: 1),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  children: [
-                    for (final (style, label, icon) in options)
-                      _GridSortOption(
-                        label: label,
-                        icon: icon,
-                        isSelected: currentStyleIndex == style.index,
-                        accentColor: accent,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          if (isAlbum) {
-                            ref.read(settingsProvider.notifier).updateAlbumCardStyle(style.index);
-                          } else {
-                            ref.read(settingsProvider.notifier).updateArtistCardStyle(style.index);
-                          }
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                  ],
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                child: PremiumSection(
+                  borderRadius: BorderRadius.circular(20),
+                  padding: EdgeInsets.zero,
+                  useExpanded: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < options.length; i++) ...[
+                        if (i > 0)
+                          Divider(
+                            height: 1,
+                            thickness: 0.8,
+                            color: Colors.white.withValues(alpha: 0.04),
+                            indent: 20,
+                            endIndent: 20,
+                          ),
+                        _GridSortOption(
+                          label: options[i].$2,
+                          icon: options[i].$3,
+                          isSelected: currentStyleIndex == options[i].$1.index,
+                          accentColor: accent,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            if (isAlbum) {
+                              ref.read(settingsProvider.notifier).updateAlbumCardStyle(options[i].$1.index);
+                            } else {
+                              ref.read(settingsProvider.notifier).updateArtistCardStyle(options[i].$1.index);
+                            }
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
+              const SizedBox(height: 8),
             ],
           ),
         );

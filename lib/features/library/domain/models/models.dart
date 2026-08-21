@@ -293,9 +293,14 @@ class AppSettings {
   // Library Card Styles (0: normal, 1: circle, 2: card, 3: image, 4: imageGapless)
   int albumCardStyleIndex = 2;
   int artistCardStyleIndex = 1;
+
+  // Song View Style (0: normal, 1: compact, 2: textOnly, 3: grid)
+  int songViewStyleIndex = 0;
 }
 
 enum CardStyle { normal, circle, card, image, imageGapless }
+
+enum SongViewStyle { normal, compact, textOnly, grid }
 
 @collection
 class PlaybackHistoryEntry {

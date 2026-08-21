@@ -1,9 +1,12 @@
 import 'dart:ui';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:isar/isar.dart';
 import 'package:looper_player/ui/widgets/app_loading_indicator.dart';
 import 'package:looper_player/core/app_fonts.dart';
+import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/library/presentation/library_notifier.dart';
@@ -33,6 +36,7 @@ void showSongOptionsBottomSheet({
   required Song song,
   Playlist? playlist,
   int? queueIndex,
+  bool isFromQueue = false,
   bool showDeleteOption = true,
   bool showRenameOption = true,
 }) {
@@ -46,6 +50,7 @@ void showSongOptionsBottomSheet({
       song: song,
       playlist: playlist,
       queueIndex: queueIndex,
+      isFromQueue: isFromQueue || queueIndex != null,
       showDeleteOption: showDeleteOption,
       showRenameOption: showRenameOption,
       parentContext: context,
@@ -57,6 +62,7 @@ class _SongOptionsSheetContent extends ConsumerWidget {
   final Song song;
   final Playlist? playlist;
   final int? queueIndex;
+  final bool isFromQueue;
   final bool showDeleteOption;
   final bool showRenameOption;
   final BuildContext parentContext;
@@ -65,6 +71,7 @@ class _SongOptionsSheetContent extends ConsumerWidget {
     required this.song,
     this.playlist,
     this.queueIndex,
+    this.isFromQueue = false,
     required this.showDeleteOption,
     required this.showRenameOption,
     required this.parentContext,
@@ -249,13 +256,13 @@ class _SongOptionsSheetContent extends ConsumerWidget {
 
     final sheetBg = isPureBlack
         ? Colors.black
-        : (useBlur ? Colors.black.withValues(alpha: 0.6) : const Color(0xFF1E1E1E));
+        : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
 
     final queue = playbackState.queue;
     final currentSongPath = playbackState.currentSong?.path;
     final currentIdx = queue.indexWhere((s) => s.path == currentSongPath);
-    final targetIdx = queueIndex ?? queue.indexWhere((s) => s.path == song.path);
-    final isUpcomingInQueue = currentIdx != -1 && targetIdx != -1 && targetIdx >= currentIdx;
+    final targetIdx = queueIndex ?? (isFromQueue ? queue.indexWhere((s) => s.path == song.path) : -1);
+    final isUpcomingInQueue = isFromQueue && currentIdx != -1 && targetIdx != -1 && targetIdx >= currentIdx;
     final songsUntilStop = isUpcomingInQueue ? (targetIdx - currentIdx + 1) : null;
     final isStoppingAfterThis = playbackState.isSleepTimerActive &&
         playbackState.sleepTimerSongsRemaining != null &&
@@ -313,14 +320,10 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        song.artist ?? l10n.unknownArtist,
-                        style: AppFonts.jostStyle(
-                          fontSize: 13,
-                          color: Colors.white54,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      _ClickableSongSubtitle(
+                        song: song,
+                        l10n: l10n,
+                        parentContext: parentContext,
                       ),
                     ],
                   ),
@@ -575,4 +578,149 @@ class _SongOptionsSheetContent extends ConsumerWidget {
 
     return sheetContent;
   }
+}
+
+class _ClickableSongSubtitle extends ConsumerStatefulWidget {
+  final Song song;
+  final AppLocalizations l10n;
+  final BuildContext parentContext;
+
+  const _ClickableSongSubtitle({
+    required this.song,
+    required this.l10n,
+    required this.parentContext,
+  });
+
+  @override
+  ConsumerState<_ClickableSongSubtitle> createState() =>
+      _ClickableSongSubtitleState();
+}
+
+class _ClickableSongSubtitleState
+    extends ConsumerState<_ClickableSongSubtitle> {
+  bool _hoverArtist = false;
+  bool _hoverAlbum = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final artist = widget.song.artist ?? widget.l10n.unknownArtist;
+    final album = widget.song.album;
+    final hasAlbum = album != null && album.isNotEmpty;
+    final accentColor = Color(ref.watch(settingsProvider).accentColor);
+
+    final defaultStyle = AppFonts.jostStyle(
+      color: Colors.white54,
+      fontSize: 13,
+    );
+
+    return Text.rich(
+      TextSpan(
+        style: defaultStyle,
+        children: [
+          TextSpan(
+            text: artist,
+            style: defaultStyle.copyWith(
+              color: _hoverArtist ? accentColor : Colors.white54,
+              decoration:
+                  _hoverArtist ? TextDecoration.underline : TextDecoration.none,
+              decorationColor: accentColor,
+            ),
+            mouseCursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hoverArtist = true),
+            onExit: (_) => setState(() => _hoverArtist = false),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                Navigator.pop(context);
+                _navigateToArtist(
+                    widget.parentContext, ref, widget.song, widget.l10n);
+              },
+          ),
+          if (hasAlbum) ...[
+            TextSpan(
+              text: ' · ',
+              style: defaultStyle,
+            ),
+            TextSpan(
+              text: album,
+              style: defaultStyle.copyWith(
+                color: _hoverAlbum ? accentColor : Colors.white54,
+                decoration:
+                    _hoverAlbum ? TextDecoration.underline : TextDecoration.none,
+                decorationColor: accentColor,
+              ),
+              mouseCursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hoverAlbum = true),
+              onExit: (_) => setState(() => _hoverAlbum = false),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  Navigator.pop(context);
+                  _navigateToAlbum(
+                      widget.parentContext, ref, widget.song);
+                },
+            ),
+          ],
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+Future<void> _navigateToArtist(
+  BuildContext context,
+  WidgetRef ref,
+  Song song,
+  AppLocalizations l10n,
+) async {
+  if (song.artist == null || song.artist!.isEmpty) return;
+
+  final artistSongs = await DbService.isar.songs
+      .filter()
+      .artistEqualTo(song.artist!)
+      .or()
+      .albumArtistEqualTo(song.artist!)
+      .findAll();
+
+  final artist = await DbService.isar.artists
+      .filter()
+      .nameEqualTo(song.artist!)
+      .findFirst();
+
+  ref.read(appNavigationProvider.notifier).showCollection(
+        title: song.artist!,
+        subtitle: l10n.artists,
+        art: artist?.artPath ?? song.artPath,
+        imageUrl: artist?.artistImageUrl,
+        images: artist?.artistImages ?? const [],
+        songs: artistSongs,
+        highlightItem: NavItem.artists,
+      );
+}
+
+Future<void> _navigateToAlbum(
+  BuildContext context,
+  WidgetRef ref,
+  Song song,
+) async {
+  final albumName = song.album;
+  if (albumName == null || albumName.isEmpty) return;
+
+  final albumSongs = await DbService.isar.songs
+      .filter()
+      .albumEqualTo(albumName)
+      .findAll();
+
+  final album = await DbService.isar.albums
+      .filter()
+      .nameEqualTo(albumName)
+      .findFirst();
+
+  ref.read(appNavigationProvider.notifier).showCollection(
+        title: albumName,
+        subtitle: song.artist,
+        art: album?.artPath ?? song.artPath,
+        songs: albumSongs,
+        highlightItem: NavItem.albums,
+      );
 }

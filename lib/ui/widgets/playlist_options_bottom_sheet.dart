@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,9 @@ import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playlists/presentation/playlist_view.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
+import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/app_input_dialog.dart';
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/core/import_export_service.dart';
@@ -31,10 +34,94 @@ Future<void> showPlaylistOptionsBottomSheet({
     barrierColor: Colors.black54,
     isScrollControlled: true,
     builder: (context) {
-      return Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF1E1E1E),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      final settings = ref.watch(settingsProvider);
+      final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) && !settings.disableBlur;
+      final isPureBlack = settings.darkTheme;
+
+      final sheetBg = isPureBlack
+          ? Colors.black
+          : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
+
+      final options = <Widget>[
+        MenuOptionTile(
+          label: l10n.playAll,
+          icon: LucideIcons.play,
+          iconColor: accentColor,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            ref.read(playbackProvider.notifier).setPlaylist(songs, queueName: playlist.name);
+            Navigator.pop(context);
+          },
+        ),
+        MenuOptionTile(
+          label: l10n.shuffleTitle,
+          icon: LucideIcons.shuffle,
+          iconColor: accentColor,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            ref
+                .read(playbackProvider.notifier)
+                .playShuffled(songs, queueName: playlist.name);
+            Navigator.pop(context);
+          },
+        ),
+        MenuOptionTile(
+          label: l10n.playNext,
+          icon: LucideIcons.playCircle,
+          iconColor: accentColor,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            ref
+                .read(playbackProvider.notifier)
+                .addNextMany(songs);
+            Navigator.pop(context);
+          },
+        ),
+        MenuOptionTile(
+          label: l10n.addToQueue,
+          icon: LucideIcons.listPlus,
+          iconColor: accentColor,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            ref
+                .read(playbackProvider.notifier)
+                .addToQueueMany(songs);
+            Navigator.pop(context);
+          },
+        ),
+        MenuOptionTile(
+          label: 'Export Playlist',
+          icon: LucideIcons.download,
+          iconColor: accentColor,
+          onTap: () {
+            Navigator.pop(context);
+            ImportExportService.exportSinglePlaylist(context, playlist, songs);
+          },
+        ),
+        MenuOptionTile(
+          label: l10n.renamePlaylist,
+          icon: LucideIcons.edit2,
+          iconColor: Colors.greenAccent,
+          onTap: () {
+            Navigator.pop(context);
+            _showRenameDialog(context, ref, playlist);
+          },
+        ),
+        MenuOptionTile(
+          label: l10n.deletePlaylist,
+          icon: LucideIcons.trash2,
+          iconColor: Colors.redAccent,
+          onTap: () {
+            Navigator.pop(context);
+            _showDeleteDialog(context, ref, playlist);
+          },
+        ),
+      ];
+
+      Widget sheetContent = Container(
+        decoration: BoxDecoration(
+          color: sheetBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -107,82 +194,25 @@ Future<void> showPlaylistOptionsBottomSheet({
                     horizontal: 8.0,
                     vertical: 8.0,
                   ),
-                  child: Column(
-                    children: [
-                      MenuOptionTile(
-                        label: l10n.playAll,
-                        icon: LucideIcons.play,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ref.read(playbackProvider.notifier).setPlaylist(songs, queueName: playlist.name);
-                          Navigator.pop(context);
-                        },
-                      ),
-                      MenuOptionTile(
-                        label: l10n.shuffleTitle,
-                        icon: LucideIcons.shuffle,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ref
-                              .read(playbackProvider.notifier)
-                              .playShuffled(songs, queueName: playlist.name);
-                          Navigator.pop(context);
-                        },
-                      ),
-                      MenuOptionTile(
-                        label: l10n.playNext,
-                        icon: LucideIcons.playCircle,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ref
-                              .read(playbackProvider.notifier)
-                              .addNextMany(songs);
-                          Navigator.pop(context);
-                        },
-                      ),
-                      MenuOptionTile(
-                        label: l10n.addToQueue,
-                        icon: LucideIcons.listPlus,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ref
-                              .read(playbackProvider.notifier)
-                              .addToQueueMany(songs);
-                          Navigator.pop(context);
-                        },
-                      ),
-                      MenuOptionTile(
-                        label: 'Export Playlist',
-                        icon: LucideIcons.download,
-                        iconColor: accentColor,
-                        onTap: () {
-                          Navigator.pop(context);
-                          ImportExportService.exportSinglePlaylist(context, playlist, songs);
-                        },
-                      ),
-                      MenuOptionTile(
-                        label: l10n.renamePlaylist,
-                        icon: LucideIcons.edit2,
-                        iconColor: Colors.greenAccent,
-                        onTap: () {
-                          Navigator.pop(context);
-                          _showRenameDialog(context, ref, playlist);
-                        },
-                      ),
-                      MenuOptionTile(
-                        label: l10n.deletePlaylist,
-                        icon: LucideIcons.trash2,
-                        iconColor: Colors.redAccent,
-                        onTap: () {
-                          Navigator.pop(context);
-                          _showDeleteDialog(context, ref, playlist);
-                        },
-                      ),
-                    ],
+                  child: PremiumSection(
+                    borderRadius: BorderRadius.circular(20),
+                    padding: EdgeInsets.zero,
+                    useExpanded: false,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(options.length * 2 - 1, (index) {
+                        if (index.isOdd) {
+                          return Divider(
+                            height: 1,
+                            thickness: 0.8,
+                            color: Colors.white.withValues(alpha: 0.04),
+                            indent: 20,
+                            endIndent: 20,
+                          );
+                        }
+                        return options[index ~/ 2];
+                      }),
+                    ),
                   ),
                 ),
               ),
@@ -191,6 +221,20 @@ Future<void> showPlaylistOptionsBottomSheet({
           ],
         ),
       );
+
+      if (useBlur && !isPureBlack) {
+        return RepaintBoundary(
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: sheetContent,
+            ),
+          ),
+        );
+      }
+
+      return sheetContent;
     },
   );
 }

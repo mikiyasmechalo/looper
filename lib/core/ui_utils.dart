@@ -17,11 +17,16 @@ class UiUtils {
   /// Returns a smaller spacing for Android.
   static double spacing(double value) => isAndroid ? value * 0.7 : value;
 
-  /// Formats a Duration object into a string (e.g. 'm:ss').
+  /// Formats a Duration object into a string (e.g. 'm:ss' or 'h:mm:ss').
   static String formatDuration(Duration d) {
-    final minutes = d.inMinutes;
+    final hours = d.inHours;
+    final minutes = d.inMinutes % 60;
     final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
+    if (hours > 0) {
+      final minStr = minutes.toString().padLeft(2, '0');
+      return '$hours:$minStr:$seconds';
+    }
+    return '${d.inMinutes}:$seconds';
   }
 
   /// Formats milliseconds into a string.

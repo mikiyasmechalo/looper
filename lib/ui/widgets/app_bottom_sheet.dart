@@ -1,7 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
 
 class AppBottomSheetContainer extends ConsumerWidget {
   final Widget child;
@@ -12,7 +12,7 @@ class AppBottomSheetContainer extends ConsumerWidget {
   const AppBottomSheetContainer({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+    this.padding,
     this.height,
     this.showDragHandle = true,
   });
@@ -20,29 +20,26 @@ class AppBottomSheetContainer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
+    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) && !settings.disableBlur;
+    final isPureBlack = settings.darkTheme;
+
+    final sheetBg = isPureBlack
+        ? Colors.black
+        : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
 
     Widget body = Container(
       height: height,
       decoration: BoxDecoration(
-        color: useBlur
-            ? const Color.fromARGB(50, 0, 0, 0)
-            : settings.darkTheme
-                ? const Color.fromARGB(255, 0, 0, 0)
-                : const Color(0xFF161613),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: padding,
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (showDragHandle) ...[
-              const SizedBox(height: 5),
+              const SizedBox(height: 12),
               Center(
                 child: Container(
                   width: 40,
@@ -53,36 +50,39 @@ class AppBottomSheetContainer extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
             ],
             if (height != null)
-              Expanded(child: child)
+              Expanded(
+                child: Padding(
+                  padding: padding ?? EdgeInsets.zero,
+                  child: child,
+                ),
+              )
             else
-              child,
+              Padding(
+                padding: padding ?? EdgeInsets.zero,
+                child: child,
+              ),
           ],
         ),
       ),
     );
 
-    if (useBlur) {
-      return PremiumSection(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
+    if (useBlur && !isPureBlack) {
+      return RepaintBoundary(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: body,
+          ),
         ),
-        useBlur: true,
-        forceBlur: true,
-        useExpanded: false,
-        useCenter: false,
-        child: body,
       );
     }
 
     return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(30),
-        topRight: Radius.circular(30),
-      ),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: body,
     );
   }

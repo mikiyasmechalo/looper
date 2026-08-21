@@ -6,6 +6,7 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/ui/widgets/app_bottom_sheet.dart';
+import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'package:looper_player/core/app_fonts.dart';
 
 import 'package:looper_player/l10n/app_localizations.dart';
@@ -180,6 +181,13 @@ class _QueueBottomSheetState extends ConsumerState<QueueBottomSheet> {
                     onTap: () {
                       ref.read(playbackProvider.notifier).playAtIndex(absoluteIndex);
                     },
+                    onLongPress: () => showSongOptionsBottomSheet(
+                      context: context,
+                      ref: ref,
+                      song: song,
+                      queueIndex: absoluteIndex,
+                      isFromQueue: true,
+                    ),
                   ),
                 ),
                 );

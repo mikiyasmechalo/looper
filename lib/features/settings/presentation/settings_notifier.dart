@@ -393,7 +393,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..enableWindowsFileAssociations = s.enableWindowsFileAssociations
       ..enableSmartPlaylists = s.enableSmartPlaylists
       ..albumCardStyleIndex = s.albumCardStyleIndex
-      ..artistCardStyleIndex = s.artistCardStyleIndex;
+      ..artistCardStyleIndex = s.artistCardStyleIndex
+      ..songViewStyleIndex = s.songViewStyleIndex;
   }
 
   Future<void> updateAlbumCardStyle(int style) async {
@@ -406,6 +407,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateArtistCardStyle(int style) async {
     final newState = _clone(state)..artistCardStyleIndex = style;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateSongViewStyle(int style) async {
+    final newState = _clone(state)..songViewStyleIndex = style;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

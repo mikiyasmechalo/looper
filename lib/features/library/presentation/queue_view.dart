@@ -165,6 +165,7 @@ class _QueueViewState extends ConsumerState<QueueView> {
                         ref: ref,
                         song: song,
                         queueIndex: originalIndex,
+                        isFromQueue: true,
                         showDeleteOption: true,
                         showRenameOption: true,
                       ),
