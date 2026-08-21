@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/stats/presentation/stats_provider.dart';
+import 'package:looper_player/features/stats/presentation/looper_wrapped_view.dart';
 import 'package:looper_player/ui/widgets/artist_image.dart';
 
 /// Shows the floating Stats & Insights modal dialog on desktop & mobile.
@@ -178,54 +179,147 @@ class _StatsDialogState extends ConsumerState<StatsDialog> {
     bool isDark,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(LucideIcons.barChart2, color: primaryColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 700;
+
+          if (isNarrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(LucideIcons.barChart2, color: primaryColor, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Listening Stats',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const LooperWrappedView()),
+                        );
+                      },
+                      icon: const Icon(LucideIcons.sparkles, size: 13),
+                      label: const Text('Wrapped', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(LucideIcons.x, size: 18),
+                      splashRadius: 18,
+                      style: IconButton.styleFrom(
+                        backgroundColor: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.05),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _buildRangeSelector(ref, stats, primaryColor, isDark),
+                ),
+              ],
+            );
+          }
+
+          return Row(
             children: [
-              Text(
-                'Listening Stats & Insights',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.3,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(LucideIcons.barChart2, color: primaryColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Listening Stats & Insights',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Your personal music habits and history',
+                      style: TextStyle(fontSize: 11.5, color: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                'Your personal music habits and history',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+              const SizedBox(width: 12),
+
+              // Looper Wrapped Button
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LooperWrappedView()),
+                  );
+                },
+                icon: const Icon(LucideIcons.sparkles, size: 14),
+                label: const Text('Wrapped', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              // Time Range Pills
+              _buildRangeSelector(ref, stats, primaryColor, isDark),
+
+              const SizedBox(width: 10),
+
+              // Close Button
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(LucideIcons.x, size: 18),
+                splashRadius: 18,
+                style: IconButton.styleFrom(
+                  backgroundColor: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.05),
+                ),
               ),
             ],
-          ),
-          const Spacer(),
-
-          // Time Range Pills
-          _buildRangeSelector(ref, stats, primaryColor, isDark),
-
-          const SizedBox(width: 16),
-
-          // Close Button
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(LucideIcons.x, size: 18),
-            splashRadius: 18,
-            style: IconButton.styleFrom(
-              backgroundColor: isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.black.withValues(alpha: 0.05),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

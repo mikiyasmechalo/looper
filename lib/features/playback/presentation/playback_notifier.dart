@@ -485,7 +485,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
             }
             
             if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-              windowManager.setTitle('Looper Player - ${songToPlay.title} - ${songToPlay.artist ?? 'Unknown Artist'}');
+              windowManager.setTitle('Looper - ${songToPlay.title} - ${songToPlay.artist ?? 'Unknown Artist'}');
             }
             
             // Remove the finished track from native playlist so index becomes 0 again
@@ -1011,7 +1011,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       await windowManager.setTitle(
-        'Looper Player - ${song.title} - ${song.artist ?? 'Unknown Artist'}',
+        'Looper - ${song.title} - ${song.artist ?? 'Unknown Artist'}',
       );
     }
 
@@ -1955,6 +1955,12 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   }
 
   Future<void> clearQueue() async {
+    final oldQueueName = _activeQueueName;
+    if (oldQueueName.isNotEmpty && oldQueueName != QueueRepository.allSongsQueueName) {
+      await _queueRepo.delete(oldQueueName);
+      _activeQueueName = QueueRepository.allSongsQueueName;
+      await ref.read(settingsProvider.notifier).updateActiveQueueName(QueueRepository.allSongsQueueName);
+    }
     _playlist = [];
     _originalPlaylist = [];
     _currentIndex = -1;
@@ -2699,6 +2705,136 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     return fileDeleted ? FileActionResult.success : FileActionResult.dbOnly;
   }
 
+  /// Synchronizes the active playback queue with the given available songs.
+  /// Any song in the queue whose ID or file is missing will be automatically purged.
+  Future<void> syncQueueWithAvailableSongs(List<Song> availableSongs) async {
+    if (_playlist.isEmpty && state.queue.isEmpty) return;
+
+    final availableIdSet = availableSongs.map((s) => s.id).toSet();
+    final missingIds = <int>{};
+
+    for (final s in _playlist) {
+      if (!availableIdSet.contains(s.id)) {
+        missingIds.add(s.id);
+      }
+    }
+
+    if (missingIds.isNotEmpty) {
+      await removeDeletedSongsFromQueue(missingIds);
+    }
+  }
+
+  /// Removes deleted songs by ID from the active playlist, original playlist and state.queue.
+  /// If the current song was among the deleted songs, it moves to the next valid song or stops.
+  Future<void> removeDeletedSongsFromQueue(Iterable<int> deletedSongIds) async {
+    if (deletedSongIds.isEmpty) return;
+    final deletedSet = deletedSongIds.toSet();
+
+    final wasCurrentDeleted = state.currentSong != null && deletedSet.contains(state.currentSong!.id);
+    final wasPlaying = state.isPlaying;
+
+    if (wasCurrentDeleted) {
+      await player.stop();
+    }
+
+    _playlist.removeWhere((s) => deletedSet.contains(s.id));
+    _originalPlaylist.removeWhere((s) => deletedSet.contains(s.id));
+
+    if (wasCurrentDeleted) {
+      if (_playlist.isNotEmpty) {
+        if (_currentIndex >= _playlist.length) {
+          _currentIndex = 0;
+        }
+        final nextSong = _playlist[_currentIndex];
+        state = state.copyWith(
+          currentSong: nextSong,
+          queue: List.from(_playlist),
+        );
+        await play(nextSong, play: wasPlaying);
+      } else {
+        _currentIndex = -1;
+        state = PlaybackState(
+          volume: state.volume,
+          isShuffle: state.isShuffle,
+          repeatMode: state.repeatMode,
+          queue: [],
+        );
+        ref.read(equalizerProvider.notifier).onSongChanged(null);
+        await ref.read(settingsProvider.notifier).updateLastPlayedSong(null);
+      }
+    } else {
+      if (state.currentSong != null) {
+        _currentIndex = _playlist.indexWhere((s) => s.id == state.currentSong!.id);
+      }
+      state = state.copyWith(queue: List.from(_playlist));
+    }
+
+    if (_playlist.isEmpty) {
+      final oldQueueName = _activeQueueName;
+      if (oldQueueName.isNotEmpty && oldQueueName != QueueRepository.allSongsQueueName) {
+        await _queueRepo.delete(oldQueueName);
+        _activeQueueName = QueueRepository.allSongsQueueName;
+        await ref.read(settingsProvider.notifier).updateActiveQueueName(QueueRepository.allSongsQueueName);
+      }
+    }
+
+    // Also clean up any SavedQueues in database where songs were deleted
+    try {
+      await DbService.isar.writeTxn(() async {
+        final allSavedQueues = await DbService.isar.savedQueues.where().findAll();
+        for (final sq in allSavedQueues) {
+          final remainingIds = sq.songIds.where((id) => !deletedSet.contains(id)).toList();
+          if (remainingIds.isEmpty && !sq.isPermanent) {
+            await DbService.isar.savedQueues.delete(sq.id);
+          } else if (remainingIds.length != sq.songIds.length) {
+            sq.songIds = remainingIds;
+            if (sq.currentIndex >= remainingIds.length) {
+              sq.currentIndex = math.max(0, remainingIds.length - 1);
+            }
+            await DbService.isar.savedQueues.put(sq);
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  /// Verifies all songs in the current playback queue against the database/filesystem
+  /// and purges any nonexistent or deleted songs.
+  Future<void> validateAndCleanQueue() async {
+    final existingDbSongs = await DbService.isar.songs.where().findAll();
+    final existingIdSet = existingDbSongs.map((s) => s.id).toSet();
+
+    final invalidIds = <int>{};
+    for (final song in _playlist) {
+      if (!existingIdSet.contains(song.id) || !File(song.path).existsSync()) {
+        invalidIds.add(song.id);
+      }
+    }
+
+    if (invalidIds.isNotEmpty) {
+      await removeDeletedSongsFromQueue(invalidIds);
+    }
+
+    // Also purge all empty non-permanent saved queues from database
+    try {
+      await DbService.isar.writeTxn(() async {
+        final allSavedQueues = await DbService.isar.savedQueues.where().findAll();
+        for (final sq in allSavedQueues) {
+          final validIds = sq.songIds.where((id) => existingIdSet.contains(id)).toList();
+          if (validIds.isEmpty && !sq.isPermanent) {
+            await DbService.isar.savedQueues.delete(sq.id);
+          } else if (validIds.length != sq.songIds.length) {
+            sq.songIds = validIds;
+            if (sq.currentIndex >= validIds.length) {
+              sq.currentIndex = math.max(0, validIds.length - 1);
+            }
+            await DbService.isar.savedQueues.put(sq);
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
   Future<void> _cleanUpOrphanedArtistsAndAlbums() async {
     try {
       await DbService.isar.writeTxn(() async {
@@ -3142,6 +3278,12 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     bool? isShuffle,
   }) async {
     final targetSongs = songs ?? _playlist;
+    if (targetSongs.isEmpty) {
+      if (name != QueueRepository.allSongsQueueName) {
+        await _queueRepo.delete(name);
+      }
+      return;
+    }
     final q = SavedQueue()
       ..name = name
       ..songIds = targetSongs.map((s) => s.id).toList()

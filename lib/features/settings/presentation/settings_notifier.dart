@@ -397,7 +397,79 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..enableSmartPlaylists = s.enableSmartPlaylists
       ..albumCardStyleIndex = s.albumCardStyleIndex
       ..artistCardStyleIndex = s.artistCardStyleIndex
-      ..songViewStyleIndex = s.songViewStyleIndex;
+      ..songViewStyleIndex = s.songViewStyleIndex
+      ..showTrayOnlyWhenMinimized = s.showTrayOnlyWhenMinimized
+      ..showSidebarNowPlaying = s.showSidebarNowPlaying
+      ..showSidebarSongs = s.showSidebarSongs
+      ..showSidebarAlbums = s.showSidebarAlbums
+      ..showSidebarArtists = s.showSidebarArtists
+      ..showSidebarPlaylists = s.showSidebarPlaylists
+      ..showSidebarRecentlyPlayed = s.showSidebarRecentlyPlayed
+      ..showSidebarFavorites = s.showSidebarFavorites
+      ..showSidebarQueue = s.showSidebarQueue
+      ..showSidebarGenres = s.showSidebarGenres
+      ..showSidebarFolders = s.showSidebarFolders
+      ..folderViewTreeMode = s.folderViewTreeMode;
+  }
+
+  Future<void> updateShowTrayOnlyWhenMinimized(bool value) async {
+    final newState = _clone(state)..showTrayOnlyWhenMinimized = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarNowPlaying(bool value) async {
+    final newState = _clone(state)..showSidebarNowPlaying = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarSongs(bool value) async {
+    final newState = _clone(state)..showSidebarSongs = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarAlbums(bool value) async {
+    final newState = _clone(state)..showSidebarAlbums = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarArtists(bool value) async {
+    final newState = _clone(state)..showSidebarArtists = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarPlaylists(bool value) async {
+    final newState = _clone(state)..showSidebarPlaylists = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarRecentlyPlayed(bool value) async {
+    final newState = _clone(state)..showSidebarRecentlyPlayed = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarFavorites(bool value) async {
+    final newState = _clone(state)..showSidebarFavorites = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarQueue(bool value) async {
+    final newState = _clone(state)..showSidebarQueue = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarGenres(bool value) async {
+    final newState = _clone(state)..showSidebarGenres = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarFolders(bool value) async {
+    final newState = _clone(state)..showSidebarFolders = value;
+    await _save(newState);
+  }
+
+  Future<void> updateFolderViewTreeMode(bool value) async {
+    final newState = _clone(state)..folderViewTreeMode = value;
+    await _save(newState);
   }
 
   Future<void> updateAlbumCardStyle(int style) async {

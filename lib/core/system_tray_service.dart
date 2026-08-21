@@ -8,11 +8,6 @@ import 'db_service.dart';
 import '../features/library/domain/models/models.dart';
 
 /// Manages the desktop system tray icon and the "minimize to tray" behavior.
-///
-/// The tray icon is always shown on desktop platforms. When the window close
-/// button is pressed the behavior depends on the [AppSettings.minimizeToTray]
-/// setting: either the window hides to the tray and playback keeps running, or
-/// the app fully quits. The tray menu offers "Show" and "Quit".
 class SystemTrayService {
   SystemTrayService._();
 
@@ -20,6 +15,7 @@ class SystemTrayService {
 
   final SystemTray _systemTray = SystemTray();
   bool _initialized = false;
+  bool _trayActive = false;
   bool _quitInProgress = false;
 
   bool get isSupported =>
@@ -30,18 +26,41 @@ class SystemTrayService {
     _initialized = true;
 
     try {
+      await windowManager.setPreventClose(true);
+      windowManager.addListener(_TrayWindowListener(this));
+
+      // Always initialize tray first so Windows hooks are active
+      await _createTray();
+
+      final settings = await DbService.isar.appSettings.get(0);
+      final showOnlyWhenMinimized = settings?.showTrayOnlyWhenMinimized ?? true;
+
+      final isMinimized = await windowManager.isMinimized();
+      if (showOnlyWhenMinimized && !isMinimized) {
+        await _destroyTray();
+      }
+    } catch (e, s) {
+      _initialized = false;
+      LoggerHelper.write('Failed to initialize SystemTray service', e, s);
+    }
+  }
+
+  Future<void> _createTray() async {
+    if (_trayActive || !isSupported) return;
+
+    try {
       await _systemTray.initSystemTray(
         iconPath: Platform.isWindows
             ? 'assets/tray_icon.ico'
             : 'assets/launcher_logo.png',
-        title: 'Looper Player',
-        toolTip: 'Looper Player',
+        title: 'Looper',
+        toolTip: 'Looper',
       );
 
       _systemTray.registerSystemTrayEventHandler((eventName) {
         if (eventName == kSystemTrayEventClick) {
           if (Platform.isWindows) {
-            _showWindow();
+            restoreFromTray();
           } else {
             _systemTray.popUpContextMenu();
           }
@@ -49,7 +68,7 @@ class SystemTrayService {
           if (Platform.isWindows) {
             _systemTray.popUpContextMenu();
           } else {
-            _showWindow();
+            restoreFromTray();
           }
         }
       });
@@ -57,8 +76,8 @@ class SystemTrayService {
       final Menu menu = Menu();
       await menu.buildFrom([
         MenuItemLabel(
-          label: 'Show Looper Player',
-          onClicked: (_) => _showWindow(),
+          label: 'Show Looper',
+          onClicked: (_) => restoreFromTray(),
         ),
         MenuSeparator(),
         MenuItemLabel(
@@ -67,39 +86,83 @@ class SystemTrayService {
         ),
       ]);
       await _systemTray.setContextMenu(menu);
-
-      // Prevent the native close from destroying the window so we can decide
-      // in [handleCloseRequest] whether to hide to the tray or quit.
-      await windowManager.setPreventClose(true);
-      windowManager.addListener(_TrayWindowListener(this));
+      _trayActive = true;
     } catch (e, s) {
-      _initialized = false;
-      LoggerHelper.write('Failed to initialize SystemTray', e, s);
+      _trayActive = false;
+      LoggerHelper.write('Failed to create SystemTray icon', e, s);
     }
   }
 
-  Future<void> _showWindow() async {
-    await windowManager.show();
-    await windowManager.focus();
+  Future<void> _destroyTray() async {
+    if (!_trayActive) return;
+    try {
+      await _systemTray.destroy();
+      _trayActive = false;
+    } catch (e, s) {
+      LoggerHelper.write('Failed to destroy SystemTray', e, s);
+    }
+  }
+
+  Future<void> minimizeToTray() async {
+    if (!isSupported) return;
+    try {
+      await _createTray();
+      await windowManager.hide();
+    } catch (e, s) {
+      LoggerHelper.write('Failed to minimize to tray', e, s);
+    }
+  }
+
+  Future<void> restoreFromTray() async {
+    if (!isSupported) return;
+    try {
+      await windowManager.show();
+      await windowManager.focus();
+      final settings = await DbService.isar.appSettings.get(0);
+      final showOnlyWhenMinimized = settings?.showTrayOnlyWhenMinimized ?? true;
+      if (showOnlyWhenMinimized) {
+        await _destroyTray();
+      }
+    } catch (e, s) {
+      LoggerHelper.write('Failed to restore from tray', e, s);
+    }
+  }
+
+  Future<void> syncTrayVisibility({bool? isMinimizedOrHidden}) async {
+    if (!isSupported) return;
+    try {
+      final settings = await DbService.isar.appSettings.get(0);
+      final showOnlyWhenMinimized = settings?.showTrayOnlyWhenMinimized ?? true;
+
+      if (!showOnlyWhenMinimized) {
+        await _createTray();
+        return;
+      }
+
+      final isHidden = isMinimizedOrHidden ?? await windowManager.isMinimized();
+      if (isHidden) {
+        await _createTray();
+      } else {
+        await _destroyTray();
+      }
+    } catch (e, s) {
+      LoggerHelper.write('Error syncing tray visibility', e, s);
+    }
   }
 
   Future<void> _quit() async {
     if (_quitInProgress) return;
     _quitInProgress = true;
     try {
-      await _systemTray.destroy();
+      await _destroyTray();
     } catch (e, s) {
-      LoggerHelper.write('Failed to destroy SystemTray', e, s);
+      LoggerHelper.write('Failed to destroy SystemTray on quit', e, s);
     }
     try {
-      // Let the window close through the native WM_CLOSE → WM_DESTROY flow.
-      // windowManager.destroy() calls PostQuitMessage(0), which bypasses that
-      // lifecycle and races the engine's window teardown, crashing in
-      // flutter_windows.dll on exit.
       await windowManager.setPreventClose(false);
       await windowManager.close();
     } catch (e, s) {
-      LoggerHelper.write('Failed to close window', e, s);
+      LoggerHelper.write('Failed to close window on quit', e, s);
     }
   }
 
@@ -110,16 +173,16 @@ class SystemTrayService {
       return;
     }
 
-    bool minimizeToTray = false;
+    bool minimizeToTraySetting = false;
     try {
       final settings = await DbService.isar.appSettings.get(0);
-      minimizeToTray = settings?.minimizeToTray ?? false;
+      minimizeToTraySetting = settings?.minimizeToTray ?? false;
     } catch (e, s) {
       LoggerHelper.write('Failed to read settings on window close', e, s);
     }
 
-    if (minimizeToTray) {
-      await windowManager.hide();
+    if (minimizeToTraySetting) {
+      await minimizeToTray();
     } else {
       await _quit();
     }
@@ -134,5 +197,15 @@ class _TrayWindowListener extends WindowListener {
   @override
   Future<void> onWindowClose() async {
     await _service.handleCloseRequest();
+  }
+
+  @override
+  void onWindowMinimize() {
+    _service.syncTrayVisibility(isMinimizedOrHidden: true);
+  }
+
+  @override
+  void onWindowRestore() {
+    _service.syncTrayVisibility(isMinimizedOrHidden: false);
   }
 }

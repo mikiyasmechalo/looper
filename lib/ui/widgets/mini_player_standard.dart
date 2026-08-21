@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:looper_player/core/system_tray_service.dart';
 
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/app_icons.dart';
@@ -211,7 +212,7 @@ class _StandardMiniPlayerState extends ConsumerState<StandardMiniPlayer>
               ),
               _WindowBtn(
                 icon: LucideIcons.panelTop,
-                onTap: windowManager.hide,
+                onTap: () => SystemTrayService.instance.minimizeToTray(),
                 tooltip: 'Minimize to tray',
               ),
               _WindowBtn(

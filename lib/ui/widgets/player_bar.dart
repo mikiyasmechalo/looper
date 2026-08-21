@@ -18,6 +18,7 @@ import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'premium_progress_bar.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
+import 'package:looper_player/core/system_tray_service.dart';
 
 class PlayerBar extends ConsumerWidget {
   const PlayerBar({super.key});
@@ -144,42 +145,33 @@ class _PremiumPlayerBar extends ConsumerWidget {
 
                       Expanded(
                         flex: stackControls ? 4 : 6,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: openPlayer,
-                          onSecondaryTap: () => showSongOptionsBottomSheet(
-                            context: context,
-                            ref: ref,
-                            song: song,
-                          ),
-                          child: Consumer(
-                            builder: (context, ref, child) {
-                              final position = ref.watch(
-                                playbackProvider.select((s) => s.position),
-                              );
-                              final duration = ref.watch(
-                                playbackProvider.select((s) => s.duration),
-                              );
-                              final isPlayingVal = ref.watch(
-                                playbackProvider.select((s) => s.isPlaying),
-                              );
-                              return ExpressiveSlider(
-                                position: position,
-                                duration: duration,
-                                isPlaying: isPlayingVal,
-                                onSeek: (pos) => ref
-                                    .read(playbackProvider.notifier)
-                                    .seek(pos),
-                                onSeekStart: () => ref
-                                    .read(playbackProvider.notifier)
-                                    .startScrubbing(),
-                                onSeekEnd: () => ref
-                                    .read(playbackProvider.notifier)
-                                    .stopScrubbing(),
-                                color: colorScheme.primary,
-                              );
-                            },
-                          ),
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final position = ref.watch(
+                              playbackProvider.select((s) => s.position),
+                            );
+                            final duration = ref.watch(
+                              playbackProvider.select((s) => s.duration),
+                            );
+                            final isPlayingVal = ref.watch(
+                              playbackProvider.select((s) => s.isPlaying),
+                            );
+                            return ExpressiveSlider(
+                              position: position,
+                              duration: duration,
+                              isPlaying: isPlayingVal,
+                              onSeek: (pos) => ref
+                                  .read(playbackProvider.notifier)
+                                  .seek(pos),
+                              onSeekStart: () => ref
+                                  .read(playbackProvider.notifier)
+                                  .startScrubbing(),
+                              onSeekEnd: () => ref
+                                  .read(playbackProvider.notifier)
+                                  .stopScrubbing(),
+                              color: colorScheme.primary,
+                            );
+                          },
                         ),
                       ),
 
@@ -885,7 +877,7 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
             ),
             position: RelativeRect.fromLTRB(
               offset.dx,
-              offset.dy - 90,
+              offset.dy - 135,
               offset.dx + rSize.width,
               offset.dy,
             ),
@@ -938,6 +930,26 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
                   ],
                 ),
               ),
+              PopupMenuItem(
+                value: 'minimize_tray',
+                child: Row(
+                  children: [
+                    const Icon(
+                      LucideIcons.panelTop,
+                      size: 15,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Minimize to Tray',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           );
 
@@ -946,6 +958,8 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
             await service.enterMiniPlayerMode();
           } else if (result == 'corner') {
             await service.enterCornerWidgetMode();
+          } else if (result == 'minimize_tray') {
+            await SystemTrayService.instance.minimizeToTray();
           }
         },
       ),

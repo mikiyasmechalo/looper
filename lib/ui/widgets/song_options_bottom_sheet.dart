@@ -372,6 +372,23 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                           );
                         },
                       ),
+                      if (isFromQueue && targetIdx != -1)
+                        MenuOptionTile(
+                          label: 'Remove from Queue',
+                          icon: LucideIcons.listMinus,
+                          iconColor: Colors.redAccent,
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            ref.read(playbackProvider.notifier).removeFromQueue(targetIdx);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Removed from queue'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
                       MenuOptionTile(
                         label: l10n.addToPlaylists,
                         icon: LucideIcons.listMusic,

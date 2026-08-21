@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:looper_player/core/system_tray_service.dart';
 
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/app_icons.dart';
@@ -603,7 +604,7 @@ class _WindowControlsState extends State<_WindowControls> with WindowListener {
         _button(
           icon: LucideIcons.panelTop,
           tooltip: AppLocalizations.of(context)!.minimizeToTray,
-          onTap: windowManager.hide,
+          onTap: () => SystemTrayService.instance.minimizeToTray(),
         ),
         _button(
           icon: _maximized ? LucideIcons.copy : LucideIcons.square,

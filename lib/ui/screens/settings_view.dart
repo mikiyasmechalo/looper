@@ -19,6 +19,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/app_icons.dart';
 import 'package:looper_player/core/ui_utils.dart';
+import 'package:looper_player/core/system_tray_service.dart';
+import 'package:looper_player/features/library/presentation/library_cleanup_view.dart';
 
 enum SettingsCategory {
   appearance,
@@ -280,6 +282,7 @@ class SettingsView extends ConsumerWidget {
         children: [
           if (category == SettingsCategory.appearance) ...[
             _buildAppearanceSection(context, ref, settings, l10n),
+            _buildSidebarSection(context, ref, settings, l10n),
             _buildLanguageSection(context, ref, settings, l10n),
             _buildTypographySection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.audio) ...[
@@ -653,6 +656,22 @@ class SettingsView extends ConsumerWidget {
           onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableInternet(v),
         ),
       ),
+      _SearchItem(
+        category: 'Library & Files',
+        title: 'Library Cleanup & Quality Assistant',
+        subtitle: 'Find duplicate tracks, low bitrate audio, and missing album artwork',
+        widget: _PremiumActionRow(
+          icon: LucideIcons.sparkles,
+          title: 'Library Cleanup & Quality Assistant',
+          subtitle: 'Find duplicate tracks, low bitrate audio, and missing album artwork',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LibraryCleanupView()),
+            );
+          },
+          isLast: false,
+        ),
+      ),
       if (isDesktop) ...[
         _SearchItem(
           category: 'Desktop & Window',
@@ -689,6 +708,21 @@ class SettingsView extends ConsumerWidget {
             subtitle: l10n.minimizeToTrayDesc,
             value: settings.minimizeToTray,
             onChanged: (v) => ref.read(settingsProvider.notifier).updateMinimizeToTray(v),
+          ),
+        ),
+        _SearchItem(
+          category: 'Desktop & Window',
+          title: 'Hide Tray Icon When Active',
+          subtitle: 'Only show the system tray icon when Looper is minimized',
+          widget: _PremiumSwitchRow(
+            icon: LucideIcons.eyeOff,
+            title: 'Hide Tray Icon When Active',
+            subtitle: 'Only show the system tray icon when Looper is minimized',
+            value: settings.showTrayOnlyWhenMinimized,
+            onChanged: (v) {
+              ref.read(settingsProvider.notifier).updateShowTrayOnlyWhenMinimized(v);
+              SystemTrayService.instance.syncTrayVisibility();
+            },
           ),
         ),
         _SearchItem(
@@ -948,6 +982,83 @@ class SettingsView extends ConsumerWidget {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateStopOnTaskRemoved(value);
           },
+          isLast: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSidebarSection(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+    AppLocalizations l10n,
+  ) {
+    return _Section(
+      title: 'Sidebar Navigation Items',
+      children: [
+        _PremiumSwitchRow(
+          icon: LucideIcons.headphones,
+          title: l10n.nowPlaying,
+          subtitle: 'Show Now Playing in the sidebar',
+          value: settings.showSidebarNowPlaying,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarNowPlaying(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.disc,
+          title: l10n.albums,
+          subtitle: 'Show Albums library item in the sidebar',
+          value: settings.showSidebarAlbums,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarAlbums(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.mic2,
+          title: l10n.artists,
+          subtitle: 'Show Artists library item in the sidebar',
+          value: settings.showSidebarArtists,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarArtists(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.library,
+          title: l10n.playlists,
+          subtitle: 'Show Playlists in the sidebar',
+          value: settings.showSidebarPlaylists,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarPlaylists(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.folder,
+          title: 'Folders',
+          subtitle: 'Show Directory Tree & Folders in the sidebar',
+          value: settings.showSidebarFolders,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarFolders(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.clock,
+          title: 'Recently Played',
+          subtitle: 'Show Recently Played in the sidebar',
+          value: settings.showSidebarRecentlyPlayed,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarRecentlyPlayed(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.heart,
+          title: 'Favorites',
+          subtitle: 'Show Favorites in the sidebar',
+          value: settings.showSidebarFavorites,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarFavorites(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.radio,
+          title: l10n.genres,
+          subtitle: 'Show Genres in the sidebar',
+          value: settings.showSidebarGenres,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarGenres(v),
           isLast: true,
         ),
       ],
@@ -1225,8 +1336,20 @@ class SettingsView extends ConsumerWidget {
           },
           isLast: false,
         ),
-        _PremiumSwitchRow(
+        _PremiumActionRow(
           icon: LucideIcons.sparkles,
+          title: 'Library Cleanup & Quality Assistant',
+          subtitle: 'Find duplicate tracks, low bitrate audio, and missing album artwork',
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LibraryCleanupView()),
+            );
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.listMusic,
           title: 'Smart Playlists',
           subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
           value: settings.enableSmartPlaylists,
@@ -1361,6 +1484,18 @@ class SettingsView extends ConsumerWidget {
           onChanged: (value) {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateMinimizeToTray(value);
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.eyeOff,
+          title: 'Hide Tray Icon When Active',
+          subtitle: 'Only show the system tray icon when Looper is minimized',
+          value: settings.showTrayOnlyWhenMinimized,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateShowTrayOnlyWhenMinimized(value);
+            SystemTrayService.instance.syncTrayVisibility();
           },
           isLast: false,
         ),

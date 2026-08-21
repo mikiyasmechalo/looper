@@ -227,6 +227,22 @@ class AppSettings {
 
   // Desktop: keep running in the system tray when the window is closed.
   bool minimizeToTray = false;
+  bool showTrayOnlyWhenMinimized = true;
+
+  // Sidebar navigation visibility settings
+  bool showSidebarNowPlaying = true;
+  bool showSidebarSongs = true;
+  bool showSidebarAlbums = true;
+  bool showSidebarArtists = true;
+  bool showSidebarPlaylists = true;
+  bool showSidebarRecentlyPlayed = true;
+  bool showSidebarFavorites = true;
+  bool showSidebarQueue = true;
+  bool showSidebarGenres = true;
+  bool showSidebarFolders = true;
+
+  // Folder view preferences
+  bool folderViewTreeMode = false;
 
   // Desktop: open the now-playing view in true fullscreen (hides the OS
   // taskbar / title bar controls).

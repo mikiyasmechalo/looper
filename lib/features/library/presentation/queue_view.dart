@@ -103,6 +103,12 @@ class _QueueViewState extends ConsumerState<QueueView> {
                 const QueueSelectorDropdown(),
               ],
               const Spacer(),
+              IconButton(
+                icon: const Icon(LucideIcons.refreshCw, size: 18, color: Colors.white70),
+                tooltip: 'Refresh & Clean Queue',
+                onPressed: () => ref.read(playbackProvider.notifier).validateAndCleanQueue(),
+              ),
+              const SizedBox(width: 8),
               if (queue.isNotEmpty)
                 TextButton.icon(
                   onPressed: () =>
@@ -283,9 +289,22 @@ class _QueueViewState extends ConsumerState<QueueView> {
                                           ],
                                         ),
                                       ),
+                                    IconButton(
+                                      icon: const Icon(LucideIcons.moreVertical, size: 18, color: Colors.white54),
+                                      tooltip: 'Song Options',
+                                      onPressed: () => showSongOptionsBottomSheet(
+                                        context: context,
+                                        ref: ref,
+                                        song: song,
+                                        queueIndex: originalIndex,
+                                        isFromQueue: true,
+                                        showDeleteOption: true,
+                                        showRenameOption: true,
+                                      ),
+                                    ),
                                     if (isCurrent)
                                       const Padding(
-                                        padding: EdgeInsets.only(right: 20.0),
+                                        padding: EdgeInsets.only(right: 12.0),
                                         child: Icon(
                                           LucideIcons.volume2,
                                           color: Colors.yellow,
@@ -296,7 +315,7 @@ class _QueueViewState extends ConsumerState<QueueView> {
                                       ReorderableDragStartListener(
                                         index: index,
                                         child: const Padding(
-                                          padding: EdgeInsets.only(right: 20.0),
+                                          padding: EdgeInsets.only(right: 12.0),
                                           child: Icon(
                                             LucideIcons.gripVertical,
                                             size: 24,
@@ -305,7 +324,7 @@ class _QueueViewState extends ConsumerState<QueueView> {
                                         ),
                                       )
                                     else
-                                      const SizedBox(width: 44),
+                                      const SizedBox(width: 36),
                                   ],
                                 ),
                                 onTap: () =>

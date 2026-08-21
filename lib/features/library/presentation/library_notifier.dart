@@ -10,6 +10,7 @@ import 'package:looper_player/features/library/data/artist_image_service.dart';
 import 'package:isar/isar.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/features/playback/data/lyrics_fetcher.dart';
+import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'dart:async';
 
 enum SongSortStrategy {
@@ -187,6 +188,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
         songs: songs,
         isInitialized: true,
       );
+      _ref.read(playbackProvider.notifier).syncQueueWithAvailableSongs(songs);
     });
   }
 

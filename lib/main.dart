@@ -111,7 +111,7 @@ void main(List<String> args) async {
             center: rawX == null || rawX < 10 || rawY == null || rawY < 10,
             skipTaskbar: false,
             titleBarStyle: TitleBarStyle.hidden,
-            title: 'Looper Player',
+            title: 'Looper',
             backgroundColor: Colors.transparent,
           );
           await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -138,7 +138,7 @@ void main(List<String> args) async {
             center: rawX == null || rawX < 10 || rawY == null || rawY < 10,
             skipTaskbar: false,
             titleBarStyle: TitleBarStyle.hidden,
-            title: 'Looper Player',
+            title: 'Looper',
             backgroundColor: Colors.transparent,
           );
           await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -164,7 +164,7 @@ void main(List<String> args) async {
             center: windowState.x == null || windowState.y == null || windowState.x! < 0 || windowState.y! < 0,
             skipTaskbar: false,
             titleBarStyle: TitleBarStyle.hidden,
-            title: 'Looper Player',
+            title: 'Looper',
             backgroundColor: const Color(0xFF111111),
           );
           await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -310,7 +310,7 @@ class MyApp extends ConsumerWidget {
         navigatorKey: rootNavigatorKey,
         scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
-        title: 'Looper Player',
+        title: 'Looper',
         color: const Color(0xFF111111),
         theme: ThemeData(
           useMaterial3: true,
