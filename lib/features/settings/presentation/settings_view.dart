@@ -844,6 +844,37 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
 
       // Audio Playback
       SettingsSearchItem(
+        title: 'Auto-Trim Silence',
+        subtitle: 'Automatically detect and skip silence at the beginning and end of tracks',
+        category: l10n.audioPlayback,
+        widget: const AutoTrimSilenceTile(),
+      ),
+      SettingsSearchItem(
+        title: 'Gapless Playback',
+        subtitle: 'Eliminate silence between consecutive tracks for continuous album & live playback',
+        category: l10n.audioPlayback,
+        widget: const GaplessPlaybackTile(),
+      ),
+      SettingsSearchItem(
+        title: 'Crossfade Duration',
+        subtitle: settings.crossfadeDuration == 0
+            ? 'Disabled (Pure Gapless transitions)'
+            : 'Smoothly fade out track and fade in next over ${settings.crossfadeDuration}s',
+        category: l10n.audioPlayback,
+        widget: const CrossfadeDurationSlider(),
+      ),
+      if (settings.crossfadeDuration > 0)
+        SettingsSearchItem(
+          title: 'Crossfade Mode',
+          subtitle: settings.crossfadeMode == 0
+              ? 'Always (Auto & Manual)'
+              : settings.crossfadeMode == 1
+                  ? 'Automatic Transitions Only'
+                  : 'Manual Skips Only',
+          category: l10n.audioPlayback,
+          widget: const CrossfadeModeTile(),
+        ),
+      SettingsSearchItem(
         title: l10n.fadePlayPauseStop,
         subtitle: l10n.fadePlayPauseStopDesc,
         category: l10n.audioPlayback,
@@ -1086,6 +1117,16 @@ class SettingsCategoryScreen extends ConsumerWidget {
       ];
     } else if (categoryId == 'audio_playback') {
       children = [
+        const AutoTrimSilenceTile(),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        const GaplessPlaybackTile(),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        const CrossfadeDurationSlider(),
+        if (settings.crossfadeDuration > 0) ...[
+          const Divider(height: 1, indent: 72, color: Colors.white10),
+          const CrossfadeModeTile(),
+        ],
+        const Divider(height: 1, indent: 72, color: Colors.white10),
         const FadePlayPauseStopTile(),
         if (settings.fadePlayPauseStop) ...[
           const Divider(height: 1, indent: 72, color: Colors.white10),

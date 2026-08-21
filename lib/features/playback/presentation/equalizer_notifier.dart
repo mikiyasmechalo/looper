@@ -143,11 +143,15 @@ class EqualizerNotifier extends StateNotifier<EqualizerState> {
 
   void _init() {
     final settings = ref.read(settingsProvider);
+    final globalGains = _ensureLength(settings.globalEqualizerGains, 48);
+    if (settings.autoTrimSilence) {
+      globalGains[19] = 1.0;
+    }
 
     state = EqualizerState(
       enabled: settings.equalizerEnabled,
-      globalGains: _ensureLength(settings.globalEqualizerGains, 48),
-      currentSongGains: _ensureLength(settings.globalEqualizerGains, 48),
+      globalGains: globalGains,
+      currentSongGains: List<double>.from(globalGains),
       currentSongHasCustom: false,
     );
   }
@@ -158,9 +162,13 @@ class EqualizerNotifier extends StateNotifier<EqualizerState> {
     final isGlobal = settings.equalizerGlobalMode;
 
     if (isGlobal) {
+      final gains = _ensureLength(settings.globalEqualizerGains, 48);
+      if (settings.autoTrimSilence) {
+        gains[19] = 1.0;
+      }
       state = state.copyWith(
-        currentSongGains: _ensureLength(settings.globalEqualizerGains, 48),
-        globalGains: _ensureLength(settings.globalEqualizerGains, 48),
+        currentSongGains: gains,
+        globalGains: gains,
         currentSongHasCustom: false,
       );
       _pendingSaveSong = null;
@@ -179,9 +187,18 @@ class EqualizerNotifier extends StateNotifier<EqualizerState> {
           ? _ensureLength(song.equalizerGains!, 48)
           : _getDefaultGains();
 
+      if (settings.autoTrimSilence && !hasCustom) {
+        songGains[19] = 1.0;
+      }
+
+      final globalGains = _ensureLength(settings.globalEqualizerGains, 48);
+      if (settings.autoTrimSilence) {
+        globalGains[19] = 1.0;
+      }
+
       state = state.copyWith(
         currentSongGains: songGains,
-        globalGains: _ensureLength(settings.globalEqualizerGains, 48),
+        globalGains: globalGains,
         currentSongHasCustom: hasCustom,
       );
       _pendingSaveSong = song;
@@ -190,6 +207,7 @@ class EqualizerNotifier extends StateNotifier<EqualizerState> {
 
   List<double> _getDefaultGains() {
     final list = List<double>.filled(48, 0.0);
+    list[19] = ref.read(settingsProvider).autoTrimSilence ? 1.0 : 0.0;
     list[20] = -50.0;
     list[22] = 0.2;
     list[24] = -20.0;
@@ -216,7 +234,9 @@ class EqualizerNotifier extends StateNotifier<EqualizerState> {
       final newGlobalGains = List<double>.from(state.globalGains);
 
       // Disable toggles
-      if (newSongGains.length > 19) newSongGains[19] = 0.0; // silence trim
+      if (newSongGains.length > 19) {
+        newSongGains[19] = ref.read(settingsProvider).autoTrimSilence ? 1.0 : 0.0;
+      }
       if (newSongGains.length > 21) newSongGains[21] = 0.0; // crossfeed
       if (newSongGains.length > 23) newSongGains[23] = 0.0; // compressor
       if (newSongGains.length > 28) newSongGains[28] = 0.0; // loudnorm

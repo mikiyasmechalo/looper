@@ -930,9 +930,9 @@ class AudioService {
           )
         : null;
 
-    // 7. Silence Trim
+    // 7. Silence Trim (Auto-Trim Silence)
     final bool trimEnabled =
-        enabled && (gains.length > 19 ? gains[19] == 1.0 : false);
+        (gains.length > 19 ? gains[19] == 1.0 : false);
     final silenceremove = trimEnabled
         ? SilenceremoveSettings(
             enabled: true,

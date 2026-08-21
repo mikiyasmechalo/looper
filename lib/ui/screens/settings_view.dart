@@ -501,6 +501,18 @@ class SettingsView extends ConsumerWidget {
       ),
       _SearchItem(
         category: 'Audio & Playback',
+        title: 'Auto-Trim Silence',
+        subtitle: 'Automatically detect and skip silence at track start and end',
+        widget: _PremiumSwitchRow(
+          icon: LucideIcons.scissors,
+          title: 'Auto-Trim Silence',
+          subtitle: 'Automatically detect and skip silence at the beginning and end of tracks',
+          value: settings.autoTrimSilence,
+          onChanged: (v) => ref.read(settingsProvider.notifier).updateAutoTrimSilence(v),
+        ),
+      ),
+      _SearchItem(
+        category: 'Audio & Playback',
         title: 'Gapless Playback',
         subtitle: 'Eliminate silence between consecutive tracks',
         widget: _PremiumSwitchRow(
@@ -1019,6 +1031,17 @@ class SettingsView extends ConsumerWidget {
           onChanged: (value) {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateShowPlayedSongsInQueue(value);
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.scissors,
+          title: 'Auto-Trim Silence',
+          subtitle: 'Automatically detect and skip silence at the beginning and end of tracks for a tight transition',
+          value: settings.autoTrimSilence,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateAutoTrimSilence(value);
           },
           isLast: false,
         ),

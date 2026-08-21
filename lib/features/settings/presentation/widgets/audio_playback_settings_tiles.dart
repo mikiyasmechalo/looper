@@ -6,6 +6,31 @@ import 'package:looper_player/features/settings/presentation/settings_notifier.d
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'settings_widgets.dart';
 
+class AutoTrimSilenceTile extends ConsumerWidget {
+  const AutoTrimSilenceTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    return SwitchListTile(
+      secondary: const Icon(LucideIcons.scissors, color: Colors.white70),
+      title: Text(
+        'Auto-Trim Silence',
+        style: _tileTitleStyle(),
+      ),
+      subtitle: Text(
+        'Automatically detect and skip silence at the beginning and end of tracks for a tight transition',
+        style: _tileSubtitleStyle(),
+      ),
+      activeThumbColor: Color(settings.accentColor),
+      value: settings.autoTrimSilence,
+      onChanged: (value) {
+        ref.read(settingsProvider.notifier).updateAutoTrimSilence(value);
+      },
+    );
+  }
+}
+
 class GaplessPlaybackTile extends ConsumerWidget {
   const GaplessPlaybackTile({super.key});
 

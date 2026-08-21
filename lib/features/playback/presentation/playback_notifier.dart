@@ -235,6 +235,9 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       if (previous?.gaplessPlayback != next.gaplessPlayback) {
         ref.read(audioServiceProvider).setGaplessAudio(next.gaplessPlayback);
       }
+      if (previous?.autoTrimSilence != next.autoTrimSilence) {
+        ref.read(equalizerProvider.notifier).setSilenceTrimEnabled(next.autoTrimSilence);
+      }
       if (previous?.stopOnTaskRemoved != next.stopOnTaskRemoved) {
         ref.read(audioServiceProvider).setStopOnTaskRemoved(next.stopOnTaskRemoved);
       }

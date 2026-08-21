@@ -326,6 +326,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..gaplessPlayback = s.gaplessPlayback
       ..crossfadeDuration = s.crossfadeDuration
       ..crossfadeMode = s.crossfadeMode
+      ..autoTrimSilence = s.autoTrimSilence
       ..showPlayedSongsInQueue = s.showPlayedSongsInQueue
       ..customShortcutsJson = s.customShortcutsJson
       ..defaultMiniPlayerType = s.defaultMiniPlayerType
@@ -694,6 +695,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateCrossfadeMode(int mode) async {
     final newState = _clone(state)..crossfadeMode = mode;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateAutoTrimSilence(bool value) async {
+    final newState = _clone(state)..autoTrimSilence = value;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

@@ -267,6 +267,9 @@ class AppSettings {
   // Playback: Crossfade Mode (0: Always, 1: Automatic Only, 2: Manual Only)
   int crossfadeMode = 0;
 
+  // Playback: Auto-Trim Silence (Skip Silence) - off by default
+  bool autoTrimSilence = false;
+
   // Desktop: Discord Rich Presence (RPC)
   bool enableDiscordRpc = false;
 
