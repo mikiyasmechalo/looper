@@ -270,6 +270,12 @@ class AppSettings {
   // Playback: Auto-Trim Silence (Skip Silence) - off by default
   bool autoTrimSilence = false;
 
+  // Desktop: System-wide Global Hotkeys
+  bool enableGlobalHotkeys = true;
+
+  // Desktop: Windows Taskbar Thumbnail Preview Controls (ITaskbarList3)
+  bool enableTaskbarControls = true;
+
   // Desktop: Discord Rich Presence (RPC)
   bool enableDiscordRpc = false;
 

@@ -1996,14 +1996,15 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     _updateNotification();
   }
 
-  double _lastVolume = 1.0;
+  double _lastVolume = 0.8;
 
   void toggleMute() {
-    if (state.volume > 0) {
+    if (state.volume > 0.001) {
       _lastVolume = state.volume;
-      setVolume(0);
+      setVolume(0.0);
     } else {
-      setVolume(_lastVolume > 0 ? _lastVolume : 1.0);
+      final target = _lastVolume > 0.001 ? _lastVolume : 0.8;
+      setVolume(target);
     }
   }
 

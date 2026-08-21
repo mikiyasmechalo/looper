@@ -656,6 +656,31 @@ class SettingsView extends ConsumerWidget {
       if (isDesktop) ...[
         _SearchItem(
           category: 'Desktop & Window',
+          title: 'Global Hotkeys (System-Wide)',
+          subtitle: 'Control playback when Looper is minimized in the background',
+          widget: _PremiumSwitchRow(
+            icon: LucideIcons.globe,
+            title: 'Global Hotkeys (System-Wide)',
+            subtitle: 'Control playback when Looper is minimized in the background',
+            value: settings.enableGlobalHotkeys,
+            onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableGlobalHotkeys(v),
+          ),
+        ),
+        if (Platform.isWindows)
+          _SearchItem(
+            category: 'Desktop & Window',
+            title: 'Windows Taskbar Thumbnail Controls',
+            subtitle: 'Show Play/Pause/Prev/Next buttons in the Windows taskbar preview window',
+            widget: _PremiumSwitchRow(
+              icon: LucideIcons.appWindow,
+              title: 'Windows Taskbar Controls',
+              subtitle: 'Show Play/Pause/Prev/Next buttons in taskbar thumbnail preview',
+              value: settings.enableTaskbarControls,
+              onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableTaskbarControls(v),
+            ),
+          ),
+        _SearchItem(
+          category: 'Desktop & Window',
           title: l10n.minimizeToTray,
           subtitle: l10n.minimizeToTrayDesc,
           widget: _PremiumSwitchRow(
@@ -1305,6 +1330,29 @@ class SettingsView extends ConsumerWidget {
     return _Section(
       title: 'Desktop & System Tray',
       children: [
+        _PremiumSwitchRow(
+          icon: LucideIcons.globe,
+          title: 'Global Hotkeys (System-Wide)',
+          subtitle: 'Control playback (Play/Pause, Next, Prev, Like, Copy info) when Looper is in the background',
+          value: settings.enableGlobalHotkeys,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateEnableGlobalHotkeys(value);
+          },
+          isLast: false,
+        ),
+        if (Platform.isWindows)
+          _PremiumSwitchRow(
+            icon: LucideIcons.appWindow,
+            title: 'Windows Taskbar Controls',
+            subtitle: 'Show Play/Pause/Prev/Next buttons in the Windows taskbar preview hover window',
+            value: settings.enableTaskbarControls,
+            onChanged: (value) {
+              HapticFeedback.lightImpact();
+              ref.read(settingsProvider.notifier).updateEnableTaskbarControls(value);
+            },
+            isLast: false,
+          ),
         _PremiumSwitchRow(
           icon: LucideIcons.panelTop,
           title: l10n.minimizeToTray,

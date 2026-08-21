@@ -99,6 +99,13 @@ class _KeyboardHandlerState extends ConsumerState<KeyboardHandler> {
       return true;
     }
 
+    // Never intercept system/hardware volume or mute keys (let OS handle master volume)
+    if (key == LogicalKeyboardKey.audioVolumeUp ||
+        key == LogicalKeyboardKey.audioVolumeDown ||
+        key == LogicalKeyboardKey.audioVolumeMute) {
+      return false;
+    }
+
     // If we're typing, ignore all playback shortcuts so they can reach the text field
     if (_isEditing()) {
       return false; // Let it bubble to TextField

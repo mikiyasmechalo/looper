@@ -148,12 +148,15 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
     final nav = ref.read(appNavigationProvider.notifier);
 
     switch (action.id) {
+      case 'global_play_pause':
       case 'play_pause':
         playback.togglePlay();
         return true;
+      case 'global_next_track':
       case 'next_track':
         playback.skipNext();
         return true;
+      case 'global_previous_track':
       case 'previous_track':
         playback.skipPrevious();
         return true;
@@ -168,8 +171,17 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
       case 'cycle_repeat':
         playback.nextRepeatMode();
         return true;
+      case 'global_toggle_favorite':
       case 'toggle_favorite':
         playback.toggleFavorite();
+        return true;
+      case 'global_copy_song_info':
+      case 'copy_song_info':
+        final currentSong = ref.read(playbackProvider).currentSong;
+        if (currentSong != null) {
+          final text = '${currentSong.title} - ${currentSong.artist ?? 'Unknown Artist'}';
+          Clipboard.setData(ClipboardData(text: text));
+        }
         return true;
       case 'set_loop_a':
         playback.setLoopPointA();
@@ -217,9 +229,11 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
       case 'seek_to_start':
         playback.seek(Duration.zero);
         return true;
+      case 'global_volume_up':
       case 'volume_up':
         playback.adjustVolume(0.05);
         return true;
+      case 'global_volume_down':
       case 'volume_down':
         playback.adjustVolume(-0.05);
         return true;
@@ -229,6 +243,7 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
       case 'volume_down_large':
         playback.adjustVolume(-0.10);
         return true;
+      case 'global_toggle_mute':
       case 'toggle_mute':
         playback.toggleMute();
         return true;

@@ -327,6 +327,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..crossfadeDuration = s.crossfadeDuration
       ..crossfadeMode = s.crossfadeMode
       ..autoTrimSilence = s.autoTrimSilence
+      ..enableGlobalHotkeys = s.enableGlobalHotkeys
+      ..enableTaskbarControls = s.enableTaskbarControls
       ..showPlayedSongsInQueue = s.showPlayedSongsInQueue
       ..customShortcutsJson = s.customShortcutsJson
       ..defaultMiniPlayerType = s.defaultMiniPlayerType
@@ -703,6 +705,22 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateAutoTrimSilence(bool value) async {
     final newState = _clone(state)..autoTrimSilence = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateEnableGlobalHotkeys(bool value) async {
+    final newState = _clone(state)..enableGlobalHotkeys = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateEnableTaskbarControls(bool value) async {
+    final newState = _clone(state)..enableTaskbarControls = value;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

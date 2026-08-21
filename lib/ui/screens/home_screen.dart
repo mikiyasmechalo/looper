@@ -47,6 +47,8 @@ import 'package:looper_player/ui/widgets/mini_player_standard.dart';
 import 'package:looper_player/ui/widgets/mini_player_corner_widget.dart';
 import 'package:looper_player/core/single_instance_service.dart';
 import 'package:looper_player/core/window_state_service.dart';
+import 'package:looper_player/core/global_hotkeys_service.dart';
+import 'package:looper_player/core/windows_taskbar_service.dart';
 import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -114,6 +116,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Wait for settings to load from DB
       await ref.read(settingsProvider.notifier).initialization;
       final settings = ref.read(settingsProvider);
+
+      // Initialize System-Wide Global Hotkeys (Desktop)
+      await ref.read(globalHotkeysServiceProvider).init();
+
+      // Initialize Windows Taskbar Thumbnail Toolbar Controls
+      ref.read(windowsTaskbarServiceProvider).init();
 
       // Check for application updates on GitHub
       UpdateService.checkForUpdates();

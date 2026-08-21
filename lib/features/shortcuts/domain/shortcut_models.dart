@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 enum ShortcutCategory {
+  global('Global (System-Wide)'),
   playback('Playback Controls'),
   seekingAndVolume('Seeking & Volume'),
   navigation('Navigation & Pages'),
@@ -172,6 +173,69 @@ class AppShortcutAction {
 
   /// All registered shortcut actions with their rich defaults.
   static final List<AppShortcutAction> all = [
+    // ─── Global System-Wide Shortcuts ───────────────────────────────────────
+    const AppShortcutAction(
+      id: 'global_play_pause',
+      title: 'Global Play / Pause',
+      description: 'Toggle playback anywhere in Windows (even minimized)',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.space, isCtrl: true, isAlt: true),
+    ),
+    const AppShortcutAction(
+      id: 'global_next_track',
+      title: 'Global Next Track',
+      description: 'Skip to next track anywhere in Windows (even minimized)',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowRight, isCtrl: true, isShift: true),
+      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.keyN, isCtrl: true, isAlt: true),
+    ),
+    const AppShortcutAction(
+      id: 'global_previous_track',
+      title: 'Global Previous Track',
+      description: 'Skip to previous track anywhere in Windows (even minimized)',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowLeft, isCtrl: true, isShift: true),
+      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.keyP, isCtrl: true, isAlt: true),
+    ),
+    const AppShortcutAction(
+      id: 'global_toggle_favorite',
+      title: 'Global Favorite / Like',
+      description: 'Toggle favorite for current song anywhere in Windows',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyF, isCtrl: true, isAlt: true),
+    ),
+    const AppShortcutAction(
+      id: 'global_copy_song_info',
+      title: 'Global Copy Song Info',
+      description: 'Copy Title - Artist to clipboard anywhere in Windows',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyC, isCtrl: true, isAlt: true),
+    ),
+    const AppShortcutAction(
+      id: 'global_volume_up',
+      title: 'Global Volume Up (+5%)',
+      description: 'Increase volume anywhere in Windows (even minimized)',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowUp, isCtrl: true, isShift: true),
+      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.arrowUp, isCtrl: true, isAlt: true),
+    ),
+    const AppShortcutAction(
+      id: 'global_volume_down',
+      title: 'Global Volume Down (-5%)',
+      description: 'Decrease volume anywhere in Windows (even minimized)',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowDown, isCtrl: true, isShift: true),
+      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.arrowDown, isCtrl: true, isAlt: true),
+    ),
+    const AppShortcutAction(
+      id: 'global_toggle_mute',
+      title: 'Global Mute / Unmute',
+      description: 'Toggle mute state anywhere in Windows (even minimized)',
+      category: ShortcutCategory.global,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyM, isCtrl: true, isShift: true),
+      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.keyM, isCtrl: true, isAlt: true),
+    ),
+
     // ─── Playback Controls ──────────────────────────────────────────────────
     const AppShortcutAction(
       id: 'play_pause',
@@ -225,6 +289,13 @@ class AppShortcutAction {
       description: 'Add or remove the current song from Favorites',
       category: ShortcutCategory.playback,
       defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyF),
+    ),
+    const AppShortcutAction(
+      id: 'copy_song_info',
+      title: 'Copy Current Song Info',
+      description: 'Copy the title and artist of the now playing song to clipboard',
+      category: ShortcutCategory.playback,
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyC, isCtrl: true, isAlt: true),
     ),
     const AppShortcutAction(
       id: 'set_loop_a',
@@ -326,7 +397,6 @@ class AppShortcutAction {
       description: 'Increase volume by 5 percent',
       category: ShortcutCategory.seekingAndVolume,
       defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowUp),
-      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.audioVolumeUp),
     ),
     const AppShortcutAction(
       id: 'volume_down',
@@ -334,7 +404,6 @@ class AppShortcutAction {
       description: 'Decrease volume by 5 percent',
       category: ShortcutCategory.seekingAndVolume,
       defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowDown),
-      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.audioVolumeDown),
     ),
     const AppShortcutAction(
       id: 'volume_up_large',
@@ -356,7 +425,6 @@ class AppShortcutAction {
       description: 'Toggle audio output mute state',
       category: ShortcutCategory.seekingAndVolume,
       defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyM),
-      defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.audioVolumeMute),
     ),
 
     // ─── Navigation & Pages ─────────────────────────────────────────────────

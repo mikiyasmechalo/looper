@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/shortcuts/domain/shortcut_models.dart';
 import 'package:looper_player/features/shortcuts/presentation/shortcuts_provider.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/features/shortcuts/presentation/widgets/shortcut_recorder_dialog.dart';
 import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_cheatsheet_dialog.dart';
 
@@ -107,6 +108,110 @@ class _ShortcutsSettingsViewState
                 ],
               ),
             ),
+
+            if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: ref.watch(settingsProvider).enableGlobalHotkeys
+                          ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              LucideIcons.globe,
+                              size: 20,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Global Hotkeys (System-Wide)',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Control playback when Looper is minimized or in the background',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Switch(
+                            value: ref.watch(settingsProvider).enableGlobalHotkeys,
+                            activeColor: theme.colorScheme.primary,
+                            onChanged: (v) {
+                              HapticFeedback.lightImpact();
+                              ref.read(settingsProvider.notifier).updateEnableGlobalHotkeys(v);
+                            },
+                          ),
+                        ],
+                      ),
+                      if (ref.watch(settingsProvider).enableGlobalHotkeys) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedCategory = ShortcutCategory.global;
+                                  _searchQuery = '';
+                                });
+                              },
+                              icon: Icon(
+                                LucideIcons.slidersHorizontal,
+                                size: 14,
+                                color: theme.colorScheme.primary,
+                              ),
+                              label: Text(
+                                'View & Edit 8 Global Shortcuts',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
 
             // Search Bar & Filter Chips
             Padding(
@@ -312,6 +417,8 @@ class _ShortcutsSettingsViewState
 
   IconData _getCategoryIcon(ShortcutCategory category) {
     switch (category) {
+      case ShortcutCategory.global:
+        return LucideIcons.globe;
       case ShortcutCategory.playback:
         return LucideIcons.play;
       case ShortcutCategory.seekingAndVolume:

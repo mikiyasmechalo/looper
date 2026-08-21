@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
   dynamic_color
   ffmpeg_kit_flutter_new_full
+  hotkey_manager_windows
   isar_flutter_libs
   local_notifier
   mpv_audio_kit

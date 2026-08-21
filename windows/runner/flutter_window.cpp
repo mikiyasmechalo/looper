@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "taskbar_manager.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -27,6 +28,10 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
+  // Initialize Windows Taskbar Thumbnail Toolbar Controls
+  TaskbarManager::GetInstance().Initialize(
+      GetHandle(), flutter_controller_->engine()->messenger());
+
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
   });
@@ -40,6 +45,8 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  TaskbarManager::GetInstance().Shutdown();
+
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -61,7 +68,23 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     }
   }
 
+  if (message == TaskbarManager::GetTaskbarCreatedMessage()) {
+    TaskbarManager::GetInstance().OnTaskbarButtonCreated();
+    return 0;
+  }
+
   switch (message) {
+    case WM_DWMSENDICONICTHUMBNAIL:
+      TaskbarManager::GetInstance().HandleSendIconicThumbnail(HIWORD(lparam), LOWORD(lparam));
+      return 0;
+    case WM_DWMSENDICONICLIVEPREVIEWBITMAP:
+      TaskbarManager::GetInstance().HandleSendIconicLivePreview(HIWORD(lparam), LOWORD(lparam));
+      return 0;
+    case WM_COMMAND:
+      if (TaskbarManager::GetInstance().HandleCommand(wparam, lparam)) {
+        return 0;
+      }
+      break;
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
