@@ -64,6 +64,9 @@ class PlaybackState {
   final Duration? loopEnd;
   final bool isABLooping;
 
+  final bool isVocalReducerActive;
+  final double vocalReducerStrength;
+
   PlaybackState({
     this.currentSong,
     this.isPlaying = false,
@@ -83,6 +86,8 @@ class PlaybackState {
     this.loopStart,
     this.loopEnd,
     this.isABLooping = false,
+    this.isVocalReducerActive = false,
+    this.vocalReducerStrength = 1.0,
   });
 
   PlaybackState copyWith({
@@ -104,6 +109,8 @@ class PlaybackState {
     Object? loopStart = _sentinel,
     Object? loopEnd = _sentinel,
     bool? isABLooping,
+    bool? isVocalReducerActive,
+    double? vocalReducerStrength,
   }) {
     return PlaybackState(
       currentSong: currentSong == _sentinel ? this.currentSong : currentSong as Song?,
@@ -132,6 +139,8 @@ class PlaybackState {
       loopStart: loopStart == _sentinel ? this.loopStart : loopStart as Duration?,
       loopEnd: loopEnd == _sentinel ? this.loopEnd : loopEnd as Duration?,
       isABLooping: isABLooping ?? this.isABLooping,
+      isVocalReducerActive: isVocalReducerActive ?? this.isVocalReducerActive,
+      vocalReducerStrength: vocalReducerStrength ?? this.vocalReducerStrength,
     );
   }
 }
@@ -2012,6 +2021,19 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       final target = _lastVolume > 0.001 ? _lastVolume : 0.8;
       setVolume(target);
     }
+  }
+
+  Future<void> toggleVocalReducer() async {
+    final nextState = !state.isVocalReducerActive;
+    await setVocalReducer(nextState, strength: state.vocalReducerStrength);
+  }
+
+  Future<void> setVocalReducer(bool enabled, {double strength = 1.0}) async {
+    state = state.copyWith(
+      isVocalReducerActive: enabled,
+      vocalReducerStrength: strength,
+    );
+    await ref.read(audioServiceProvider).setLiveVocalReducer(enabled, strength: strength);
   }
 
   Future<bool> _requestStoragePermissions() async {

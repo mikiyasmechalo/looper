@@ -11,6 +11,8 @@ class AudioService {
   late final Player player;
   List<double>? _lastEqualizerGains;
   bool _equalizerEnabled = false;
+  bool _vocalReducerEnabled = false;
+  double _vocalReducerStrength = 1.0;
   String? _customFilterString;
   String? _lastArtPath;
   MediaSessionArtwork _lastArtwork = MediaSessionArtwork.embedded;
@@ -524,11 +526,11 @@ class AudioService {
     final media = Media(
       path,
       extras: {
-        if (title != null) 'title': title,
-        if (artist != null) 'artist': artist,
-        if (album != null) 'album': album,
-        if (artPath != null) 'artPath': artPath,
-        if (metadata?['duration'] != null) 'duration': metadata!['duration']!,
+        ...?title != null ? {'title': title} : null,
+        ...?artist != null ? {'artist': artist} : null,
+        ...?album != null ? {'album': album} : null,
+        ...?artPath != null ? {'artPath': artPath} : null,
+        ...?metadata?['duration'] != null ? {'duration': metadata!['duration']!} : null,
       },
     );
     await player.add(media);
@@ -768,6 +770,26 @@ class AudioService {
     } catch (e) {}
   }
 
+  Future<void> setLiveVocalReducer(bool enabled, {double strength = 1.0}) async {
+    _vocalReducerEnabled = enabled;
+    _vocalReducerStrength = strength.clamp(0.0, 1.0);
+    if (!_filtersInitialized || player.state.playlist.items.isEmpty) return;
+    try {
+      await player.updateAudioEffects((e) {
+        final customList = List<String>.from(e.custom);
+        customList.removeWhere((f) => f.contains('@aek_karaoke'));
+        if (_vocalReducerEnabled) {
+          final mlev = (1.0 - _vocalReducerStrength * 0.97).toStringAsFixed(2);
+          final slev = (1.0 + _vocalReducerStrength * 0.15).toStringAsFixed(2);
+          customList.insert(0, '@aek_karaoke:lavfi-stereotools=mlev=$mlev:slev=$slev');
+        }
+        return e.copyWith(custom: customList);
+      });
+    } catch (e) {
+      debugPrint("Failed to set live vocal reducer: $e");
+    }
+  }
+
   // ── SoX resampler filter string (injected last in every customFilters list)
   // Placed last so it is the final stage before the AO — ensuring the output
   // rate conversion (when needed) uses SoX 28-bit sinc with TPDF dither.
@@ -998,6 +1020,11 @@ class AudioService {
 
     AudioEffects buildEffects() {
       final List<String> finalCustomFilters = [];
+      if (_vocalReducerEnabled) {
+        final mlev = (1.0 - _vocalReducerStrength * 0.97).toStringAsFixed(2);
+        final slev = (1.0 + _vocalReducerStrength * 0.15).toStringAsFixed(2);
+        finalCustomFilters.add('@aek_karaoke:lavfi-stereotools=mlev=$mlev:slev=$slev');
+      }
       if (customFilter != null && customFilter.trim().isNotEmpty) {
         finalCustomFilters.add(customFilter.trim());
       }

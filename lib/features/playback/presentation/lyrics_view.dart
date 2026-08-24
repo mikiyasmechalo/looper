@@ -132,6 +132,32 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
                   _buildModeSelector(true),
                 if (currentSong != null) ...[
                   const SizedBox(width: 4),
+                  Tooltip(
+                    message: ref.watch(playbackProvider.select((s) => s.isVocalReducerActive))
+                        ? 'Vocal Reducer (Active) - Tap to disable'
+                        : 'Live Vocal Reducer (Instant Karaoke)',
+                    child: IconButton(
+                      icon: Icon(
+                        ref.watch(playbackProvider.select((s) => s.isVocalReducerActive))
+                            ? LucideIcons.mic
+                            : LucideIcons.micOff,
+                        size: 17,
+                        color: ref.watch(playbackProvider.select((s) => s.isVocalReducerActive))
+                            ? primaryColor
+                            : Colors.white54,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: ref.watch(playbackProvider.select((s) => s.isVocalReducerActive))
+                            ? primaryColor.withValues(alpha: 0.18)
+                            : Colors.white.withValues(alpha: 0.04),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        ref.read(playbackProvider.notifier).toggleVocalReducer();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   IconButton(
                     icon: const Icon(LucideIcons.rotateCcw, size: 16, color: Colors.white54),
                     tooltip: 'Reload lyrics',

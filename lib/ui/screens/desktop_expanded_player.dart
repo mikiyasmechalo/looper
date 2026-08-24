@@ -2194,6 +2194,9 @@ class _PanelHeaderBadge extends ConsumerWidget {
       final alignment = ref.watch(
         settingsProvider.select((s) => s.lyricsAlignment),
       );
+      final isKaraokeActive = ref.watch(
+        playbackProvider.select((s) => s.isVocalReducerActive),
+      );
       final colorScheme = Theme.of(context).colorScheme;
 
       Widget alignBtn(IconData icon, String value, String tooltip) {
@@ -2244,6 +2247,60 @@ class _PanelHeaderBadge extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Tooltip(
+              message: isKaraokeActive
+                  ? 'Vocal Reducer (Active) - Tap to disable'
+                  : 'Live Vocal Reducer (Instant Karaoke)',
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  ref.read(playbackProvider.notifier).toggleVocalReducer();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  height: 24,
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                  decoration: BoxDecoration(
+                    color: isKaraokeActive
+                        ? colorScheme.primary.withValues(alpha: 0.25)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(999),
+                    border: isKaraokeActive
+                        ? Border.all(
+                            color: colorScheme.primary.withValues(alpha: 0.5),
+                            width: 0.8,
+                          )
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isKaraokeActive ? LucideIcons.mic : LucideIcons.micOff,
+                        size: 12.5,
+                        color: isKaraokeActive ? colorScheme.primary : Colors.white54,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Karaoke',
+                        style: AppFonts.jostStyle(
+                          fontSize: 11,
+                          fontWeight: isKaraokeActive ? FontWeight.bold : FontWeight.normal,
+                          color: isKaraokeActive ? colorScheme.primary : Colors.white54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              height: 14,
+              width: 1,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
             alignBtn(LucideIcons.alignLeft, 'left', 'Left align'),
             const SizedBox(width: 2),
             alignBtn(LucideIcons.alignCenter, 'center', 'Center align'),
