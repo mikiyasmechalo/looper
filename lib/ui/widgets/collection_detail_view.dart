@@ -247,7 +247,8 @@ class CollectionDetailView extends ConsumerWidget {
                   ),
                 ),
                 if (sortedSongs.isNotEmpty)
-                  SliverList(
+                  SliverFixedExtentList(
+                    itemExtent: 72.0,
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final song = sortedSongs[index];

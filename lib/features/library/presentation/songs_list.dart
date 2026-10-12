@@ -53,6 +53,15 @@ class SongsList extends ConsumerWidget {
         .watch(settingsProvider.select((s) => s.songViewStyleIndex))
         .clamp(0, SongViewStyle.values.length - 1)];
 
+    final double? itemExtent = (searchQuery == null || searchQuery!.isEmpty)
+        ? switch (songViewStyle) {
+            SongViewStyle.normal => 72.0,
+            SongViewStyle.compact => 48.0,
+            SongViewStyle.textOnly => 40.0,
+            SongViewStyle.grid => null,
+          }
+        : null;
+
     Widget buildSongItem(int index) {
       final song = songs[index];
       return switch (songViewStyle) {
@@ -221,6 +230,7 @@ class SongsList extends ConsumerWidget {
                   physics: physics ?? const BouncingScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(0, 8, 0, 180),
                   itemCount: songs.length,
+                  itemExtent: itemExtent,
                   itemBuilder: (context, index) => buildSongItem(index),
                 )
         else
@@ -256,6 +266,7 @@ class SongsList extends ConsumerWidget {
                           ),
                       padding: const EdgeInsets.fromLTRB(0, 8, 0, 180),
                       itemCount: songs.length,
+                      itemExtent: itemExtent,
                       itemBuilder: (context, index) => buildSongItem(index),
                     ),
             ),
@@ -384,133 +395,145 @@ class SongTile extends ConsumerWidget {
           song: song,
           playlist: playlist,
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.only(
-            left: 16,
-            right: 4,
-            top: 0,
-            bottom: 0,
-          ),
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: isCurrent
-                ? Stack(
-                    children: [
-                      OptimizedImage(
-                        imagePath: song.artPath,
-                        width: 52,
-                        height: 52,
-                        fit: BoxFit.contain,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      Positioned.fill(
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 300),
-                          opacity: isPlaying ? 1.0 : 0.0,
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            child: Center(
-                              child: Image.asset(
-                                'assets/android_icons/Playing.gif',
-                                width: 24,
-                                height: 24,
-                                color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: isCurrent
+                      ? Stack(
+                          children: [
+                            OptimizedImage(
+                              imagePath: song.artPath,
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.contain,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            Positioned.fill(
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 300),
+                                opacity: isPlaying ? 1.0 : 0.0,
+                                child: Container(
+                                  color: Colors.black.withValues(alpha: 0.4),
+                                  child: Center(
+                                    child: Image.asset(
+                                      'assets/android_icons/Playing.gif',
+                                      width: 24,
+                                      height: 24,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
+                        )
+                      : OptimizedImage(
+                          imagePath: song.artPath,
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.contain,
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                      ),
-                    ],
-                  )
-                : OptimizedImage(
-                    imagePath: song.artPath,
-                    width: 52,
-                    height: 52,
-                    fit: BoxFit.contain,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-          ),
-          title: Text(
-            song.title,
-            style: AppFonts.jostStyle(
-              color: isCurrent
-                  ? Theme.of(context).colorScheme.primary
-                  : Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: lyricSnippet != null
-              ? Column(
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Align keeps the subtitle bounded to the text width
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildSubtitle(context, ref),
+                    Text(
+                      song.title,
+                      style: AppFonts.jostStyle(
+                        color: isCurrent
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.12),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Row(
+                    const SizedBox(height: 3),
+                    if (lyricSnippet != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            LucideIcons.quote,
-                            size: 9,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: _buildHighlightedText(
-                              context: context,
-                              text: lyricSnippet,
-                              query: searchQuery ?? '',
-                              baseStyle: AppFonts.jostStyle(
-                                color: Colors.white.withValues(alpha: 0.75),
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
+                          _buildSubtitle(context, ref),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.12),
+                                width: 0.8,
                               ),
-                              highlightStyle: AppFonts.jostStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  LucideIcons.quote,
+                                  size: 9,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: _buildHighlightedText(
+                                    context: context,
+                                    text: lyricSnippet,
+                                    query: searchQuery ?? '',
+                                    baseStyle: AppFonts.jostStyle(
+                                      color: Colors.white
+                                          .withValues(alpha: 0.75),
+                                      fontSize: 11,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    highlightStyle: AppFonts.jostStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                    ),
+                      )
+                    else
+                      _buildSubtitle(context, ref),
                   ],
-                )
-              : Align(
-                  alignment: Alignment.centerLeft,
-                  child: _buildSubtitle(context, ref),
                 ),
-          trailing: IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.grey),
-            onPressed: () => showSongOptionsBottomSheet(
-              context: context,
-              ref: ref,
-              song: song,
-              playlist: playlist,
-            ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.more_vert, color: Colors.grey),
+                onPressed: () => showSongOptionsBottomSheet(
+                  context: context,
+                  ref: ref,
+                  song: song,
+                  playlist: playlist,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1422,7 +1445,9 @@ class _SongTextOnlyTile extends ConsumerWidget {
           child: Row(
             children: [
               SizedBox(
-                width: 28,
+                width: songs.length >= 10000
+                    ? 42
+                    : (songs.length >= 1000 ? 34 : 26),
                 child: isCurrent && isPlaying
                     ? Center(
                         child: Image.asset(
@@ -1432,14 +1457,20 @@ class _SongTextOnlyTile extends ConsumerWidget {
                           color: accent,
                         ),
                       )
-                    : Text(
-                        '${index + 1}',
-                        textAlign: TextAlign.center,
-                        style: AppFonts.jostStyle(
-                          color: isCurrent ? accent : Colors.white38,
-                          fontSize: 12,
-                          fontWeight:
-                              isCurrent ? FontWeight.bold : FontWeight.normal,
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${index + 1}',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: AppFonts.jostStyle(
+                            color: isCurrent ? accent : Colors.white38,
+                            fontSize: 12,
+                            fontWeight:
+                                isCurrent ? FontWeight.bold : FontWeight.normal,
+                          ),
                         ),
                       ),
               ),
