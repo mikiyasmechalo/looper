@@ -192,7 +192,12 @@ class CollectionDetailView extends ConsumerWidget {
                         const SizedBox(height: 16),
                       // Header - Now always a Row for cover and name
                       Container(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        padding: EdgeInsets.fromLTRB(
+                          (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
+                          8,
+                          (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
+                          16,
+                        ),
                         child: isNarrow
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,

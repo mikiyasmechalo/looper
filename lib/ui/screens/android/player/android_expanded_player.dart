@@ -1375,7 +1375,7 @@ class _GestureArtworkWithFeedbackState
                           : null,
                       borderRadius: BorderRadius.circular(24),
                       fit: BoxFit.cover,
-                      cacheWidth: (screenWidth * dpr).toInt(),
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                 ),
@@ -1579,9 +1579,6 @@ class ForegroundAlbumArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final double dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
-
     return AspectRatio(
       aspectRatio: 1.0,
       child: OptimizedImage(
@@ -1593,7 +1590,7 @@ class ForegroundAlbumArt extends StatelessWidget {
             : null,
         borderRadius: BorderRadius.circular(24),
         fit: BoxFit.cover,
-        cacheWidth: (screenWidth * dpr).toInt(),
+        filterQuality: FilterQuality.high,
       ),
     );
   }

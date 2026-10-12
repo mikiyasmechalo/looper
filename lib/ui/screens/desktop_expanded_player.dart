@@ -1986,7 +1986,10 @@ class _BreathingAlbumArtState extends State<_BreathingAlbumArt>
                 borderRadius: BorderRadius.circular(24),
                 child: OptimizedImage(
                   imagePath: widget.artPath,
+                  width: widget.maxSize,
+                  height: widget.maxSize,
                   fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
                   placeholder: Container(
                     color: Colors.white10,
                     child: const Icon(

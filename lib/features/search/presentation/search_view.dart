@@ -312,8 +312,14 @@ class SearchView extends ConsumerWidget {
     }
 
     Widget buildSongsHeader() {
+      final isDesktop = !Platform.isAndroid && !Platform.isIOS;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        padding: EdgeInsets.fromLTRB(
+          isDesktop ? 10 : 16,
+          16,
+          isDesktop ? 14 : 16,
+          8,
+        ),
         child: Text(
           l10n.songs,
           style: AppFonts.jostStyle(fontSize: 18, fontWeight: FontWeight.normal),

@@ -236,8 +236,11 @@ class _PremiumPlayerBar extends ConsumerWidget {
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
           child: OptimizedImage(
             imagePath: artPath,
+            width: (isVeryNarrow ? 40 : 56).s,
+            height: (isVeryNarrow ? 40 : 56).s,
             borderRadius: BorderRadius.circular(6),
             fit: BoxFit.cover,
+            filterQuality: FilterQuality.medium,
             placeholder: Icon(
               LucideIcons.music,
               color: Colors.white24,

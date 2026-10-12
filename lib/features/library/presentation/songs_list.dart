@@ -103,7 +103,12 @@ class SongsList extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.only(
+            left: (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
+            right: (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
+            top: 8,
+            bottom: 8,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -214,7 +219,12 @@ class SongsList extends ConsumerWidget {
                   controller: controller,
                   shrinkWrap: true,
                   physics: physics ?? const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
+                  padding: EdgeInsets.fromLTRB(
+                    (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
+                    8,
+                    (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
+                    180,
+                  ),
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 180,
                     crossAxisSpacing: 12,
@@ -246,7 +256,12 @@ class SongsList extends ConsumerWidget {
                           const AlwaysScrollableScrollPhysics(
                             parent: BouncingScrollPhysics(),
                           ),
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
+                      padding: EdgeInsets.fromLTRB(
+                        (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
+                        8,
+                        (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
+                        180,
+                      ),
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: 180,
@@ -919,6 +934,7 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap>
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = !Platform.isAndroid && !Platform.isIOS;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -926,6 +942,10 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap>
       child: AnimatedContainer(
         duration: Duration(milliseconds: _isHovered ? 80 : 220),
         curve: Curves.easeOutCubic,
+        margin: EdgeInsets.only(
+          left: isDesktop ? 10 : 8,
+          right: isDesktop ? 14 : 8,
+        ),
         decoration: BoxDecoration(
           color: _isHovered
               ? Colors.white.withValues(alpha: 0.08)
