@@ -69,15 +69,31 @@ const int _quickPicksCount = 12;
 /// favorites, and a random selection, deduplicated. Computed once per app run
 /// (or when the library song set changes) so it does not reshuffle on rebuilds.
 final homeQuickPicksMixProvider = Provider<List<Song>>((ref) {
+  final isScanning = ref.watch(libraryProvider.select((l) => l.isScanning));
   final allSongs = ref.watch(libraryProvider.select((l) => l.songs));
+
+  // If a library scan is in progress and we already have cached quick picks,
+  // hold the existing list completely stable. Do not reshuffle or refresh
+  // until the scan is fully finished.
+  if (isScanning && _cachedQuickPicks != null && _cachedQuickPicks!.isNotEmpty) {
+    return _cachedQuickPicks!;
+  }
+
+  // If scanning is in progress and we had no songs before, stay empty until scan completes.
+  if (isScanning && (_cachedQuickPicks == null || _cachedQuickPicks!.isEmpty)) {
+    return const [];
+  }
+
   var fingerprint = allSongs.length;
   for (final s in allSongs) {
     fingerprint = (fingerprint * 31 + s.path.hashCode) & 0x7fffffff;
   }
+
+  final targetCount = math.min(_quickPicksCount, allSongs.length);
   // Rebuild if the library changed OR the cached list no longer matches the
   // requested count (e.g. a stale cache left over from a hot-reloaded build).
   if (_cachedQuickPicks == null ||
-      _cachedQuickPicks!.length != _quickPicksCount ||
+      _cachedQuickPicks!.length != targetCount ||
       fingerprint != _quickPicksFingerprint) {
     _quickPicksFingerprint = fingerprint;
     _cachedQuickPicks = RecommendationsService.buildQuickPicksQueue(
@@ -96,7 +112,6 @@ class HomeDashboard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final bool isDynamic = settings.enableDynamicTheming;
-    final library = ref.watch(libraryProvider);
     final l10n = AppLocalizations.of(context)!;
 
     final genresData = ref.watch(dashboardGenresDataProvider);
@@ -143,7 +158,7 @@ class HomeDashboard extends ConsumerWidget {
         for (final section in settings.homeSectionOrder) {
           if (section == 'quick_picks') {
             orderedChildren.add(
-              _buildQuickPicks(context, ref, isNarrow, isMedium, isDynamic),
+              _buildQuickPicks(context, ref, isNarrow, isMedium),
             );
             orderedChildren.add(const SizedBox(height: 16));
           } else if (section == 'songs') {
@@ -324,7 +339,6 @@ class HomeDashboard extends ConsumerWidget {
     WidgetRef ref,
     bool isNarrow,
     bool isMedium,
-    bool isDynamic,
   ) {
     final songs = ref.watch(homeQuickPicksMixProvider);
 
@@ -340,7 +354,7 @@ class HomeDashboard extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
+        HomeDashboard._buildSectionHeader(
           context,
           title: 'Quick Picks',
           isNarrow: isNarrow,
@@ -751,7 +765,7 @@ class HomeDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(
+  static Widget _buildSectionHeader(
     BuildContext context, {
     required String title,
     required bool isNarrow,

@@ -28,7 +28,12 @@ class WindowsTaskbarService {
     _channel.setMethodCallHandler(_handleMethodCall);
 
     _ref.listen<PlaybackState>(playbackProvider, (prev, next) {
-      final songChanged = prev?.currentSong?.id != next.currentSong?.id;
+      final prevSong = prev?.currentSong;
+      final nextSong = next.currentSong;
+      final songChanged = prevSong?.path != nextSong?.path ||
+          prevSong?.title != nextSong?.title ||
+          prevSong?.artist != nextSong?.artist ||
+          prevSong?.id != nextSong?.id;
       final playChanged = prev?.isPlaying != next.isPlaying;
       final queueChanged = prev?.queue.length != next.queue.length;
 
@@ -94,9 +99,12 @@ class WindowsTaskbarService {
         : 0.0;
 
     // Load artwork bytes if changed
-    if (song?.artPath != _lastArtworkPath) {
-      _lastArtworkPath = song?.artPath;
+    if (song != null && song.artPath != _lastArtworkPath) {
+      _lastArtworkPath = song.artPath;
       _cachedArt = await _loadArtworkRgba(_lastArtworkPath);
+    } else if (song == null) {
+      _lastArtworkPath = null;
+      _cachedArt = null;
     }
 
     try {
@@ -104,7 +112,7 @@ class WindowsTaskbarService {
         'isPlaying': isPlaying,
         'canSkipPrev': canSkipPrev,
         'canSkipNext': canSkipNext,
-        'title': song?.title ?? 'No Track Playing',
+        'title': song?.title ?? (isPlaying ? 'Playing Track' : 'No Track Playing'),
         'artist': song?.artist ?? 'Looper Player',
         'album': song?.album ?? '',
         'timeText': timeText,
@@ -126,18 +134,35 @@ class WindowsTaskbarService {
   }
 
   Future<Map<String, dynamic>?> _loadArtworkRgba(String? path) async {
-    if (path == null || path.isEmpty || !File(path).existsSync()) return null;
+    if (path == null || path.isEmpty) return null;
     try {
-      final bytes = await File(path).readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes, targetWidth: 80, targetHeight: 80);
-      final frame = await codec.getNextFrame();
-      final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      if (byteData != null) {
-        return {
-          'bytes': byteData.buffer.asUint8List(),
-          'width': frame.image.width,
-          'height': frame.image.height,
-        };
+      Uint8List? bytes;
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        final client = HttpClient();
+        final request = await client.getUrl(Uri.parse(path));
+        final response = await request.close();
+        if (response.statusCode == 200) {
+          bytes = await consolidateHttpClientResponseBytes(response);
+        }
+        client.close();
+      } else {
+        final file = File(path);
+        if (file.existsSync()) {
+          bytes = await file.readAsBytes();
+        }
+      }
+
+      if (bytes != null && bytes.isNotEmpty) {
+        final codec = await ui.instantiateImageCodec(bytes, targetWidth: 80, targetHeight: 80);
+        final frame = await codec.getNextFrame();
+        final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        if (byteData != null) {
+          return {
+            'bytes': byteData.buffer.asUint8List(),
+            'width': frame.image.width,
+            'height': frame.image.height,
+          };
+        }
       }
     } catch (e) {
       debugPrint('[WindowsTaskbarService] Error loading artwork: $e');

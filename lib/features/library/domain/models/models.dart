@@ -151,6 +151,8 @@ class AppSettings {
   bool enablePlayerGradient = true;
   bool settingsV2 = false;
   bool settingsV3 = false;
+  bool settingsV4 = false;
+  bool settingsV5 = false;
   bool showPerformanceOptimizer = false;
   String? customBackgroundImagePath;
   double bgBrightness = 0.5;
@@ -321,6 +323,10 @@ class AppSettings {
 
   // Song View Style (0: normal, 1: compact, 2: textOnly, 3: grid)
   int songViewStyleIndex = 0;
+
+  // App Updates & Notifications
+  bool enableUpdateNotifications = true;
+  String skippedUpdateVersion = '';
 }
 
 enum CardStyle { normal, circle, card, image, imageGapless }

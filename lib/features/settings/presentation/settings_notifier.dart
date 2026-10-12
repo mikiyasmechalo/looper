@@ -168,6 +168,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.settingsV3 = true;
         needsSave = true;
       }
+      if (!settings.settingsV4) {
+        settings.enableUpdateNotifications = true;
+        settings.settingsV4 = true;
+        needsSave = true;
+      }
+      if (!settings.settingsV5) {
+        settings.enableTaskbarControls = true;
+        settings.settingsV5 = true;
+        needsSave = true;
+      }
       if (settings.globalEqualizerGains.length < 48) {
         settings.globalEqualizerGains = _createDefaultGains();
         needsSave = true;
@@ -204,6 +214,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         ..enablePlayerGradient = true
         ..settingsV2 = true
         ..settingsV3 = true
+        ..settingsV4 = true
+        ..settingsV5 = true
+        ..enableTaskbarControls = true
+        ..enableUpdateNotifications = true
         ..dynamicLyrics = false
         ..blurredArtworkForLyrics = true
         ..showPerformanceOptimizer = false
@@ -301,6 +315,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..enablePlayerGradient = s.enablePlayerGradient
       ..settingsV2 = s.settingsV2
       ..settingsV3 = s.settingsV3
+      ..settingsV4 = s.settingsV4
+      ..settingsV5 = s.settingsV5
       ..blurredArtworkForLyrics = s.blurredArtworkForLyrics
       ..customBackgroundImagePath = s.customBackgroundImagePath
       ..bgBrightness = s.bgBrightness
@@ -409,7 +425,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..showSidebarQueue = s.showSidebarQueue
       ..showSidebarGenres = s.showSidebarGenres
       ..showSidebarFolders = s.showSidebarFolders
-      ..folderViewTreeMode = s.folderViewTreeMode;
+      ..folderViewTreeMode = s.folderViewTreeMode
+      ..enableUpdateNotifications = s.enableUpdateNotifications
+      ..skippedUpdateVersion = s.skippedUpdateVersion;
   }
 
   Future<void> updateShowTrayOnlyWhenMinimized(bool value) async {
@@ -1299,6 +1317,18 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateStreamingQuality(int quality) async {
     final newState = _clone(state)..streamingQuality = quality;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateEnableUpdateNotifications(bool value) async {
+    final newState = _clone(state)..enableUpdateNotifications = value;
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> updateSkippedUpdateVersion(String version) async {
+    final newState = _clone(state)..skippedUpdateVersion = version;
     await _save(newState);
     state = newState;
   }

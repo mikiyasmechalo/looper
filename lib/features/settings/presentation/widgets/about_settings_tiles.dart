@@ -8,6 +8,7 @@ import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/core/update_service.dart';
 
 class LooperVersionTile extends StatelessWidget {
   const LooperVersionTile({super.key});
@@ -21,17 +22,111 @@ class LooperVersionTile extends StatelessWidget {
         style: AppFonts.jostStyle(color: Colors.white, fontWeight: FontWeight.w500),
       ),
       subtitle: Text(
-        'Version 2.0.00',
+        'Version 2.2.0',
         style: AppFonts.jostStyle(color: Colors.white54, fontSize: 12),
       ),
+      trailing: IconButton(
+        icon: SvgPicture.asset(
+          'assets/about/github_icon.svg',
+          width: 20,
+          height: 20,
+          colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn),
+        ),
+        tooltip: 'GitHub Repository',
+        onPressed: () async {
+          final Uri uri = Uri.parse('https://github.com/mikiyasmechalo/looper');
+          try {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        },
+      ),
       onTap: () async {
-        final Uri uri = Uri.parse('https://github.com/SthrNilshaaa/looper');
+        final Uri uri = Uri.parse('https://github.com/mikiyasmechalo/looper');
         try {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } catch (e) {
 
         }
       },
+    );
+  }
+}
+
+class CheckForUpdatesTile extends ConsumerWidget {
+  const CheckForUpdatesTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
+      leading: const Icon(LucideIcons.refreshCw, color: Colors.white70),
+      title: Text(
+        'Check for Updates',
+        style: AppFonts.jostStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      ),
+      subtitle: Text(
+        'Check GitHub for the latest release',
+        style: AppFonts.jostStyle(color: Colors.white54, fontSize: 12),
+      ),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        UpdateService.checkForUpdates(ref: ref, context: context, manual: true);
+      },
+    );
+  }
+}
+
+class UpdateNotificationsTile extends ConsumerWidget {
+  const UpdateNotificationsTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final isEnabled = settings.enableUpdateNotifications;
+    final skippedVersion = settings.skippedUpdateVersion;
+
+    return Column(
+      children: [
+        SwitchListTile(
+          secondary: const Icon(LucideIcons.bellRing, color: Colors.white70),
+          title: Text(
+            'Update Notifications',
+            style: AppFonts.jostStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
+          subtitle: Text(
+            'Automatically check for new releases and show notifications',
+            style: AppFonts.jostStyle(color: Colors.white54, fontSize: 12),
+          ),
+          value: isEnabled,
+          activeColor: const Color(0xFF41C25E),
+          onChanged: (val) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateEnableUpdateNotifications(val);
+          },
+        ),
+        if (skippedVersion.isNotEmpty) ...[
+          ListTile(
+            leading: const Icon(LucideIcons.skipForward, color: Colors.white38, size: 20),
+            title: Text(
+              'Skipped Version: $skippedVersion',
+              style: AppFonts.jostStyle(color: Colors.white70, fontSize: 13),
+            ),
+            subtitle: Text(
+              'Tap to un-skip and receive notifications for this version again',
+              style: AppFonts.jostStyle(color: Colors.white38, fontSize: 11),
+            ),
+            trailing: TextButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                ref.read(settingsProvider.notifier).updateSkippedUpdateVersion('');
+              },
+              child: Text(
+                'Reset',
+                style: AppFonts.jostStyle(color: const Color(0xFF41C25E), fontSize: 12),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -271,8 +271,14 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         duration: state.duration,
         isPlaying: state.isPlaying,
       );
+      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+        windowManager.setTitle('Looper - ${song.title} - ${song.artist ?? 'Unknown Artist'}');
+      }
     } else {
       DiscordRpcService.instance.clearPresence();
+      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+        windowManager.setTitle('Looper');
+      }
     }
     _updateWidgetState();
   }
@@ -1981,6 +1987,9 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       repeatMode: state.repeatMode,
     );
     await player.stop();
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      await windowManager.setTitle('Looper');
+    }
     await _ensureDynamicQueue();
   }
 

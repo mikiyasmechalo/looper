@@ -125,7 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(windowsTaskbarServiceProvider).init();
 
       // Check for application updates on GitHub
-      UpdateService.checkForUpdates();
+      UpdateService.checkForUpdates(ref: ref, context: context);
 
       // Handle CLI / Startup arguments (e.g. Open With, Add to Queue)
       final startupArgs = ref.read(startupArgsProvider);

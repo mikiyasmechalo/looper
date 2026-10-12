@@ -21,6 +21,7 @@ import 'package:looper_player/core/app_icons.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/core/system_tray_service.dart';
 import 'package:looper_player/features/library/presentation/library_cleanup_view.dart';
+import 'package:looper_player/core/update_service.dart';
 
 enum SettingsCategory {
   appearance,
@@ -110,7 +111,8 @@ class SettingsView extends ConsumerWidget {
                   fit: StackFit.expand,
                   children: <Widget>[
                     ...previousChildren,
-                    ?currentChild,
+                    // ignore: use_null_aware_elements
+                    if (currentChild != null) currentChild,
                   ],
                 );
               },
@@ -1778,13 +1780,73 @@ class SettingsView extends ConsumerWidget {
           icon: LucideIcons.info,
           title: l10n.appTitle,
           subtitle: 'Version 2.2.0',
-          onTap: () {},
-          trailing: const Text(
-            'v2.2.0',
-            style: TextStyle(color: Colors.white38, fontSize: 13),
+          onTap: () async {
+            final url = Uri.parse('https://github.com/mikiyasmechalo/looper');
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            }
+          },
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'v2.2.0',
+                style: TextStyle(color: Colors.white38, fontSize: 13),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: SvgPicture.asset(
+                  'assets/about/github_icon.svg',
+                  width: 18,
+                  height: 18,
+                  colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn),
+                ),
+                tooltip: 'GitHub Repository',
+                onPressed: () async {
+                  final url = Uri.parse('https://github.com/mikiyasmechalo/looper');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+            ],
           ),
           isLast: false,
         ),
+        _PremiumActionRow(
+          icon: LucideIcons.refreshCw,
+          title: 'Check for Updates',
+          subtitle: 'Check GitHub for the latest release',
+          onTap: () {
+            HapticFeedback.lightImpact();
+            UpdateService.checkForUpdates(ref: ref, context: context, manual: true);
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.bellRing,
+          title: 'Update Notifications',
+          subtitle: 'Automatically check for new releases and show notifications',
+          value: settings.enableUpdateNotifications,
+          onChanged: (val) =>
+              ref.read(settingsProvider.notifier).updateEnableUpdateNotifications(val),
+          isLast: settings.skippedUpdateVersion.isEmpty,
+        ),
+        if (settings.skippedUpdateVersion.isNotEmpty)
+          _PremiumActionRow(
+            icon: LucideIcons.skipForward,
+            title: 'Skipped Version: ${settings.skippedUpdateVersion}',
+            subtitle: 'Tap to reset and receive notifications for this version',
+            trailing: Text(
+              'Reset',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              ref.read(settingsProvider.notifier).updateSkippedUpdateVersion('');
+            },
+            isLast: false,
+          ),
         _PremiumActionRow(
           icon: LucideIcons.music,
           title: l10n.lyricsProvider,
@@ -1802,7 +1864,7 @@ class SettingsView extends ConsumerWidget {
           title: l10n.sourceCode,
           subtitle: l10n.visitOfficialRepository,
           onTap: () async {
-            final url = Uri.parse('https://github.com/SthrNilshaaa/looper');
+            final url = Uri.parse('https://github.com/mikiyasmechalo/looper');
             if (await canLaunchUrl(url)) {
               await launchUrl(url, mode: LaunchMode.externalApplication);
             }
@@ -3015,10 +3077,11 @@ class _PremiumMaintainerSection extends StatelessWidget {
       title: 'Maintainers & Contributors',
       children: const [
         _AboutMaintainerTile(
-          name: 'John Doe',
+          name: 'Mikiyas Mechalo',
           role: 'Active Contributor',
-          github: 'https://github.com/johndoe',
-          telegram: 'https://t.me/johndoe',
+          avatar: 'assets/about/miki_avatar.jpg',
+          github: 'https://github.com/mikiyasmechalo',
+          telegram: 'https://t.me/mikeme2',
           isLast: false,
         ),
         _AboutMaintainerTile(

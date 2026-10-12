@@ -1185,14 +1185,19 @@ class SettingsCategoryScreen extends ConsumerWidget {
 
     } else if (categoryId == 'about') {
       children = [
-        const LooperVersionTile(), //1
-        const Divider(height: 1, indent: 72, color: Colors.white10), //2
-        const LyricsProviderTile(), //3
+        const LooperVersionTile(),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        const CheckForUpdatesTile(),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        const UpdateNotificationsTile(),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        const LyricsProviderTile(),
         AboutMaintainerRow(
-          name: 'John Doe',
+          name: 'Mikiyas Mechalo',
           role: 'Active Contributor',
-          github: 'https://github.com/johndoe',
-          telegram: 'https://t.me/johndoe',
+          avatar: 'assets/about/miki_avatar.jpg',
+          github: 'https://github.com/mikiyasmechalo',
+          telegram: 'https://t.me/mikeme2',
         ),
         const Divider(height: 1, indent: 72, color: Colors.white10),
         AboutMaintainerRow(

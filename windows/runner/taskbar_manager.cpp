@@ -306,10 +306,8 @@ bool TaskbarManager::HandleCommand(WPARAM wparam, LPARAM lparam) {
 }
 
 void TaskbarManager::HandleSendIconicThumbnail(int max_w, int max_h) {
-  int target_w = (std::min)(max_w, 280);
-  int target_h = (std::min)(max_h, 110);
-  if (target_w < 150) target_w = 150;
-  if (target_h < 75) target_h = 75;
+  int target_w = (max_w > 0) ? (std::min)(max_w, 280) : 280;
+  int target_h = (max_h > 0) ? (std::min)(max_h, 110) : 110;
 
   HBITMAP hBmp = CreateThumbnailBitmap(target_w, target_h);
   if (hBmp && hwnd_) {
@@ -319,10 +317,14 @@ void TaskbarManager::HandleSendIconicThumbnail(int max_w, int max_h) {
 }
 
 void TaskbarManager::HandleSendIconicLivePreview(int max_w, int max_h) {
-  int target_w = (std::min)(max_w, 280);
-  int target_h = (std::min)(max_h, 110);
-  if (target_w < 150) target_w = 150;
-  if (target_h < 75) target_h = 75;
+  int target_h = (max_h > 0) ? (std::min)(max_h, 330) : 220;
+  int target_w = (int)(target_h * (280.0 / 110.0));
+  if (max_w > 0 && target_w > max_w) {
+    target_w = max_w;
+    target_h = (int)(target_w * (110.0 / 280.0));
+  }
+  if (target_w < 280) target_w = 280;
+  if (target_h < 110) target_h = 110;
 
   HBITMAP hBmp = CreateThumbnailBitmap(target_w, target_h);
   if (hBmp && hwnd_) {
@@ -365,8 +367,11 @@ HBITMAP TaskbarManager::CreateThumbnailBitmap(int target_w, int target_h) {
     pixels[y * target_w + (target_w - 1)] = border_color;
   }
 
+  float scale = (float)target_h / 110.0f;
+  if (scale < 1.0f) scale = 1.0f;
+
   // Artwork dimensions
-  int art_pad = 12;
+  int art_pad = (int)(12 * scale);
   int art_size = target_h - (art_pad * 2);
   int art_x = art_pad;
   int art_y = art_pad;
@@ -412,59 +417,59 @@ HBITMAP TaskbarManager::CreateThumbnailBitmap(int target_w, int target_h) {
   // Draw typography & progress bar using GDI
   SetBkMode(memDC, TRANSPARENT);
 
-  int text_x = art_x + art_size + 14;
-  int text_w = target_w - text_x - 14;
+  int text_x = art_x + art_size + (int)(14 * scale);
+  int text_w = target_w - text_x - (int)(14 * scale);
 
   HFONT hTitleFont = CreateFontW(
-      15, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+      (int)(15 * scale), 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
       DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
       CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 
   HFONT hArtistFont = CreateFontW(
-      12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+      (int)(12 * scale), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
       DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
       CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 
   HFONT hAlbumFont = CreateFontW(
-      11, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+      (int)(11 * scale), 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
       DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
       CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 
   HFONT hTimeFont = CreateFontW(
-      11, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
+      (int)(11 * scale), 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
       DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
       CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 
   // Title
   HFONT hOldFont = (HFONT)SelectObject(memDC, hTitleFont);
   SetTextColor(memDC, RGB(255, 255, 255));
-  RECT rcTitle = { text_x, 10, text_x + text_w, 28 };
+  RECT rcTitle = { text_x, (int)(10 * scale), text_x + text_w, (int)(28 * scale) };
   DrawTextW(memDC, current_title_.c_str(), -1, &rcTitle,
             DT_LEFT | DT_VCENTER | DT_END_ELLIPSIS | DT_SINGLELINE | DT_NOPREFIX);
 
   // Artist
   SelectObject(memDC, hArtistFont);
   SetTextColor(memDC, RGB(180, 180, 185));
-  RECT rcArtist = { text_x, 28, text_x + text_w, 44 };
+  RECT rcArtist = { text_x, (int)(28 * scale), text_x + text_w, (int)(44 * scale) };
   DrawTextW(memDC, current_artist_.c_str(), -1, &rcArtist,
             DT_LEFT | DT_VCENTER | DT_END_ELLIPSIS | DT_SINGLELINE | DT_NOPREFIX);
 
-  int pb_y = 62;
-  int time_y = 70;
+  int pb_y = (int)(62 * scale);
+  int time_y = (int)(70 * scale);
 
   // Album (if present)
   if (!current_album_.empty()) {
     SelectObject(memDC, hAlbumFont);
     SetTextColor(memDC, RGB(130, 130, 140));
-    RECT rcAlbum = { text_x, 44, text_x + text_w, 58 };
+    RECT rcAlbum = { text_x, (int)(44 * scale), text_x + text_w, (int)(58 * scale) };
     DrawTextW(memDC, current_album_.c_str(), -1, &rcAlbum,
               DT_LEFT | DT_VCENTER | DT_END_ELLIPSIS | DT_SINGLELINE | DT_NOPREFIX);
-    pb_y = 66;
-    time_y = 74;
+    pb_y = (int)(66 * scale);
+    time_y = (int)(74 * scale);
   }
 
   // Progress Bar Track
-  int pb_h = 3;
+  int pb_h = (std::max)(2, (int)(3 * scale));
   int pb_w = text_w;
   uint32_t pb_track_color = 0xFF2E2E38;
   uint8_t acc_r = (accent_color_ >> 16) & 0xFF;
@@ -487,7 +492,7 @@ HBITMAP TaskbarManager::CreateThumbnailBitmap(int target_w, int target_h) {
   // Duration / Time Text
   SelectObject(memDC, hTimeFont);
   SetTextColor(memDC, RGB(140, 140, 150));
-  RECT rcTime = { text_x, time_y, text_x + text_w, time_y + 16 };
+  RECT rcTime = { text_x, time_y, text_x + text_w, time_y + (int)(16 * scale) };
   DrawTextW(memDC, current_time_text_.c_str(), -1, &rcTime,
             DT_LEFT | DT_VCENTER | DT_END_ELLIPSIS | DT_SINGLELINE | DT_NOPREFIX);
 

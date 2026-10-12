@@ -136,18 +136,63 @@ final homeSortedAlbumsProvider = Provider<List<Album>>((ref) {
   return albums;
 });
 
+List<Song>? _cachedAndroidQuickPicks;
+int _androidQuickPicksFingerprint = -1;
+
 final homeQuickPicksProvider = Provider<List<Song>>((ref) {
-  final library = ref.watch(libraryProvider);
-  final allSongs = List<Song>.from(library.songs);
-  allSongs.sort((a, b) => b.playCount.compareTo(a.playCount));
-  return allSongs.take(18).toList();
+  final isScanning = ref.watch(libraryProvider.select((l) => l.isScanning));
+  final songs = ref.watch(libraryProvider.select((l) => l.songs));
+
+  // If a library scan is in progress and we already have cached quick picks,
+  // hold the existing list completely stable. Do not reshuffle or refresh
+  // until the scan is fully finished.
+  if (isScanning && _cachedAndroidQuickPicks != null && _cachedAndroidQuickPicks!.isNotEmpty) {
+    return _cachedAndroidQuickPicks!;
+  }
+  if (isScanning && (_cachedAndroidQuickPicks == null || _cachedAndroidQuickPicks!.isEmpty)) {
+    return const [];
+  }
+
+  var fingerprint = songs.length;
+  for (final s in songs) {
+    fingerprint = (fingerprint * 31 + s.path.hashCode) & 0x7fffffff;
+  }
+
+  if (_cachedAndroidQuickPicks == null || fingerprint != _androidQuickPicksFingerprint) {
+    _androidQuickPicksFingerprint = fingerprint;
+    final allSongs = List<Song>.from(songs);
+    allSongs.sort((a, b) => b.playCount.compareTo(a.playCount));
+    _cachedAndroidQuickPicks = allSongs.take(18).toList();
+  }
+  return _cachedAndroidQuickPicks!;
 });
 
+List<Song>? _cachedAndroidRecentSongs;
+int _androidRecentSongsFingerprint = -1;
+
 final homeRecentlyAddedSongsProvider = Provider<List<Song>>((ref) {
-  final library = ref.watch(libraryProvider);
-  final dateAddedSongs = List<Song>.from(library.songs);
-  dateAddedSongs.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
-  return dateAddedSongs;
+  final isScanning = ref.watch(libraryProvider.select((l) => l.isScanning));
+  final songs = ref.watch(libraryProvider.select((l) => l.songs));
+
+  if (isScanning && _cachedAndroidRecentSongs != null && _cachedAndroidRecentSongs!.isNotEmpty) {
+    return _cachedAndroidRecentSongs!;
+  }
+  if (isScanning && (_cachedAndroidRecentSongs == null || _cachedAndroidRecentSongs!.isEmpty)) {
+    return const [];
+  }
+
+  var fingerprint = songs.length;
+  for (final s in songs) {
+    fingerprint = (fingerprint * 31 + s.path.hashCode) & 0x7fffffff;
+  }
+
+  if (_cachedAndroidRecentSongs == null || fingerprint != _androidRecentSongsFingerprint) {
+    _androidRecentSongsFingerprint = fingerprint;
+    final dateAddedSongs = List<Song>.from(songs);
+    dateAddedSongs.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+    _cachedAndroidRecentSongs = dateAddedSongs;
+  }
+  return _cachedAndroidRecentSongs!;
 });
 
 class AndroidHomeTab extends ConsumerStatefulWidget {
