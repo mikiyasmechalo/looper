@@ -42,6 +42,8 @@ class ArtistImage extends StatelessWidget {
     } else if (localPaths.length == 1) {
       content = OptimizedImage(
         imagePath: localPaths.first,
+        width: width,
+        height: height,
         fit: fit,
         placeholder: placeholder,
       );
@@ -49,6 +51,8 @@ class ArtistImage extends StatelessWidget {
       content = OptimizedImage(
         imageUrl: imageUrl,
         imagePath: imagePath,
+        width: width,
+        height: height,
         fit: fit,
         placeholder: placeholder,
       );
@@ -81,6 +85,7 @@ class ArtistImage extends StatelessWidget {
             child: OptimizedImage(
               imagePath: path,
               fit: BoxFit.cover,
+              cacheWidth: 192,
               placeholder: const SizedBox.shrink(),
             ),
           ),

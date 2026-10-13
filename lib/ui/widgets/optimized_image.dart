@@ -62,31 +62,30 @@ class OptimizedImage extends StatelessWidget {
     int? computedCacheHeight = cacheHeight;
 
     if (computedCacheWidth == null && computedCacheHeight == null) {
-      const int minThumbnailSize = 256;
-      const int maxMasterSize = 1024;
+      const int minThumbnailSize = 128;
+      const int maxMasterSize = 768;
 
       if (width != null && width!.isFinite && width! <= 220) {
         // Thumbnail / list / tile mode:
-        // Use a minimum resolution floor (256px) so downscaled thumbnails preserve
-        // fine typography, intricate cover art, and crisp edges without pixelation.
-        final int scaled = (width! * dpr * 1.5).round();
-        computedCacheWidth = scaled.clamp(minThumbnailSize, 512);
+        // Use a resolution floor of 128px for small rows and clamp to 384px for tiles.
+        final int scaled = (width! * dpr).round();
+        computedCacheWidth = scaled.clamp(minThumbnailSize, 384);
       } else if (height != null && height!.isFinite && height! <= 220 && width == null) {
-        final int scaled = (height! * dpr * 1.5).round();
-        computedCacheHeight = scaled.clamp(minThumbnailSize, 512);
+        final int scaled = (height! * dpr).round();
+        computedCacheHeight = scaled.clamp(minThumbnailSize, 384);
       } else if (width != null && width!.isFinite) {
         // Large player views / header banners with explicit width:
-        // Cap decode size to maxMasterSize (1024px) to avoid decoding 3000x3000px
-        // master files into ~36-64MB bitmaps while maintaining ultra-sharp 4K fidelity.
+        // Cap decode size to maxMasterSize (768px) to deliver pristine 4K fidelity at ~2.3MB.
         final int scaled = (width! * dpr).round();
-        computedCacheWidth = scaled.clamp(512, maxMasterSize);
+        computedCacheWidth = scaled.clamp(384, maxMasterSize);
       } else if (height != null && height!.isFinite) {
         // Large player views with explicit height:
         final int scaled = (height! * dpr).round();
-        computedCacheHeight = scaled.clamp(512, maxMasterSize);
+        computedCacheHeight = scaled.clamp(384, maxMasterSize);
       } else {
-        // Unconstrained flexible containers:
-        computedCacheWidth = maxMasterSize;
+        // Unconstrained flexible containers (cards, collages, responsive boxes):
+        // Decodes at a lightweight 384px (~580KB) instead of bloated 4MB+ master decodes.
+        computedCacheWidth = 384;
       }
     }
 

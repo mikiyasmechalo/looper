@@ -1638,6 +1638,7 @@ class _SongGridCardState extends ConsumerState<_SongGridCard> {
                     OptimizedImage(
                       imagePath: song.artPath,
                       fit: BoxFit.cover,
+                      cacheWidth: 384,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     if (isCurrent)

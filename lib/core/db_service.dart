@@ -26,7 +26,7 @@ class DbService {
         AppSettingsSchema,
         SavedQueueSchema,
         PlaybackHistoryEntrySchema,
-      ], directory: dir.path);
+      ], directory: dir.path, maxSizeMiB: 256);
       LoggerHelper.write('DbService: Isar opened successfully.');
     } catch (e, stack) {
       LoggerHelper.write('DbService: Opening Isar failed!', e, stack);

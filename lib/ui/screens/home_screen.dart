@@ -39,6 +39,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import '../widgets/global_search_bar.dart';
 import 'package:looper_player/features/playback/presentation/widgets/overlay_lyrics_widget.dart';
 import 'package:looper_player/core/update_service.dart';
+import 'package:looper_player/core/memory_service.dart';
 
 import 'android/android_main_screen.dart';
 import 'android/widgets/empty_library_view.dart';
@@ -125,6 +126,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // Check for application updates on GitHub
       UpdateService.checkForUpdates(ref: ref, context: context);
+
+      // Release transient startup memory and working set pages
+      Future.delayed(const Duration(seconds: 4), MemoryService.trimWorkingSet);
 
       // Handle CLI / Startup arguments (e.g. Open With, Add to Queue)
       final startupArgs = ref.read(startupArgsProvider);

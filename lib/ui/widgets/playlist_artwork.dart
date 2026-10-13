@@ -59,13 +59,14 @@ class PlaylistArtwork extends StatelessWidget {
 
   // SizedBox.expand forces tight constraints on each cell so images are drawn
   // at full size with BoxFit.cover (cropped) instead of being letterboxed.
-  Widget _cell(String path, {EdgeInsets padding = EdgeInsets.zero}) {
+  Widget _cell(String path, {EdgeInsets padding = EdgeInsets.zero, int cacheWidth = 192}) {
     return Padding(
       padding: padding,
       child: SizedBox.expand(
         child: OptimizedImage(
           imagePath: path,
           fit: BoxFit.cover,
+          cacheWidth: cacheWidth,
           placeholder: const SizedBox.shrink(),
         ),
       ),
@@ -77,7 +78,7 @@ class PlaylistArtwork extends StatelessWidget {
 
     switch (paths.length) {
       case 1:
-        return _cell(paths[0]);
+        return _cell(paths[0], cacheWidth: 384);
       case 2:
         return Row(
           children: [

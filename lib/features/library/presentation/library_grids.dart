@@ -483,6 +483,7 @@ class _AlbumCardState extends ConsumerState<_AlbumCard> {
                       child: OptimizedImage(
                         imagePath: album.artPath,
                         fit: BoxFit.cover,
+                        cacheWidth: 384,
                         placeholder: const Center(
                           child: Icon(LucideIcons.disc, size: 48, color: Colors.grey),
                         ),
@@ -494,6 +495,7 @@ class _AlbumCardState extends ConsumerState<_AlbumCard> {
                       child: OptimizedImage(
                         imagePath: album.artPath,
                         fit: BoxFit.cover,
+                        cacheWidth: 384,
                         placeholder: const Center(
                           child: Icon(LucideIcons.disc, size: 48, color: Colors.grey),
                         ),
@@ -1368,6 +1370,8 @@ class _ArtistCardState extends ConsumerState<_ArtistCard> {
                   images: artist.artistImages,
                   imageUrl: isNetworkImage ? artist.artistImageUrl : null,
                   imagePath: isLocalImage ? artist.artistImageUrl : artist.artPath,
+                  width: 200,
+                  height: 200,
                   fit: BoxFit.cover,
                   placeholder: const Center(
                     child: Icon(
@@ -1385,6 +1389,8 @@ class _ArtistCardState extends ConsumerState<_ArtistCard> {
                   images: artist.artistImages,
                   imageUrl: isNetworkImage ? artist.artistImageUrl : null,
                   imagePath: isLocalImage ? artist.artistImageUrl : artist.artPath,
+                  width: 200,
+                  height: 200,
                   fit: BoxFit.cover,
                   placeholder: const Center(
                     child: Icon(
@@ -1904,6 +1910,9 @@ class GenresGrid extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(8),
                                 child: OptimizedImage(
                                   imagePath: firstSongWithArt.artPath,
+                                  width: artSize,
+                                  height: artSize,
+                                  cacheWidth: 256,
                                   fit: BoxFit.cover,
                                 ),
                               ),
