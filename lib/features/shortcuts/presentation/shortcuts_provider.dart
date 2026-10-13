@@ -9,8 +9,6 @@ import 'package:looper_player/features/search/presentation/search_view.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/features/shortcuts/domain/shortcut_models.dart';
 import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_cheatsheet_dialog.dart';
-import 'package:looper_player/features/stats/presentation/stats_dialog.dart';
-import 'package:looper_player/features/stats/presentation/stats_provider.dart';
 import 'package:looper_player/ui/widgets/sleep_timer_sheet_content.dart';
 
 final shortcutsProvider =
@@ -306,11 +304,7 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
         }
         return true;
       case 'show_stats':
-        final context = rootNavigatorKey.currentContext;
-        if (context != null) {
-          ref.read(statsProvider.notifier).refresh();
-          showStatsDialog(context);
-        }
+        _ref.read(appNavigationProvider.notifier).setItem(NavItem.analyze);
         return true;
       default:
         return false;

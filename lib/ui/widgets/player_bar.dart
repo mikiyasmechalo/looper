@@ -240,7 +240,7 @@ class _PremiumPlayerBar extends ConsumerWidget {
             height: (isVeryNarrow ? 40 : 56).s,
             borderRadius: BorderRadius.circular(6),
             fit: BoxFit.cover,
-            filterQuality: FilterQuality.medium,
+            filterQuality: FilterQuality.low,
             placeholder: Icon(
               LucideIcons.music,
               color: Colors.white24,

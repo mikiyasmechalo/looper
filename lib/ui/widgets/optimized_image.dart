@@ -26,7 +26,7 @@ class OptimizedImage extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.cacheWidth,
     this.cacheHeight,
-    this.filterQuality = FilterQuality.medium,
+    this.filterQuality = FilterQuality.low,
   });
 
   @override

@@ -28,6 +28,7 @@ import 'package:looper_player/features/playback/presentation/waveform_provider.d
 import 'package:looper_player/features/playback/presentation/widgets/ab_looper_widget.dart';
 import 'package:looper_player/ui/widgets/sleep_timer_sheet_content.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/features/playback/presentation/queue_scroll_provider.dart';
 
 enum PlayerPanelTab { queue, lyrics }
 
@@ -1989,7 +1990,7 @@ class _BreathingAlbumArtState extends State<_BreathingAlbumArt>
                   width: widget.maxSize,
                   height: widget.maxSize,
                   fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
+                  filterQuality: FilterQuality.low,
                   placeholder: Container(
                     color: Colors.white10,
                     child: const Icon(
@@ -2382,64 +2383,105 @@ class _QueueList extends ConsumerStatefulWidget {
 
 class _QueueListState extends ConsumerState<_QueueList> {
   static const double _itemExtent = 58;
-  final ScrollController _scrollController = ScrollController();
-  int _lastCurrentIndex = -1;
-  int _currentIndex = -1;
+  late final ScrollController _scrollController;
   bool _lastVisible = false;
   Timer? _scrollTimer;
-  Timer? _openTimer;
+  bool _isScrolledAway = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final scrollState = ref.read(queueScrollProvider);
+    final playback = ref.read(playbackProvider);
+    final queue = playback.queue;
+    final currentSongPath = playback.currentSong?.path;
+    final showPlayed = ref.read(settingsProvider).showPlayedSongsInQueue;
+    final currentIndex = queue.indexWhere((s) => s.path == currentSongPath);
+
+    double initialOffset = scrollState.sidebarScrollOffset;
+
+    if (currentSongPath != null &&
+        currentSongPath != scrollState.sidebarLastScrolledSongPath &&
+        currentIndex != -1) {
+      final targetIdx = showPlayed ? currentIndex : 0;
+      initialOffset = (targetIdx * _itemExtent).toDouble();
+      if (widget.visible) {
+        _scheduleScrollToActive(targetIdx, currentSongPath);
+      }
+    }
+
+    _scrollController = ScrollController(
+      initialScrollOffset: initialOffset,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final curIdx = currentIndex != -1 ? (showPlayed ? currentIndex : 0) : -1;
+        _updateScrolledAwayStatus(curIdx);
+      }
+    });
+  }
 
   @override
   void dispose() {
     _scrollTimer?.cancel();
-    _openTimer?.cancel();
+    if (_scrollController.hasClients) {
+      ref
+          .read(queueScrollProvider.notifier)
+          .updateSidebarOffset(_scrollController.offset);
+    }
     _scrollController.dispose();
     super.dispose();
   }
 
-  /// Delays the centering until the side panel has finished sliding in,
-  /// otherwise the scroll target is computed against a ~0 width viewport and
-  /// the active song never becomes visible on open.
-  void _scheduleScrollToActive(int index) {
+  bool _checkIsScrolledAway(
+    double scrollPixels,
+    double viewportDimension,
+    int activeIdx,
+  ) {
+    if (activeIdx < 0) return false;
+    final songTop = activeIdx * _itemExtent;
+    final songBottom = songTop + _itemExtent;
+    final viewportTop = scrollPixels;
+    final viewportBottom = scrollPixels + viewportDimension;
+    return (songBottom < viewportTop + 10) || (songTop > viewportBottom - 10);
+  }
+
+  void _updateScrolledAwayStatus(int activeIdx) {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final away =
+        _checkIsScrolledAway(pos.pixels, pos.viewportDimension, activeIdx);
+    if (away != _isScrolledAway && mounted) {
+      setState(() {
+        _isScrolledAway = away;
+      });
+    }
+  }
+
+  void _scheduleScrollToActive(int index, String songPath, {bool force = false}) {
     _scrollTimer?.cancel();
-    _scrollTimer = Timer(const Duration(milliseconds: 480), () {
+    _scrollTimer = Timer(Duration(milliseconds: force ? 0 : 320), () {
       if (!mounted || !_scrollController.hasClients) return;
       final position = _scrollController.position;
       final target =
           (index * _itemExtent - position.viewportDimension / 2 +
                   _itemExtent / 2)
               .clamp(0.0, position.maxScrollExtent);
-      _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-      );
-    });
-  }
+      ref
+          .read(queueScrollProvider.notifier)
+          .markSidebarScrolledTo(songPath, target);
 
-  /// When the panel is opened, snap back to the active song only if it is not
-  /// already visible, otherwise keep the previous scroll position.
-  void _scheduleEnsureActiveVisible() {
-    _openTimer?.cancel();
-    _openTimer = Timer(const Duration(milliseconds: 200), () {
-      if (!mounted || !_scrollController.hasClients || _currentIndex < 0) {
-        return;
+      final currentOffset = _scrollController.offset;
+      if (!force && (target - currentOffset).abs() > 15 * _itemExtent) {
+        _scrollController.jumpTo(target);
+      } else {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        );
       }
-      final position = _scrollController.position;
-      final start = _currentIndex * _itemExtent;
-      final end = start + _itemExtent;
-      if (start >= position.pixels &&
-          end <= position.pixels + position.viewportDimension) {
-        return;
-      }
-      final target =
-          (start - position.viewportDimension / 2 + _itemExtent / 2)
-              .clamp(0.0, position.maxScrollExtent);
-      _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-      );
     });
   }
 
@@ -2460,20 +2502,34 @@ class _QueueListState extends ConsumerState<_QueueList> {
         : queue.sublist(currentIndex);
     final targetActiveIdx = showPlayed ? currentIndex : (currentIndex >= 0 ? 0 : -1);
 
-    _currentIndex = targetActiveIdx;
-    if (targetActiveIdx >= 0 && targetActiveIdx != _lastCurrentIndex) {
-      _lastCurrentIndex = targetActiveIdx;
-      if (widget.visible) _scheduleScrollToActive(targetActiveIdx);
-    }
+    // Smoothly scroll to the new song when the track changes while the sidebar is open
+    ref.listen(playbackProvider.select((s) => s.currentSong?.path), (prev, next) {
+      if (next != null && next != prev && widget.visible) {
+        final q = ref.read(playbackProvider).queue;
+        final newIdx = q.indexWhere((s) => s.path == next);
+        if (newIdx != -1) {
+          final curDisp = showPlayed ? newIdx : 0;
+          _scheduleScrollToActive(curDisp, next);
+        }
+      }
+    });
 
-    // When the panel becomes visible, scroll to the active song.
+    // When the sidebar becomes visible, ONLY scroll if we have NOT scrolled for this active song yet!
     if (widget.visible != _lastVisible) {
       _lastVisible = widget.visible;
-      if (widget.visible && targetActiveIdx >= 0) {
-        _scrollTimer?.cancel();
-        _scheduleScrollToActive(targetActiveIdx);
+      final lastScrolled =
+          ref.read(queueScrollProvider).sidebarLastScrolledSongPath;
+      if (widget.visible &&
+          currentSongPath != null &&
+          currentSongPath != lastScrolled &&
+          targetActiveIdx >= 0) {
+        _scheduleScrollToActive(targetActiveIdx, currentSongPath);
       }
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateScrolledAwayStatus(targetActiveIdx);
+    });
 
     if (displayedQueue.isEmpty) {
       return Center(
@@ -2484,22 +2540,50 @@ class _QueueListState extends ConsumerState<_QueueList> {
       );
     }
 
-    return ScrollbarTheme(
-      data: ScrollbarThemeData(
-        thumbVisibility: const WidgetStatePropertyAll(true),
-        trackVisibility: const WidgetStatePropertyAll(false),
-        thumbColor: WidgetStatePropertyAll(
-          Colors.white.withValues(alpha: 0.3),
-        ),
-        mainAxisMargin: 8,
-        crossAxisMargin: 4,
-        minThumbLength: 40,
-      ),
-      child: ReorderableListView.builder(
-        scrollController: _scrollController,
-        buildDefaultDragHandles: false,
-        padding: const EdgeInsets.only(right: 8, bottom: 24),
-        itemCount: displayedQueue.length,
+    final bool isAbove = _scrollController.hasClients &&
+        targetActiveIdx >= 0 &&
+        (targetActiveIdx * _itemExtent < _scrollController.offset);
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: ScrollbarTheme(
+            data: ScrollbarThemeData(
+              thumbVisibility: const WidgetStatePropertyAll(true),
+              trackVisibility: const WidgetStatePropertyAll(false),
+              thumbColor: WidgetStatePropertyAll(
+                Colors.white.withValues(alpha: 0.3),
+              ),
+              mainAxisMargin: 8,
+              crossAxisMargin: 4,
+              minThumbLength: 40,
+            ),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollEndNotification ||
+                    notification is ScrollUpdateNotification) {
+                  ref
+                      .read(queueScrollProvider.notifier)
+                      .updateSidebarOffset(notification.metrics.pixels);
+                  final away = _checkIsScrolledAway(
+                    notification.metrics.pixels,
+                    notification.metrics.viewportDimension,
+                    targetActiveIdx,
+                  );
+                  if (away != _isScrolledAway && mounted) {
+                    setState(() {
+                      _isScrolledAway = away;
+                    });
+                  }
+                }
+                return false;
+              },
+              child: ReorderableListView.builder(
+                scrollController: _scrollController,
+                buildDefaultDragHandles: false,
+                itemExtent: _itemExtent,
+                padding: const EdgeInsets.only(right: 8, bottom: 24),
+                itemCount: displayedQueue.length,
         onReorder: (oldI, newI) {
           // displayedQueue is full queue when showPlayed=true, sublist from currentIndex otherwise
           final curDisp = (showPlayed || currentIndex == -1) ? currentIndex : 0;
@@ -2718,7 +2802,86 @@ class _QueueListState extends ConsumerState<_QueueList> {
           );
         },
       ),
-    );
+    ),
+  ),
+),
+AnimatedPositioned(
+  duration: const Duration(milliseconds: 260),
+  curve: Curves.easeOutCubic,
+  bottom: _isScrolledAway ? 20 : -56,
+  left: 0,
+  right: 0,
+  child: Center(
+    child: AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
+      opacity: _isScrolledAway ? 1.0 : 0.0,
+      child: IgnorePointer(
+        ignoring: !_isScrolledAway,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              if (currentSongPath != null && targetActiveIdx >= 0) {
+                _scheduleScrollToActive(targetActiveIdx, currentSongPath, force: true);
+              }
+            },
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161618).withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.55),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    spreadRadius: -2,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    LucideIcons.locateFixed,
+                    size: 14,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Current Song',
+                    style: AppFonts.jostStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    isAbove ? LucideIcons.arrowUp : LucideIcons.arrowDown,
+                    size: 13,
+                    color: colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  ),
+),
+],
+);
   }
 }
 

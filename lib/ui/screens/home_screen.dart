@@ -25,8 +25,7 @@ import 'package:looper_player/features/library/presentation/smart_views.dart';
 import 'package:looper_player/ui/screens/settings_view.dart';
 import 'package:looper_player/ui/screens/welcome_screen.dart';
 import 'package:looper_player/ui/widgets/folder_picker_helper.dart';
-import 'package:looper_player/features/stats/presentation/stats_dialog.dart';
-import 'package:looper_player/features/stats/presentation/stats_provider.dart';
+import 'package:looper_player/features/analyze/presentation/screens/looper_analyze_view.dart';
 
 import 'package:looper_player/ui/widgets/collection_detail_view.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_view.dart';
@@ -358,7 +357,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                      crossAxisAlignment:
                                          CrossAxisAlignment.start,
                                      children: [
-                                       if (nav.activeItem != NavItem.lyrics)
+                                       if (nav.activeItem != NavItem.lyrics &&
+                                           nav.activeItem != NavItem.analyze)
                                          Padding(
                                            padding: const EdgeInsets.symmetric(
                                              horizontal: 24,
@@ -421,8 +421,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                 if (nav.activeItem == NavItem.home) ...[
                                                   _HeaderButton(
                                                     onTap: () {
-                                                      ref.read(statsProvider.notifier).refresh();
-                                                      showStatsDialog(context);
+                                                      ref
+                                                          .read(
+                                                            appNavigationProvider
+                                                                .notifier,
+                                                          )
+                                                          .setItem(
+                                                            NavItem.analyze,
+                                                          );
                                                     },
                                                     icon: LucideIcons.barChart2,
                                                     label: 'Stats',
@@ -623,6 +629,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return const GenresGrid(key: ValueKey('genres'));
       case NavItem.folders:
         return const FolderBrowserView(key: ValueKey('folders'));
+      case NavItem.analyze:
+        return const LooperAnalyzeView(key: ValueKey('analyze'));
       case NavItem.home:
       default:
         return library.songs.isEmpty
@@ -823,6 +831,15 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.genres ||
                             highlightItem == NavItem.genres,
                         onTap: () => navigateTo(NavItem.genres),
+                      ),
+                    if (settings.showSidebarAnalyze)
+                      _SidebarItem(
+                        icon: LucideIcons.barChart2,
+                        label: 'Analyze',
+                        isSelected:
+                            activeItem == NavItem.analyze ||
+                            highlightItem == NavItem.analyze,
+                        onTap: () => navigateTo(NavItem.analyze),
                       ),
                     _SidebarItem(
                       customIcon: AppIcons.settings,

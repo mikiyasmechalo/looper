@@ -1535,7 +1535,7 @@ class _ImagePainter extends CustomPainter {
       rect: Offset.zero & size,
       image: image,
       fit: BoxFit.contain,
-      filterQuality: FilterQuality.medium,
+      filterQuality: FilterQuality.low,
     );
   }
 

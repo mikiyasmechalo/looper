@@ -242,6 +242,7 @@ class AppSettings {
   bool showSidebarQueue = true;
   bool showSidebarGenres = true;
   bool showSidebarFolders = true;
+  bool showSidebarAnalyze = true;
 
   // Folder view preferences
   bool folderViewTreeMode = false;

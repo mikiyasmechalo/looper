@@ -1138,7 +1138,7 @@ class _GestureArtworkWithFeedbackState
             alignment: Alignment.center,
             children: <Widget>[
               ...previousChildren,
-              if (currentChild != null) currentChild,
+              ?currentChild,
             ],
           );
         },
@@ -1375,7 +1375,7 @@ class _GestureArtworkWithFeedbackState
                           : null,
                       borderRadius: BorderRadius.circular(24),
                       fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
+                      filterQuality: FilterQuality.low,
                     ),
                   ),
                 ),
@@ -1590,7 +1590,7 @@ class ForegroundAlbumArt extends StatelessWidget {
             : null,
         borderRadius: BorderRadius.circular(24),
         fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
+        filterQuality: FilterQuality.low,
       ),
     );
   }

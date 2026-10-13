@@ -5,9 +5,9 @@ import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
+import 'package:looper_player/features/playback/presentation/queue_scroll_provider.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
-import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'package:looper_player/ui/widgets/queue_selector_dropdown.dart';
@@ -20,29 +20,76 @@ class QueueView extends ConsumerStatefulWidget {
 }
 
 class _QueueViewState extends ConsumerState<QueueView> {
-  final _scrollController = ScrollController();
-  int _lastCurrentIdx = -1;
+  static const double kItemHeight = 72.0;
+  static const double kTopPadding = 16.0;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    final scrollState = ref.read(queueScrollProvider);
+    final playback = ref.read(playbackProvider);
+    final queue = playback.queue;
+    final currentSongPath = playback.currentSong?.path;
+    final showPlayed = ref.read(settingsProvider).showPlayedSongsInQueue;
+    final currentIdx = queue.indexWhere((s) => s.path == currentSongPath);
+
+    double initialOffset = scrollState.pageScrollOffset;
+
+    // Only when opening a song for the very first time (never scrolled for this song yet),
+    // start initially centered near the song rather than starting from 0 and freezing on animateTo.
+    if (currentSongPath != null &&
+        currentSongPath != scrollState.pageLastScrolledSongPath &&
+        currentIdx != -1) {
+      final targetIdx = showPlayed ? currentIdx : 0;
+      initialOffset = (kTopPadding + targetIdx * kItemHeight).toDouble();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _scrollToCurrent(targetIdx, currentSongPath);
+      });
+    }
+
+    _scrollController = ScrollController(
+      initialScrollOffset: initialOffset,
+    );
+  }
 
   @override
   void dispose() {
+    if (_scrollController.hasClients) {
+      ref
+          .read(queueScrollProvider.notifier)
+          .updatePageOffset(_scrollController.offset);
+    }
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToCurrent(int currentIdx) {
+  void _scrollToCurrent(int currentIdx, String songPath, {bool force = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      const double kItemHeight = 72.0;
-      const double kTopPadding = 16.0;
+      if (!mounted || !_scrollController.hasClients) return;
       final maxExtent = _scrollController.position.maxScrollExtent;
       final viewport = _scrollController.position.viewportDimension;
-      final target = (kTopPadding + currentIdx * kItemHeight - viewport / 2 + kItemHeight / 2)
+      final target = (kTopPadding +
+              currentIdx * kItemHeight -
+              viewport / 2 +
+              kItemHeight / 2)
           .clamp(0.0, maxExtent);
-      _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 380),
-        curve: Curves.easeOutCubic,
-      );
+
+      ref
+          .read(queueScrollProvider.notifier)
+          .markPageScrolledTo(songPath, target);
+
+      final currentOffset = _scrollController.offset;
+      if (!force && (target - currentOffset).abs() > 15 * kItemHeight) {
+        _scrollController.jumpTo(target);
+      } else {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        );
+      }
     });
   }
 
@@ -56,6 +103,18 @@ class _QueueViewState extends ConsumerState<QueueView> {
     final showPlayed =
         ref.watch(settingsProvider.select((s) => s.showPlayedSongsInQueue));
     final currentIdx = queue.indexWhere((s) => s.path == currentSongPath);
+
+    // Smoothly scroll to next song ONLY when the currently playing song actually changes
+    ref.listen(playbackProvider.select((s) => s.currentSong?.path), (prev, next) {
+      if (next != null && next != prev) {
+        final q = ref.read(playbackProvider).queue;
+        final newIdx = q.indexWhere((s) => s.path == next);
+        if (newIdx != -1) {
+          final curDisp = showPlayed ? newIdx : 0;
+          _scrollToCurrent(curDisp, next);
+        }
+      }
+    });
 
     // [played... (dimmed), current, upcoming...] — same layout as fullscreen player
     final List<Song> displayedQueue;
@@ -71,18 +130,9 @@ class _QueueViewState extends ConsumerState<QueueView> {
     }
 
     // displayedIdx → originalQueueIdx
-    // When showPlayed=true: displayed IS the full queue in order → displayedIdx == originalIdx
-    // When showPlayed=false: displayed starts at currentIdx → originalIdx = displayedIdx + currentIdx
     int displayedToOriginal(int displayedIdx) {
       if (currentIdx == -1 || showPlayed) return displayedIdx;
       return displayedIdx + currentIdx;
-    }
-
-    if (showPlayed && currentIdx != -1 && currentIdx != _lastCurrentIdx) {
-      _lastCurrentIdx = currentIdx;
-      _scrollToCurrent(currentIdx);
-    } else if (!showPlayed && _lastCurrentIdx != 0) {
-      _lastCurrentIdx = 0;
     }
 
     return Column(
@@ -97,16 +147,32 @@ class _QueueViewState extends ConsumerState<QueueView> {
               if (!Platform.isAndroid) ...[
                 Text(
                   l10n.playQueue,
-                  style: AppFonts.jostStyle(fontSize: 32, fontWeight: FontWeight.normal),
+                  style: AppFonts.jostStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.normal,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 const QueueSelectorDropdown(),
               ],
               const Spacer(),
+              if (currentIdx != -1 && currentSongPath != null)
+                IconButton(
+                  icon: const Icon(LucideIcons.locateFixed,
+                      size: 18, color: Colors.white70),
+                  tooltip: 'Jump to current song',
+                  onPressed: () {
+                    final curDisp = showPlayed ? currentIdx : 0;
+                    _scrollToCurrent(curDisp, currentSongPath, force: true);
+                  },
+                ),
+              const SizedBox(width: 4),
               IconButton(
-                icon: const Icon(LucideIcons.refreshCw, size: 18, color: Colors.white70),
+                icon: const Icon(LucideIcons.refreshCw,
+                    size: 18, color: Colors.white70),
                 tooltip: 'Refresh & Clean Queue',
-                onPressed: () => ref.read(playbackProvider.notifier).validateAndCleanQueue(),
+                onPressed: () =>
+                    ref.read(playbackProvider.notifier).validateAndCleanQueue(),
               ),
               const SizedBox(width: 8),
               if (queue.isNotEmpty)
@@ -125,217 +191,361 @@ class _QueueViewState extends ConsumerState<QueueView> {
               ? Center(
                   child: Text(
                     l10n.queueIsEmpty,
-                    style: AppFonts.jostStyle(color: Colors.grey, fontSize: 16),
+                    style:
+                        AppFonts.jostStyle(color: Colors.grey, fontSize: 16),
                   ),
                 )
-              : ReorderableListView.builder(
-                  scrollController: _scrollController,
-                  buildDefaultDragHandles: false,
-                  padding: EdgeInsets.only(
-                    left: 24,
-                    right: 24,
-                    top: 16,
-                    bottom: Platform.isAndroid ? 200 : 16,
-                  ),
-                  itemCount: displayedQueue.length,
-                  onReorder: (oldI, newI) {
-                    // Index of current song in the displayed list
-                    final curDisp = showPlayed ? currentIdx : 0;
-                    // Block dragging played songs or the current song
-                    if (currentIdx != -1 && oldI <= curDisp) return;
-                    // Flutter's standard adjustment for downward moves
-                    if (newI > oldI) newI -= 1;
-                    // Clamp: cannot drop at or before the current song
-                    if (currentIdx != -1 && newI <= curDisp) newI = curDisp + 1;
-                    if (oldI == newI) return;
-                    final oldOrig = displayedToOriginal(oldI);
-                    final newOrig = displayedToOriginal(newI);
-                    ref.read(playbackProvider.notifier).reorderQueueDirect(oldOrig, newOrig);
+              : NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification is ScrollEndNotification) {
+                      ref
+                          .read(queueScrollProvider.notifier)
+                          .updatePageOffset(notification.metrics.pixels);
+                    }
+                    return false;
                   },
-                  itemBuilder: (context, index) {
-                    final song = displayedQueue[index];
-                    final isCurrent = currentSongPath == song.path;
-                    final originalIndex = displayedToOriginal(index);
-                    final isPlayed = currentIdx != -1 &&
-                        originalIndex < currentIdx;
-                    final isDraggable = !isPlayed && !isCurrent;
-                    final isStopTarget = playbackState.isSleepTimerActive &&
-                        playbackState.sleepTimerSongsRemaining != null &&
-                        currentIdx != -1 &&
-                        originalIndex == currentIdx + playbackState.sleepTimerSongsRemaining! - 1;
-
-                    return GestureDetector(
-                      key: ValueKey('queue_view_${song.path}_$index'),
-                      onSecondaryTap: () => showSongOptionsBottomSheet(
-                        context: context,
-                        ref: ref,
-                        song: song,
-                        queueIndex: originalIndex,
-                        isFromQueue: true,
-                        showDeleteOption: true,
-                        showRenameOption: true,
+                  child: ScrollbarTheme(
+                    data: ScrollbarThemeData(
+                      thumbVisibility: const WidgetStatePropertyAll(true),
+                      trackVisibility: const WidgetStatePropertyAll(false),
+                      thumbColor: WidgetStatePropertyAll(
+                        Colors.white.withValues(alpha: 0.3),
                       ),
-                      child: Dismissible(
-                        key: ValueKey('queue_dismiss_${song.path}_$index'),
-                        direction: DismissDirection.endToStart,
-                        onDismissed: (_) {
-                          ref
-                              .read(playbackProvider.notifier)
-                              .removeFromQueue(originalIndex);
-                        },
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 24),
-                          color: Colors.red.withValues(alpha: 0.1),
-                          child: const Icon(LucideIcons.x, color: Colors.red),
-                        ),
-                        child: Opacity(
-                          opacity: isPlayed ? 0.40 : 1.0,
-                          child: AnimatedContainer(
-                            key: ValueKey('queue_tile_${song.path}_$index'),
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            decoration: BoxDecoration(
-                              color: isCurrent
-                                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
-                                  : Colors.white.withValues(alpha: 0.02),
-                              borderRadius: BorderRadius.circular(12),
+                      mainAxisMargin: 8,
+                      crossAxisMargin: 4,
+                      minThumbLength: 40,
+                    ),
+                    child: ReorderableListView.builder(
+                      scrollController: _scrollController,
+                      buildDefaultDragHandles: false,
+                      itemExtent: kItemHeight,
+                      padding: EdgeInsets.only(
+                        left: 24,
+                        right: 24,
+                        top: kTopPadding,
+                        bottom: Platform.isAndroid ? 200 : 16,
+                      ),
+                      itemCount: displayedQueue.length,
+                      onReorder: (oldI, newI) {
+                        // Index of current song in the displayed list
+                        final curDisp = showPlayed ? currentIdx : 0;
+                        // Block dragging played songs or the current song
+                        if (currentIdx != -1 && oldI <= curDisp) return;
+                        // Flutter's standard adjustment for downward moves
+                        if (newI > oldI) newI -= 1;
+                        // Clamp: cannot drop at or before the current song
+                        if (currentIdx != -1 && newI <= curDisp) {
+                          newI = curDisp + 1;
+                        }
+                        if (oldI == newI) return;
+                        final oldOrig = displayedToOriginal(oldI);
+                        final newOrig = displayedToOriginal(newI);
+                        ref
+                            .read(playbackProvider.notifier)
+                            .reorderQueueDirect(oldOrig, newOrig);
+                      },
+                      itemBuilder: (context, index) {
+                        final song = displayedQueue[index];
+                        final isCurrent = currentSongPath == song.path;
+                        final originalIndex = displayedToOriginal(index);
+                        final isPlayed =
+                            currentIdx != -1 && originalIndex < currentIdx;
+                        final isDraggable = !isPlayed && !isCurrent;
+                        final isStopTarget = playbackState.isSleepTimerActive &&
+                            playbackState.sleepTimerSongsRemaining != null &&
+                            currentIdx != -1 &&
+                            originalIndex ==
+                                currentIdx +
+                                    playbackState.sleepTimerSongsRemaining! -
+                                    1;
+
+                        return SizedBox(
+                          key: ValueKey('queue_view_${song.path}_$index'),
+                          height: kItemHeight,
+                          child: GestureDetector(
+                            onSecondaryTap: () => showSongOptionsBottomSheet(
+                              context: context,
+                              ref: ref,
+                              song: song,
+                              queueIndex: originalIndex,
+                              isFromQueue: true,
+                              showDeleteOption: true,
+                              showRenameOption: true,
                             ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: ListTile(
-                                leading: OptimizedImage(
-                                  imagePath: song.artPath,
-                                  width: 44,
-                                  height: 44,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                title: Text(
-                                  song.title,
-                                  style: AppFonts.jostStyle(
-                                    fontWeight: FontWeight.normal,
-                                    color: isCurrent
-                                        ? Theme.of(context).colorScheme.primary
-                                        : null,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: Row(
-                                  children: [
-                                    if (song.isOnlineStream) ...[
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'ONLINE',
-                                          style: AppFonts.jostStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.primary,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                    ],
-                                    Expanded(
-                                      child: Text(
-                                        song.album != null && song.album!.isNotEmpty
-                                            ? '${song.artist ?? 'Unknown Artist'} · ${song.album}'
-                                            : (song.artist ?? 'Unknown Artist'),
-                                        style: AppFonts.jostStyle(fontSize: 12),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                            child: Dismissible(
+                              key: ValueKey('queue_dismiss_${song.path}_$index'),
+                              direction: DismissDirection.endToStart,
+                              onDismissed: (_) {
+                                ref
+                                    .read(playbackProvider.notifier)
+                                    .removeFromQueue(originalIndex);
+                              },
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 24),
+                                color: Colors.red.withValues(alpha: 0.1),
+                                child: const Icon(LucideIcons.x,
+                                    color: Colors.red),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Opacity(
+                                  opacity: isPlayed ? 0.40 : 1.0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isCurrent
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.35)
+                                          : Colors.white
+                                              .withValues(alpha: 0.025),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: isCurrent
+                                          ? Border.all(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                                  .withValues(alpha: 0.45),
+                                              width: 1,
+                                            )
+                                          : null,
                                     ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isStopTarget)
-                                      Container(
-                                        margin: const EdgeInsets.only(right: 8),
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.18),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(
-                                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
-                                            width: 0.8,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              LucideIcons.timer,
-                                              size: 10,
-                                              color: Theme.of(context).colorScheme.primary,
-                                            ),
-                                            const SizedBox(width: 3),
-                                            Text(
-                                              'STOP',
-                                              style: TextStyle(
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.primary,
-                                                letterSpacing: 0.5,
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                        onTap: () => ref
+                                            .read(playbackProvider.notifier)
+                                            .playAtIndex(originalIndex),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12),
+                                          child: Row(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: OptimizedImage(
+                                                  imagePath: song.artPath,
+                                                  width: 44,
+                                                  height: 44,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  fit: BoxFit.cover,
+                                                  filterQuality:
+                                                      FilterQuality.low,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    IconButton(
-                                      icon: const Icon(LucideIcons.moreVertical, size: 18, color: Colors.white54),
-                                      tooltip: 'Song Options',
-                                      onPressed: () => showSongOptionsBottomSheet(
-                                        context: context,
-                                        ref: ref,
-                                        song: song,
-                                        queueIndex: originalIndex,
-                                        isFromQueue: true,
-                                        showDeleteOption: true,
-                                        showRenameOption: true,
-                                      ),
-                                    ),
-                                    if (isCurrent)
-                                      const Padding(
-                                        padding: EdgeInsets.only(right: 12.0),
-                                        child: Icon(
-                                          LucideIcons.volume2,
-                                          color: Colors.yellow,
-                                          size: 20,
-                                        ),
-                                      )
-                                    else if (isDraggable)
-                                      ReorderableDragStartListener(
-                                        index: index,
-                                        child: const Padding(
-                                          padding: EdgeInsets.only(right: 12.0),
-                                          child: Icon(
-                                            LucideIcons.gripVertical,
-                                            size: 24,
-                                            color: Colors.grey,
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      song.title,
+                                                      style:
+                                                          AppFonts.jostStyle(
+                                                        fontWeight: isCurrent
+                                                            ? FontWeight.w600
+                                                            : FontWeight.normal,
+                                                        color: isCurrent
+                                                            ? Theme.of(context)
+                                                                .colorScheme
+                                                                .primary
+                                                            : Colors.white,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(height: 3),
+                                                    Row(
+                                                      children: [
+                                                        if (song
+                                                            .isOnlineStream) ...[
+                                                          Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                              horizontal: 5,
+                                                              vertical: 1,
+                                                            ),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .primary
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.2),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          4),
+                                                            ),
+                                                            child: Text(
+                                                              'ONLINE',
+                                                              style: AppFonts
+                                                                  .jostStyle(
+                                                                fontSize: 9,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .primary,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 6),
+                                                        ],
+                                                        Expanded(
+                                                          child: Text(
+                                                            song.album !=
+                                                                        null &&
+                                                                    song.album!
+                                                                        .isNotEmpty
+                                                                ? '${song.artist ?? 'Unknown Artist'} · ${song.album}'
+                                                                : (song.artist ??
+                                                                    'Unknown Artist'),
+                                                            style: AppFonts
+                                                                .jostStyle(
+                                                              fontSize: 12,
+                                                              color: Colors
+                                                                  .white60,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              if (isStopTarget)
+                                                Container(
+                                                  margin: const EdgeInsets.only(
+                                                      right: 8),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withValues(
+                                                            alpha: 0.18),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            6),
+                                                    border: Border.all(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .primary
+                                                          .withValues(
+                                                              alpha: 0.35),
+                                                      width: 0.8,
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        LucideIcons.timer,
+                                                        size: 10,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
+                                                      ),
+                                                      const SizedBox(width: 3),
+                                                      Text(
+                                                        'STOP',
+                                                        style: TextStyle(
+                                                          fontSize: 9,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                          letterSpacing: 0.5,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  LucideIcons.moreVertical,
+                                                  size: 18,
+                                                  color: Colors.white54,
+                                                ),
+                                                tooltip: 'Song Options',
+                                                onPressed: () =>
+                                                    showSongOptionsBottomSheet(
+                                                  context: context,
+                                                  ref: ref,
+                                                  song: song,
+                                                  queueIndex: originalIndex,
+                                                  isFromQueue: true,
+                                                  showDeleteOption: true,
+                                                  showRenameOption: true,
+                                                ),
+                                              ),
+                                              if (isCurrent)
+                                                const Padding(
+                                                  padding: EdgeInsets.only(
+                                                      right: 12.0),
+                                                  child: Icon(
+                                                    LucideIcons.volume2,
+                                                    color: Colors.yellow,
+                                                    size: 20,
+                                                  ),
+                                                )
+                                              else if (isDraggable)
+                                                ReorderableDragStartListener(
+                                                  index: index,
+                                                  child: const Padding(
+                                                    padding: EdgeInsets.only(
+                                                        right: 12.0),
+                                                    child: Icon(
+                                                      LucideIcons.gripVertical,
+                                                      size: 24,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                )
+                                              else
+                                                const SizedBox(width: 36),
+                                            ],
                                           ),
                                         ),
-                                      )
-                                    else
-                                      const SizedBox(width: 36),
-                                  ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                onTap: () =>
-                                    ref.read(playbackProvider.notifier).playAtIndex(originalIndex),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ),
                 ),
         ),
       ],

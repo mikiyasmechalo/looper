@@ -22,6 +22,7 @@ import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/core/system_tray_service.dart';
 import 'package:looper_player/features/library/presentation/library_cleanup_view.dart';
 import 'package:looper_player/core/update_service.dart';
+import 'package:looper_player/ui/screens/android/player/android_equalizer_screen.dart';
 
 enum SettingsCategory {
   appearance,
@@ -33,8 +34,9 @@ enum SettingsCategory {
   about,
 }
 
-final activeSettingsCategoryProvider =
-    StateProvider<SettingsCategory>((ref) => SettingsCategory.appearance);
+final activeSettingsCategoryProvider = StateProvider<SettingsCategory>(
+  (ref) => SettingsCategory.appearance,
+);
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -99,8 +101,8 @@ class SettingsView extends ConsumerWidget {
             final contentPadding = isNarrow
                 ? const EdgeInsets.fromLTRB(16, 12, 16, 160)
                 : isMedium
-                    ? const EdgeInsets.fromLTRB(20, 16, 20, 160)
-                    : const EdgeInsets.fromLTRB(28, 20, 28, 160);
+                ? const EdgeInsets.fromLTRB(20, 16, 20, 160)
+                : const EdgeInsets.fromLTRB(28, 20, 28, 160);
 
             final double sidebarWidth = isMedium ? 64 : 240;
 
@@ -127,16 +129,30 @@ class SettingsView extends ConsumerWidget {
                             height: 52,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
                               physics: const BouncingScrollPhysics(),
                               children: categories.map((cat) {
                                 return _CategoryChip(
                                   label: cat.label,
                                   icon: cat.icon,
-                                  isSelected: activeCategory == cat.category && searchQuery.isEmpty,
+                                  isSelected:
+                                      activeCategory == cat.category &&
+                                      searchQuery.isEmpty,
                                   onTap: () {
-                                    ref.read(searchQueryProvider.notifier).state = '';
-                                    ref.read(activeSettingsCategoryProvider.notifier).state = cat.category;
+                                    ref
+                                            .read(searchQueryProvider.notifier)
+                                            .state =
+                                        '';
+                                    ref
+                                            .read(
+                                              activeSettingsCategoryProvider
+                                                  .notifier,
+                                            )
+                                            .state =
+                                        cat.category;
                                   },
                                 );
                               }).toList(),
@@ -148,8 +164,24 @@ class SettingsView extends ConsumerWidget {
                           ),
                           Expanded(
                             child: searchQuery.isNotEmpty
-                                ? _buildSearchResults(context, ref, settings, l10n, searchQuery, isDesktop, padding: contentPadding)
-                                : _buildCategoryContent(context, ref, settings, l10n, activeCategory, isDesktop, padding: contentPadding),
+                                ? _buildSearchResults(
+                                    context,
+                                    ref,
+                                    settings,
+                                    l10n,
+                                    searchQuery,
+                                    isDesktop,
+                                    padding: contentPadding,
+                                  )
+                                : _buildCategoryContent(
+                                    context,
+                                    ref,
+                                    settings,
+                                    l10n,
+                                    activeCategory,
+                                    isDesktop,
+                                    padding: contentPadding,
+                                  ),
                           ),
                         ],
                       ),
@@ -180,7 +212,9 @@ class SettingsView extends ConsumerWidget {
                                           height: 64,
                                           child: Center(
                                             child: AnimatedOpacity(
-                                              duration: const Duration(milliseconds: 200),
+                                              duration: const Duration(
+                                                milliseconds: 200,
+                                              ),
                                               curve: Curves.easeInOut,
                                               opacity: isMedium ? 1.0 : 0.0,
                                               child: const Tooltip(
@@ -196,11 +230,15 @@ class SettingsView extends ConsumerWidget {
                                         ),
                                         // Expanded Settings title
                                         Padding(
-                                          padding: const EdgeInsets.only(left: 20),
+                                          padding: const EdgeInsets.only(
+                                            left: 20,
+                                          ),
                                           child: Align(
                                             alignment: Alignment.centerLeft,
                                             child: AnimatedOpacity(
-                                              duration: const Duration(milliseconds: 200),
+                                              duration: const Duration(
+                                                milliseconds: 200,
+                                              ),
                                               curve: Curves.easeInOut,
                                               opacity: isMedium ? 0.0 : 1.0,
                                               child: Text(
@@ -223,7 +261,9 @@ class SettingsView extends ConsumerWidget {
                                   ),
                                   Expanded(
                                     child: ListView(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
                                       physics: const BouncingScrollPhysics(),
                                       children: categories.map((cat) {
                                         return _CategorySidebarTile(
@@ -231,10 +271,24 @@ class SettingsView extends ConsumerWidget {
                                           label: cat.label,
                                           icon: cat.icon,
                                           isMedium: isMedium,
-                                          isSelected: activeCategory == cat.category && searchQuery.isEmpty,
+                                          isSelected:
+                                              activeCategory == cat.category &&
+                                              searchQuery.isEmpty,
                                           onTap: () {
-                                            ref.read(searchQueryProvider.notifier).state = '';
-                                            ref.read(activeSettingsCategoryProvider.notifier).state = cat.category;
+                                            ref
+                                                    .read(
+                                                      searchQueryProvider
+                                                          .notifier,
+                                                    )
+                                                    .state =
+                                                '';
+                                            ref
+                                                .read(
+                                                  activeSettingsCategoryProvider
+                                                      .notifier,
+                                                )
+                                                .state = cat
+                                                .category;
                                           },
                                         );
                                       }).toList(),
@@ -254,8 +308,24 @@ class SettingsView extends ConsumerWidget {
                           // Right Content Area (Selected Category OR Live Search Results)
                           Expanded(
                             child: searchQuery.isNotEmpty
-                                ? _buildSearchResults(context, ref, settings, l10n, searchQuery, isDesktop, padding: contentPadding)
-                                : _buildCategoryContent(context, ref, settings, l10n, activeCategory, isDesktop, padding: contentPadding),
+                                ? _buildSearchResults(
+                                    context,
+                                    ref,
+                                    settings,
+                                    l10n,
+                                    searchQuery,
+                                    isDesktop,
+                                    padding: contentPadding,
+                                  )
+                                : _buildCategoryContent(
+                                    context,
+                                    ref,
+                                    settings,
+                                    l10n,
+                                    activeCategory,
+                                    isDesktop,
+                                    padding: contentPadding,
+                                  ),
                           ),
                         ],
                       ),
@@ -293,8 +363,10 @@ class SettingsView extends ConsumerWidget {
             _buildLibrarySection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.desktop) ...[
             _buildDesktopSection(context, ref, settings, l10n),
-            if (isDesktop) _buildDiscordRpcSection(context, ref, settings, l10n),
-            if (isDesktop) _buildFullscreenPlayerSection(context, ref, settings, l10n),
+            if (isDesktop)
+              _buildDiscordRpcSection(context, ref, settings, l10n),
+            if (isDesktop)
+              _buildFullscreenPlayerSection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.scrobbling) ...[
             _buildScrobblingSection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.shortcuts) ...[
@@ -317,12 +389,15 @@ class SettingsView extends ConsumerWidget {
     bool isDesktop, {
     EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(28, 20, 28, 160),
   }) {
-    final results = _getSearchableSettings(context, ref, settings, l10n, isDesktop)
-        .where((item) =>
-            item.title.toLowerCase().contains(query) ||
-            item.subtitle.toLowerCase().contains(query) ||
-            item.category.toLowerCase().contains(query))
-        .toList();
+    final results =
+        _getSearchableSettings(context, ref, settings, l10n, isDesktop)
+            .where(
+              (item) =>
+                  item.title.toLowerCase().contains(query) ||
+                  item.subtitle.toLowerCase().contains(query) ||
+                  item.category.toLowerCase().contains(query),
+            )
+            .toList();
 
     if (results.isEmpty) {
       return Center(
@@ -340,7 +415,8 @@ class SettingsView extends ConsumerWidget {
       );
     }
 
-    final isDynamic = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+    final isDynamic =
+        settings.enableDynamicTheming || settings.keepBackgroundGradient;
     final useBlur = isDynamic && !settings.disableBlur;
 
     return SingleChildScrollView(
@@ -376,7 +452,10 @@ class SettingsView extends ConsumerWidget {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(6),
@@ -428,7 +507,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.dynamicTheming,
           subtitle: l10n.adaptColorsArtwork,
           value: settings.enableDynamicTheming,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateDynamicTheming(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateDynamicTheming(v),
         ),
       ),
       _SearchItem(
@@ -440,7 +520,9 @@ class SettingsView extends ConsumerWidget {
           title: l10n.keepBackgroundGradient,
           subtitle: l10n.keepBackgroundGradientDesc,
           value: settings.keepBackgroundGradient,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateKeepBackgroundGradient(v),
+          onChanged: (v) => ref
+              .read(settingsProvider.notifier)
+              .updateKeepBackgroundGradient(v),
         ),
       ),
       _SearchItem(
@@ -452,7 +534,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.dynamicAccentColor,
           subtitle: l10n.dynamicAccentColorDesc,
           value: settings.dynamicAccentColor,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateDynamicAccentColor(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateDynamicAccentColor(v),
         ),
       ),
       if (!settings.dynamicAccentColor)
@@ -465,7 +548,8 @@ class SettingsView extends ConsumerWidget {
             title: l10n.accentColor,
             subtitle: l10n.accentColorDesc,
             selectedColor: settings.accentColor,
-            onColorChanged: (c) => ref.read(settingsProvider.notifier).updateAccentColor(c),
+            onColorChanged: (c) =>
+                ref.read(settingsProvider.notifier).updateAccentColor(c),
           ),
         ),
       _SearchItem(
@@ -477,7 +561,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.pureBlackOled,
           subtitle: l10n.pureBlackOledDesc,
           value: settings.darkTheme,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateDarkTheme(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateDarkTheme(v),
         ),
       ),
       _SearchItem(
@@ -489,7 +574,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.dynamicLyricsBg,
           subtitle: l10n.dynamicLyricsBgDesc,
           value: settings.dynamicLyrics,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateDynamicLyrics(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateDynamicLyrics(v),
         ),
       ),
       _SearchItem(
@@ -501,19 +587,44 @@ class SettingsView extends ConsumerWidget {
           title: l10n.disableBlurEffects,
           subtitle: l10n.turnOffBlursOptimize,
           value: settings.disableBlur,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateDisableBlur(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateDisableBlur(v),
+        ),
+      ),
+      _SearchItem(
+        category: 'Audio & Playback',
+        title: 'Equalizer (EQ)',
+        subtitle: '18-band equalizer, presets, sound profiles and audio curves',
+        widget: _PremiumActionRow(
+          icon: LucideIcons.sliders,
+          title: 'Equalizer',
+          subtitle: settings.equalizerEnabled
+              ? 'Enabled • 18-band EQ, presets & sound profiles'
+              : 'Configure 18-band EQ, presets & sound profiles',
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AndroidEqualizerScreen(),
+              ),
+            );
+          },
         ),
       ),
       _SearchItem(
         category: 'Audio & Playback',
         title: 'Auto-Trim Silence',
-        subtitle: 'Automatically detect and skip silence at track start and end',
+        subtitle:
+            'Automatically detect and skip silence at track start and end',
         widget: _PremiumSwitchRow(
           icon: LucideIcons.scissors,
           title: 'Auto-Trim Silence',
-          subtitle: 'Automatically detect and skip silence at the beginning and end of tracks',
+          subtitle:
+              'Automatically detect and skip silence at the beginning and end of tracks',
           value: settings.autoTrimSilence,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateAutoTrimSilence(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateAutoTrimSilence(v),
         ),
       ),
       _SearchItem(
@@ -525,7 +636,8 @@ class SettingsView extends ConsumerWidget {
           title: 'Gapless Playback',
           subtitle: 'Eliminate silence between consecutive tracks',
           value: settings.gaplessPlayback,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateGaplessPlayback(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateGaplessPlayback(v),
         ),
       ),
       _SearchItem(
@@ -541,7 +653,9 @@ class SettingsView extends ConsumerWidget {
           max: 12,
           divisions: 12,
           suffix: 's',
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateCrossfadeDuration(v.round()),
+          onChanged: (v) => ref
+              .read(settingsProvider.notifier)
+              .updateCrossfadeDuration(v.round()),
         ),
       ),
       _SearchItem(
@@ -553,7 +667,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.fadePlayPauseStop,
           subtitle: l10n.fadePlayPauseStopDesc,
           value: settings.fadePlayPauseStop,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateFadePlayPauseStop(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateFadePlayPauseStop(v),
         ),
       ),
       _SearchItem(
@@ -566,32 +681,37 @@ class SettingsView extends ConsumerWidget {
           subtitle: l10n.updateLibraryIndexing,
           onTap: () {
             ref.read(libraryProvider.notifier).scanSavedFolders();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.scanningLibrary)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.scanningLibrary)));
           },
         ),
       ),
       _SearchItem(
         category: 'Library & Files',
         title: 'Smart Playlists',
-        subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
+        subtitle:
+            'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
         widget: _PremiumSwitchRow(
           icon: LucideIcons.sparkles,
           title: 'Smart Playlists',
-          subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
+          subtitle:
+              'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
           value: settings.enableSmartPlaylists,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(v),
         ),
       ),
       _SearchItem(
         category: 'Library & Files',
         title: 'Song View Style',
-        subtitle: 'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
+        subtitle:
+            'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
         widget: _PremiumDropdownRow<int>(
           icon: LucideIcons.layoutList,
           title: 'Song View Style',
-          subtitle: 'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
+          subtitle:
+              'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
           value: settings.songViewStyleIndex.clamp(0, 3),
           items: const [
             DropdownMenuItem(value: 0, child: Text('Normal List')),
@@ -600,7 +720,9 @@ class SettingsView extends ConsumerWidget {
             DropdownMenuItem(value: 3, child: Text('Grid Cards')),
           ],
           onChanged: (v) {
-            if (v != null) ref.read(settingsProvider.notifier).updateSongViewStyle(v);
+            if (v != null) {
+              ref.read(settingsProvider.notifier).updateSongViewStyle(v);
+            }
           },
         ),
       ),
@@ -614,14 +736,28 @@ class SettingsView extends ConsumerWidget {
           subtitle: 'Choose visual layout for album grid items',
           value: settings.albumCardStyleIndex.clamp(0, 4),
           items: const [
-            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
-            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(
+              value: 0,
+              child: Text('Normal (Rounded Cover & Info Below)'),
+            ),
+            DropdownMenuItem(
+              value: 1,
+              child: Text('Circle (Circular Avatar & Centered Info)'),
+            ),
             DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
-            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+            DropdownMenuItem(
+              value: 3,
+              child: Text('Image (Overlay Text on Dark Gradient)'),
+            ),
+            DropdownMenuItem(
+              value: 4,
+              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
+            ),
           ],
           onChanged: (v) {
-            if (v != null) ref.read(settingsProvider.notifier).updateAlbumCardStyle(v);
+            if (v != null) {
+              ref.read(settingsProvider.notifier).updateAlbumCardStyle(v);
+            }
           },
         ),
       ),
@@ -635,14 +771,28 @@ class SettingsView extends ConsumerWidget {
           subtitle: 'Choose visual layout for artist grid items',
           value: settings.artistCardStyleIndex.clamp(0, 4),
           items: const [
-            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
-            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(
+              value: 0,
+              child: Text('Normal (Rounded Cover & Info Below)'),
+            ),
+            DropdownMenuItem(
+              value: 1,
+              child: Text('Circle (Circular Avatar & Centered Info)'),
+            ),
             DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
-            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+            DropdownMenuItem(
+              value: 3,
+              child: Text('Image (Overlay Text on Dark Gradient)'),
+            ),
+            DropdownMenuItem(
+              value: 4,
+              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
+            ),
           ],
           onChanged: (v) {
-            if (v != null) ref.read(settingsProvider.notifier).updateArtistCardStyle(v);
+            if (v != null) {
+              ref.read(settingsProvider.notifier).updateArtistCardStyle(v);
+            }
           },
         ),
       ),
@@ -655,17 +805,20 @@ class SettingsView extends ConsumerWidget {
           title: l10n.internetMode,
           subtitle: l10n.enableNetworkLyricsArt,
           value: settings.enableInternet,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableInternet(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateEnableInternet(v),
         ),
       ),
       _SearchItem(
         category: 'Library & Files',
         title: 'Library Cleanup & Quality Assistant',
-        subtitle: 'Find duplicate tracks, low bitrate audio, and missing album artwork',
+        subtitle:
+            'Find duplicate tracks, low bitrate audio, and missing album artwork',
         widget: _PremiumActionRow(
           icon: LucideIcons.sparkles,
           title: 'Library Cleanup & Quality Assistant',
-          subtitle: 'Find duplicate tracks, low bitrate audio, and missing album artwork',
+          subtitle:
+              'Find duplicate tracks, low bitrate audio, and missing album artwork',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const LibraryCleanupView()),
@@ -678,26 +831,34 @@ class SettingsView extends ConsumerWidget {
         _SearchItem(
           category: 'Desktop & Window',
           title: 'Global Hotkeys (System-Wide)',
-          subtitle: 'Control playback when Looper is minimized in the background',
+          subtitle:
+              'Control playback when Looper is minimized in the background',
           widget: _PremiumSwitchRow(
             icon: LucideIcons.globe,
             title: 'Global Hotkeys (System-Wide)',
-            subtitle: 'Control playback when Looper is minimized in the background',
+            subtitle:
+                'Control playback when Looper is minimized in the background',
             value: settings.enableGlobalHotkeys,
-            onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableGlobalHotkeys(v),
+            onChanged: (v) => ref
+                .read(settingsProvider.notifier)
+                .updateEnableGlobalHotkeys(v),
           ),
         ),
         if (Platform.isWindows)
           _SearchItem(
             category: 'Desktop & Window',
             title: 'Windows Taskbar Thumbnail Controls',
-            subtitle: 'Show Play/Pause/Prev/Next buttons in the Windows taskbar preview window',
+            subtitle:
+                'Show Play/Pause/Prev/Next buttons in the Windows taskbar preview window',
             widget: _PremiumSwitchRow(
               icon: LucideIcons.appWindow,
               title: 'Windows Taskbar Controls',
-              subtitle: 'Show Play/Pause/Prev/Next buttons in taskbar thumbnail preview',
+              subtitle:
+                  'Show Play/Pause/Prev/Next buttons in taskbar thumbnail preview',
               value: settings.enableTaskbarControls,
-              onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableTaskbarControls(v),
+              onChanged: (v) => ref
+                  .read(settingsProvider.notifier)
+                  .updateEnableTaskbarControls(v),
             ),
           ),
         _SearchItem(
@@ -709,7 +870,8 @@ class SettingsView extends ConsumerWidget {
             title: l10n.minimizeToTray,
             subtitle: l10n.minimizeToTrayDesc,
             value: settings.minimizeToTray,
-            onChanged: (v) => ref.read(settingsProvider.notifier).updateMinimizeToTray(v),
+            onChanged: (v) =>
+                ref.read(settingsProvider.notifier).updateMinimizeToTray(v),
           ),
         ),
         _SearchItem(
@@ -722,7 +884,9 @@ class SettingsView extends ConsumerWidget {
             subtitle: 'Only show the system tray icon when Looper is minimized',
             value: settings.showTrayOnlyWhenMinimized,
             onChanged: (v) {
-              ref.read(settingsProvider.notifier).updateShowTrayOnlyWhenMinimized(v);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateShowTrayOnlyWhenMinimized(v);
               SystemTrayService.instance.syncTrayVisibility();
             },
           ),
@@ -736,20 +900,25 @@ class SettingsView extends ConsumerWidget {
             title: 'Discord Rich Presence',
             subtitle: 'Broadcast currently playing track to Discord status',
             value: settings.enableDiscordRpc,
-            onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableDiscordRpc(v),
+            onChanged: (v) =>
+                ref.read(settingsProvider.notifier).updateEnableDiscordRpc(v),
           ),
         ),
         if (Platform.isWindows)
           _SearchItem(
             category: 'Desktop & Window',
             title: 'Windows Explorer Context Menu',
-            subtitle: 'Show "Play in Looper" and "Add to Looper Queue" in Windows right-click menus',
+            subtitle:
+                'Show "Play in Looper" and "Add to Looper Queue" in Windows right-click menus',
             widget: _PremiumSwitchRow(
               icon: LucideIcons.mousePointerClick,
               title: 'Windows Explorer Context Menu',
-              subtitle: 'Show "Play in Looper" and "Add to Looper Queue" in Windows right-click menus',
+              subtitle:
+                  'Show "Play in Looper" and "Add to Looper Queue" in Windows right-click menus',
               value: settings.enableWindowsFileAssociations,
-              onChanged: (v) => ref.read(settingsProvider.notifier).updateEnableWindowsFileAssociations(v),
+              onChanged: (v) => ref
+                  .read(settingsProvider.notifier)
+                  .updateEnableWindowsFileAssociations(v),
             ),
           ),
       ],
@@ -768,7 +937,9 @@ class SettingsView extends ConsumerWidget {
             if (v && settings.lastFmSessionKey.isEmpty) {
               _showLastFmConfigDialog(context, ref, settings, isEnabling: true);
             } else {
-              ref.read(settingsProvider.notifier).updateEnableLastFmScrobbling(v);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateEnableLastFmScrobbling(v);
             }
           },
         ),
@@ -786,9 +957,16 @@ class SettingsView extends ConsumerWidget {
           value: settings.enableListenBrainzScrobbling,
           onChanged: (v) {
             if (v && settings.listenBrainzUserToken.isEmpty) {
-              _showListenBrainzConfigDialog(context, ref, settings, isEnabling: true);
+              _showListenBrainzConfigDialog(
+                context,
+                ref,
+                settings,
+                isEnabling: true,
+              );
             } else {
-              ref.read(settingsProvider.notifier).updateEnableListenBrainzScrobbling(v);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateEnableListenBrainzScrobbling(v);
             }
           },
         ),
@@ -803,7 +981,9 @@ class SettingsView extends ConsumerWidget {
           subtitle: 'Rebind key combinations for playback and navigation',
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (ctx) => const ShortcutsSettingsView()),
+              MaterialPageRoute(
+                builder: (ctx) => const ShortcutsSettingsView(),
+              ),
             );
           },
         ),
@@ -853,7 +1033,9 @@ class SettingsView extends ConsumerWidget {
             value: settings.keepBackgroundGradient,
             onChanged: (value) {
               HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateKeepBackgroundGradient(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateKeepBackgroundGradient(value);
             },
             isLast: false,
           ),
@@ -864,7 +1046,9 @@ class SettingsView extends ConsumerWidget {
             value: settings.dynamicAccentColor,
             onChanged: (value) {
               HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateDynamicAccentColor(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateDynamicAccentColor(value);
             },
             isLast: false,
           ),
@@ -910,7 +1094,9 @@ class SettingsView extends ConsumerWidget {
             value: settings.dynamicColorActiveLyrics,
             onChanged: (value) {
               HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateDynamicColorActiveLyrics(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateDynamicColorActiveLyrics(value);
             },
             isLast: false,
           ),
@@ -938,7 +1124,9 @@ class SettingsView extends ConsumerWidget {
           value: settings.uniformLyricsFontSize,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateUniformLyricsFontSize(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateUniformLyricsFontSize(value);
           },
           isLast: false,
         ),
@@ -960,7 +1148,9 @@ class SettingsView extends ConsumerWidget {
           value: settings.disableAnimatedDuration,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateDisableAnimatedDuration(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateDisableAnimatedDuration(value);
           },
           isLast: false,
         ),
@@ -1004,7 +1194,9 @@ class SettingsView extends ConsumerWidget {
           title: l10n.nowPlaying,
           subtitle: 'Show Now Playing in the sidebar',
           value: settings.showSidebarNowPlaying,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarNowPlaying(v),
+          onChanged: (v) => ref
+              .read(settingsProvider.notifier)
+              .updateShowSidebarNowPlaying(v),
           isLast: false,
         ),
         _PremiumSwitchRow(
@@ -1012,7 +1204,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.albums,
           subtitle: 'Show Albums library item in the sidebar',
           value: settings.showSidebarAlbums,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarAlbums(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarAlbums(v),
           isLast: false,
         ),
         _PremiumSwitchRow(
@@ -1020,7 +1213,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.artists,
           subtitle: 'Show Artists library item in the sidebar',
           value: settings.showSidebarArtists,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarArtists(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarArtists(v),
           isLast: false,
         ),
         _PremiumSwitchRow(
@@ -1028,7 +1222,8 @@ class SettingsView extends ConsumerWidget {
           title: l10n.playlists,
           subtitle: 'Show Playlists in the sidebar',
           value: settings.showSidebarPlaylists,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarPlaylists(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarPlaylists(v),
           isLast: false,
         ),
         _PremiumSwitchRow(
@@ -1036,7 +1231,8 @@ class SettingsView extends ConsumerWidget {
           title: 'Folders',
           subtitle: 'Show Directory Tree & Folders in the sidebar',
           value: settings.showSidebarFolders,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarFolders(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarFolders(v),
           isLast: false,
         ),
         _PremiumSwitchRow(
@@ -1044,7 +1240,9 @@ class SettingsView extends ConsumerWidget {
           title: 'Recently Played',
           subtitle: 'Show Recently Played in the sidebar',
           value: settings.showSidebarRecentlyPlayed,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarRecentlyPlayed(v),
+          onChanged: (v) => ref
+              .read(settingsProvider.notifier)
+              .updateShowSidebarRecentlyPlayed(v),
           isLast: false,
         ),
         _PremiumSwitchRow(
@@ -1052,7 +1250,8 @@ class SettingsView extends ConsumerWidget {
           title: 'Favorites',
           subtitle: 'Show Favorites in the sidebar',
           value: settings.showSidebarFavorites,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarFavorites(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarFavorites(v),
           isLast: false,
         ),
         _PremiumSwitchRow(
@@ -1060,7 +1259,17 @@ class SettingsView extends ConsumerWidget {
           title: l10n.genres,
           subtitle: 'Show Genres in the sidebar',
           value: settings.showSidebarGenres,
-          onChanged: (v) => ref.read(settingsProvider.notifier).updateShowSidebarGenres(v),
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarGenres(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.barChart2,
+          title: 'Stats & Analyze',
+          subtitle: 'Show Looper Analyze in the sidebar',
+          value: settings.showSidebarAnalyze,
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarAnalyze(v),
           isLast: true,
         ),
       ],
@@ -1084,22 +1293,24 @@ class SettingsView extends ConsumerWidget {
             DropdownMenuItem(value: '', child: Text(l10n.systemDefault)),
             ...AppLocalizations.supportedLocales.map((locale) {
               final code = locale.languageCode;
-              final name = {
-                'en': 'English',
-                'es': 'Español',
-                'fr': 'Français',
-                'de': 'Deutsch',
-                'pt': 'Português',
-                'ru': 'Русский',
-                'it': 'Italiano',
-                'zh': '中文',
-                'ja': '日本語',
-                'ko': '한국어',
-                'ar': 'العربية',
-                'tr': 'Türkçe',
-                'nl': 'Nederlands',
-                'hi': 'हिन्दी',
-              }[code] ?? code;
+              final name =
+                  {
+                    'en': 'English',
+                    'es': 'Español',
+                    'fr': 'Français',
+                    'de': 'Deutsch',
+                    'pt': 'Português',
+                    'ru': 'Русский',
+                    'it': 'Italiano',
+                    'zh': '中文',
+                    'ja': '日本語',
+                    'ko': '한국어',
+                    'ar': 'العربية',
+                    'tr': 'Türkçe',
+                    'nl': 'Nederlands',
+                    'hi': 'हिन्दी',
+                  }[code] ??
+                  code;
               return DropdownMenuItem(value: code, child: Text(name));
             }),
           ],
@@ -1161,6 +1372,44 @@ class SettingsView extends ConsumerWidget {
     return _Section(
       title: l10n.audioPlayback,
       children: [
+        _PremiumActionRow(
+          icon: LucideIcons.sliders,
+          title: 'Equalizer',
+          subtitle: settings.equalizerEnabled
+              ? 'Enabled • 18-band EQ, presets & sound profiles'
+              : 'Configure 18-band EQ, presets & sound profiles',
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                settings.equalizerEnabled ? 'ON' : 'OFF',
+                style: TextStyle(
+                  color: settings.equalizerEnabled
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.white38,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                LucideIcons.chevronRight,
+                size: 16,
+                color: Colors.white38,
+              ),
+            ],
+          ),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AndroidEqualizerScreen(),
+              ),
+            );
+          },
+          isLast: false,
+        ),
         _PremiumSwitchRow(
           icon: LucideIcons.listMusic,
           title: l10n.showPlayedSongsInQueue,
@@ -1168,14 +1417,17 @@ class SettingsView extends ConsumerWidget {
           value: settings.showPlayedSongsInQueue,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateShowPlayedSongsInQueue(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateShowPlayedSongsInQueue(value);
           },
           isLast: false,
         ),
         _PremiumSwitchRow(
           icon: LucideIcons.scissors,
           title: 'Auto-Trim Silence',
-          subtitle: 'Automatically detect and skip silence at the beginning and end of tracks for a tight transition',
+          subtitle:
+              'Automatically detect and skip silence at the beginning and end of tracks for a tight transition',
           value: settings.autoTrimSilence,
           onChanged: (value) {
             HapticFeedback.lightImpact();
@@ -1186,7 +1438,8 @@ class SettingsView extends ConsumerWidget {
         _PremiumSwitchRow(
           icon: LucideIcons.infinity,
           title: 'Gapless Playback',
-          subtitle: 'Eliminate silence between consecutive tracks for continuous album & live playback',
+          subtitle:
+              'Eliminate silence between consecutive tracks for continuous album & live playback',
           value: settings.gaplessPlayback,
           onChanged: (value) {
             HapticFeedback.lightImpact();
@@ -1206,7 +1459,9 @@ class SettingsView extends ConsumerWidget {
           divisions: 12,
           suffix: 's',
           onChanged: (value) {
-            ref.read(settingsProvider.notifier).updateCrossfadeDuration(value.round());
+            ref
+                .read(settingsProvider.notifier)
+                .updateCrossfadeDuration(value.round());
           },
           isLast: false,
         ),
@@ -1218,7 +1473,10 @@ class SettingsView extends ConsumerWidget {
             value: settings.crossfadeMode,
             items: const [
               DropdownMenuItem(value: 0, child: Text('Always (Auto & Manual)')),
-              DropdownMenuItem(value: 1, child: Text('Automatic Transitions Only')),
+              DropdownMenuItem(
+                value: 1,
+                child: Text('Automatic Transitions Only'),
+              ),
               DropdownMenuItem(value: 2, child: Text('Manual Skips Only')),
             ],
             onChanged: (value) {
@@ -1251,7 +1509,9 @@ class SettingsView extends ConsumerWidget {
             divisions: 99,
             suffix: 'ms',
             onChanged: (value) {
-              ref.read(settingsProvider.notifier).updatePlayPauseStopFadeLength(value.round());
+              ref
+                  .read(settingsProvider.notifier)
+                  .updatePlayPauseStopFadeLength(value.round());
             },
             isLast: false,
           ),
@@ -1296,7 +1556,9 @@ class SettingsView extends ConsumerWidget {
             value: settings.permanentAudioFocusChange,
             onChanged: (value) {
               HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updatePermanentAudioFocusChange(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updatePermanentAudioFocusChange(value);
             },
             isLast: true,
           ),
@@ -1332,16 +1594,17 @@ class SettingsView extends ConsumerWidget {
           onTap: () {
             HapticFeedback.lightImpact();
             ref.read(libraryProvider.notifier).scanSavedFolders();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.scanningLibrary)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.scanningLibrary)));
           },
           isLast: false,
         ),
         _PremiumActionRow(
           icon: LucideIcons.sparkles,
           title: 'Library Cleanup & Quality Assistant',
-          subtitle: 'Find duplicate tracks, low bitrate audio, and missing album artwork',
+          subtitle:
+              'Find duplicate tracks, low bitrate audio, and missing album artwork',
           onTap: () {
             HapticFeedback.lightImpact();
             Navigator.of(context).push(
@@ -1353,11 +1616,14 @@ class SettingsView extends ConsumerWidget {
         _PremiumSwitchRow(
           icon: LucideIcons.listMusic,
           title: 'Smart Playlists',
-          subtitle: 'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
+          subtitle:
+              'Auto-generate dynamic playlists (Top Most Played, Recently Added, Forgotten Favorites)',
           value: settings.enableSmartPlaylists,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateEnableSmartPlaylists(value);
           },
           isLast: false,
         ),
@@ -1386,11 +1652,23 @@ class SettingsView extends ConsumerWidget {
           subtitle: 'Choose visual layout for album grid items',
           value: settings.albumCardStyleIndex.clamp(0, 4),
           items: const [
-            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
-            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(
+              value: 0,
+              child: Text('Normal (Rounded Cover & Info Below)'),
+            ),
+            DropdownMenuItem(
+              value: 1,
+              child: Text('Circle (Circular Avatar & Centered Info)'),
+            ),
             DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
-            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+            DropdownMenuItem(
+              value: 3,
+              child: Text('Image (Overlay Text on Dark Gradient)'),
+            ),
+            DropdownMenuItem(
+              value: 4,
+              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
+            ),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -1406,11 +1684,23 @@ class SettingsView extends ConsumerWidget {
           subtitle: 'Choose visual layout for artist grid items',
           value: settings.artistCardStyleIndex.clamp(0, 4),
           items: const [
-            DropdownMenuItem(value: 0, child: Text('Normal (Rounded Cover & Info Below)')),
-            DropdownMenuItem(value: 1, child: Text('Circle (Circular Avatar & Centered Info)')),
+            DropdownMenuItem(
+              value: 0,
+              child: Text('Normal (Rounded Cover & Info Below)'),
+            ),
+            DropdownMenuItem(
+              value: 1,
+              child: Text('Circle (Circular Avatar & Centered Info)'),
+            ),
             DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(value: 3, child: Text('Image (Overlay Text on Dark Gradient)')),
-            DropdownMenuItem(value: 4, child: Text('Gapless (Edge-to-Edge Full Bleed Grid)')),
+            DropdownMenuItem(
+              value: 3,
+              child: Text('Image (Overlay Text on Dark Gradient)'),
+            ),
+            DropdownMenuItem(
+              value: 4,
+              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
+            ),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -1458,11 +1748,14 @@ class SettingsView extends ConsumerWidget {
         _PremiumSwitchRow(
           icon: LucideIcons.globe,
           title: 'Global Hotkeys (System-Wide)',
-          subtitle: 'Control playback (Play/Pause, Next, Prev, Like, Copy info) when Looper is in the background',
+          subtitle:
+              'Control playback (Play/Pause, Next, Prev, Like, Copy info) when Looper is in the background',
           value: settings.enableGlobalHotkeys,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateEnableGlobalHotkeys(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateEnableGlobalHotkeys(value);
           },
           isLast: false,
         ),
@@ -1470,11 +1763,14 @@ class SettingsView extends ConsumerWidget {
           _PremiumSwitchRow(
             icon: LucideIcons.appWindow,
             title: 'Windows Taskbar Controls',
-            subtitle: 'Show Play/Pause/Prev/Next buttons in the Windows taskbar preview hover window',
+            subtitle:
+                'Show Play/Pause/Prev/Next buttons in the Windows taskbar preview hover window',
             value: settings.enableTaskbarControls,
             onChanged: (value) {
               HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateEnableTaskbarControls(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateEnableTaskbarControls(value);
             },
             isLast: false,
           ),
@@ -1496,7 +1792,9 @@ class SettingsView extends ConsumerWidget {
           value: settings.showTrayOnlyWhenMinimized,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateShowTrayOnlyWhenMinimized(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateShowTrayOnlyWhenMinimized(value);
             SystemTrayService.instance.syncTrayVisibility();
           },
           isLast: false,
@@ -1504,7 +1802,8 @@ class SettingsView extends ConsumerWidget {
         _PremiumDropdownRow<int>(
           icon: LucideIcons.minimize2,
           title: 'Default Mini Player Shortcut',
-          subtitle: 'Select which mini player style is opened by the keyboard shortcut',
+          subtitle:
+              'Select which mini player style is opened by the keyboard shortcut',
           value: settings.defaultMiniPlayerType,
           items: const [
             DropdownMenuItem(value: 0, child: Text('Mini Player')),
@@ -1513,7 +1812,9 @@ class SettingsView extends ConsumerWidget {
           onChanged: (value) {
             if (value != null) {
               HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateDefaultMiniPlayerType(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateDefaultMiniPlayerType(value);
             }
           },
           isLast: !Platform.isWindows,
@@ -1549,7 +1850,8 @@ class SettingsView extends ConsumerWidget {
         _PremiumSwitchRow(
           icon: LucideIcons.messageSquare,
           title: 'Discord Rich Presence',
-          subtitle: 'Broadcast currently playing track title, artist, album, and timeline to Discord',
+          subtitle:
+              'Broadcast currently playing track title, artist, album, and timeline to Discord',
           value: settings.enableDiscordRpc,
           onChanged: (value) {
             HapticFeedback.lightImpact();
@@ -1577,29 +1879,37 @@ class SettingsView extends ConsumerWidget {
           value: settings.nowPlayingFullscreen,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateNowPlayingFullscreen(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateNowPlayingFullscreen(value);
           },
           isLast: false,
         ),
         _PremiumSwitchRow(
           icon: LucideIcons.activity,
           title: 'Bottom Visualizer',
-          subtitle: 'Display a dynamic audio visualizer across the bottom of the player',
+          subtitle:
+              'Display a dynamic audio visualizer across the bottom of the player',
           value: settings.fullscreenVisualizerEnabled,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateFullscreenVisualizerEnabled(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateFullscreenVisualizerEnabled(value);
           },
           isLast: false,
         ),
         _PremiumSwitchRow(
           icon: LucideIcons.repeat1,
           title: 'Show A-B Looper Button',
-          subtitle: 'Display the A-B section looper shortcut in the player toolbar',
+          subtitle:
+              'Display the A-B section looper shortcut in the player toolbar',
           value: settings.showFullscreenABLooper,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateShowFullscreenABLooper(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateShowFullscreenABLooper(value);
           },
           isLast: false,
         ),
@@ -1610,7 +1920,9 @@ class SettingsView extends ConsumerWidget {
           value: settings.showFullscreenSleepTimer,
           onChanged: (value) {
             HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateShowFullscreenSleepTimer(value);
+            ref
+                .read(settingsProvider.notifier)
+                .updateShowFullscreenSleepTimer(value);
           },
           isLast: false,
         ),
@@ -1656,7 +1968,9 @@ class SettingsView extends ConsumerWidget {
             if (value && settings.lastFmSessionKey.isEmpty) {
               _showLastFmConfigDialog(context, ref, settings, isEnabling: true);
             } else {
-              ref.read(settingsProvider.notifier).updateEnableLastFmScrobbling(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateEnableLastFmScrobbling(value);
             }
           },
           isLast: false,
@@ -1684,9 +1998,16 @@ class SettingsView extends ConsumerWidget {
           onChanged: (value) {
             HapticFeedback.lightImpact();
             if (value && settings.listenBrainzUserToken.isEmpty) {
-              _showListenBrainzConfigDialog(context, ref, settings, isEnabling: true);
+              _showListenBrainzConfigDialog(
+                context,
+                ref,
+                settings,
+                isEnabling: true,
+              );
             } else {
-              ref.read(settingsProvider.notifier).updateEnableListenBrainzScrobbling(value);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateEnableListenBrainzScrobbling(value);
             }
           },
           isLast: false,
@@ -1707,8 +2028,11 @@ class SettingsView extends ConsumerWidget {
         _PremiumSliderRow(
           icon: LucideIcons.percent,
           title: 'Scrobble Threshold',
-          subtitle: 'Track completion percentage required before sending a scrobble',
-          value: (settings.scrobbleThresholdPercent < 20 || settings.scrobbleThresholdPercent > 90)
+          subtitle:
+              'Track completion percentage required before sending a scrobble',
+          value:
+              (settings.scrobbleThresholdPercent < 20 ||
+                  settings.scrobbleThresholdPercent > 90)
               ? 50.0
               : settings.scrobbleThresholdPercent.toDouble(),
           min: 20,
@@ -1716,7 +2040,9 @@ class SettingsView extends ConsumerWidget {
           divisions: 7,
           suffix: '%',
           onChanged: (value) {
-            ref.read(settingsProvider.notifier).updateScrobbleThresholdPercent(value.round());
+            ref
+                .read(settingsProvider.notifier)
+                .updateScrobbleThresholdPercent(value.round());
           },
           isLast: true,
         ),
@@ -1736,7 +2062,8 @@ class SettingsView extends ConsumerWidget {
         _PremiumActionRow(
           icon: LucideIcons.keyboard,
           title: 'Customize Shortcuts',
-          subtitle: 'Rebind and customize key combinations for playback, seeking, volume, and navigation',
+          subtitle:
+              'Rebind and customize key combinations for playback, seeking, volume, and navigation',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -1754,7 +2081,8 @@ class SettingsView extends ConsumerWidget {
         _PremiumActionRow(
           icon: LucideIcons.helpCircle,
           title: 'Shortcuts Cheatsheet',
-          subtitle: 'Quick reference card of all currently active shortcuts (Press ?)',
+          subtitle:
+              'Quick reference card of all currently active shortcuts (Press ?)',
           onTap: () => showShortcutsCheatsheetDialog(context),
           trailing: const Icon(
             LucideIcons.chevronRight,
@@ -1799,11 +2127,16 @@ class SettingsView extends ConsumerWidget {
                   'assets/about/github_icon.svg',
                   width: 18,
                   height: 18,
-                  colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn),
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white70,
+                    BlendMode.srcIn,
+                  ),
                 ),
                 tooltip: 'GitHub Repository',
                 onPressed: () async {
-                  final url = Uri.parse('https://github.com/mikiyasmechalo/looper');
+                  final url = Uri.parse(
+                    'https://github.com/mikiyasmechalo/looper',
+                  );
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   }
@@ -1819,17 +2152,23 @@ class SettingsView extends ConsumerWidget {
           subtitle: 'Check GitHub for the latest release',
           onTap: () {
             HapticFeedback.lightImpact();
-            UpdateService.checkForUpdates(ref: ref, context: context, manual: true);
+            UpdateService.checkForUpdates(
+              ref: ref,
+              context: context,
+              manual: true,
+            );
           },
           isLast: false,
         ),
         _PremiumSwitchRow(
           icon: LucideIcons.bellRing,
           title: 'Update Notifications',
-          subtitle: 'Automatically check for new releases and show notifications',
+          subtitle:
+              'Automatically check for new releases and show notifications',
           value: settings.enableUpdateNotifications,
-          onChanged: (val) =>
-              ref.read(settingsProvider.notifier).updateEnableUpdateNotifications(val),
+          onChanged: (val) => ref
+              .read(settingsProvider.notifier)
+              .updateEnableUpdateNotifications(val),
           isLast: settings.skippedUpdateVersion.isEmpty,
         ),
         if (settings.skippedUpdateVersion.isNotEmpty)
@@ -1839,11 +2178,17 @@ class SettingsView extends ConsumerWidget {
             subtitle: 'Tap to reset and receive notifications for this version',
             trailing: Text(
               'Reset',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             onTap: () {
               HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateSkippedUpdateVersion('');
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateSkippedUpdateVersion('');
             },
             isLast: false,
           ),
@@ -1882,7 +2227,10 @@ class SettingsView extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: Text(l10n.resetLibrary, style: const TextStyle(color: Colors.white)),
+        title: Text(
+          l10n.resetLibrary,
+          style: const TextStyle(color: Colors.white),
+        ),
         content: Text(
           l10n.resetLibraryDesc,
           style: const TextStyle(color: Colors.white70),
@@ -1890,7 +2238,10 @@ class SettingsView extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel, style: const TextStyle(color: Colors.white60)),
+            child: Text(
+              l10n.cancel,
+              style: const TextStyle(color: Colors.white60),
+            ),
           ),
           Consumer(
             builder: (context, ref, child) {
@@ -1899,7 +2250,10 @@ class SettingsView extends ConsumerWidget {
                   await ref.read(libraryProvider.notifier).clearAllData();
                   if (context.mounted) Navigator.pop(context);
                 },
-                child: Text(l10n.reset, style: const TextStyle(color: Colors.redAccent)),
+                child: Text(
+                  l10n.reset,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
               );
             },
           ),
@@ -1908,7 +2262,11 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  void _showFontPicker(BuildContext context, WidgetRef ref, AppSettings settings) {
+  void _showFontPicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -1919,15 +2277,23 @@ class SettingsView extends ConsumerWidget {
           currentWeightDelta: settings.customFontWeightDelta,
           onSave: (useNew, family, weightDelta) async {
             await ref.read(settingsProvider.notifier).updateUseNewFont(useNew);
-            await ref.read(settingsProvider.notifier).updateCustomFontFamily(family);
-            await ref.read(settingsProvider.notifier).updateCustomFontWeightDelta(weightDelta);
+            await ref
+                .read(settingsProvider.notifier)
+                .updateCustomFontFamily(family);
+            await ref
+                .read(settingsProvider.notifier)
+                .updateCustomFontWeightDelta(weightDelta);
           },
         );
       },
     );
   }
 
-  void _showLyricsFontPicker(BuildContext context, WidgetRef ref, AppSettings settings) {
+  void _showLyricsFontPicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -1937,9 +2303,15 @@ class SettingsView extends ConsumerWidget {
           useNewFont: settings.useNewFontLyrics,
           currentWeightDelta: settings.customFontWeightLyricsDelta,
           onSave: (useNew, family, weightDelta) async {
-            await ref.read(settingsProvider.notifier).updateUseNewFontLyrics(useNew);
-            await ref.read(settingsProvider.notifier).updateCustomFontFamilyLyrics(family);
-            await ref.read(settingsProvider.notifier).updateCustomFontWeightLyricsDelta(weightDelta);
+            await ref
+                .read(settingsProvider.notifier)
+                .updateUseNewFontLyrics(useNew);
+            await ref
+                .read(settingsProvider.notifier)
+                .updateCustomFontFamilyLyrics(family);
+            await ref
+                .read(settingsProvider.notifier)
+                .updateCustomFontWeightLyricsDelta(weightDelta);
           },
         );
       },
@@ -1953,7 +2325,9 @@ class SettingsView extends ConsumerWidget {
     bool isEnabling = false,
   }) {
     final userController = TextEditingController(text: settings.lastFmUsername);
-    final keyController = TextEditingController(text: settings.lastFmSessionKey);
+    final keyController = TextEditingController(
+      text: settings.lastFmSessionKey,
+    );
     bool saved = false;
 
     showDialog(
@@ -1964,7 +2338,10 @@ class SettingsView extends ConsumerWidget {
           children: [
             Icon(LucideIcons.radio, color: Colors.redAccent, size: 20),
             SizedBox(width: 10),
-            Text('Last.fm Account', style: TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              'Last.fm Account',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
           ],
         ),
         content: Column(
@@ -1984,7 +2361,9 @@ class SettingsView extends ConsumerWidget {
                 labelStyle: const TextStyle(color: Colors.white54),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -1996,7 +2375,9 @@ class SettingsView extends ConsumerWidget {
                 labelStyle: const TextStyle(color: Colors.white54),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -2004,7 +2385,10 @@ class SettingsView extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -2012,20 +2396,26 @@ class SettingsView extends ConsumerWidget {
               final key = keyController.text.trim();
               if (user.isNotEmpty && key.isNotEmpty) {
                 saved = true;
-                await ref.read(settingsProvider.notifier).updateLastFmCredentials(
-                      username: user,
-                      sessionKey: key,
-                    );
-                await ref.read(settingsProvider.notifier).updateEnableLastFmScrobbling(true);
+                await ref
+                    .read(settingsProvider.notifier)
+                    .updateLastFmCredentials(username: user, sessionKey: key);
+                await ref
+                    .read(settingsProvider.notifier)
+                    .updateEnableLastFmScrobbling(true);
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Save', style: TextStyle(color: Colors.greenAccent)),
+            child: const Text(
+              'Save',
+              style: TextStyle(color: Colors.greenAccent),
+            ),
           ),
         ],
       ),
     ).then((_) {
-      if (!saved && isEnabling && ref.read(settingsProvider).lastFmSessionKey.isEmpty) {
+      if (!saved &&
+          isEnabling &&
+          ref.read(settingsProvider).lastFmSessionKey.isEmpty) {
         ref.read(settingsProvider.notifier).updateEnableLastFmScrobbling(false);
       }
     });
@@ -2037,7 +2427,9 @@ class SettingsView extends ConsumerWidget {
     AppSettings settings, {
     bool isEnabling = false,
   }) {
-    final tokenController = TextEditingController(text: settings.listenBrainzUserToken);
+    final tokenController = TextEditingController(
+      text: settings.listenBrainzUserToken,
+    );
     bool saved = false;
 
     showDialog(
@@ -2048,7 +2440,10 @@ class SettingsView extends ConsumerWidget {
           children: [
             Icon(LucideIcons.brain, color: Colors.amberAccent, size: 20),
             SizedBox(width: 10),
-            Text('ListenBrainz User Token', style: TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              'ListenBrainz User Token',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
           ],
         ),
         content: Column(
@@ -2068,7 +2463,9 @@ class SettingsView extends ConsumerWidget {
                 labelStyle: const TextStyle(color: Colors.white54),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -2076,25 +2473,39 @@ class SettingsView extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
           TextButton(
             onPressed: () async {
               final token = tokenController.text.trim();
               if (token.isNotEmpty) {
                 saved = true;
-                await ref.read(settingsProvider.notifier).updateListenBrainzUserToken(token);
-                await ref.read(settingsProvider.notifier).updateEnableListenBrainzScrobbling(true);
+                await ref
+                    .read(settingsProvider.notifier)
+                    .updateListenBrainzUserToken(token);
+                await ref
+                    .read(settingsProvider.notifier)
+                    .updateEnableListenBrainzScrobbling(true);
               }
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Save', style: TextStyle(color: Colors.greenAccent)),
+            child: const Text(
+              'Save',
+              style: TextStyle(color: Colors.greenAccent),
+            ),
           ),
         ],
       ),
     ).then((_) {
-      if (!saved && isEnabling && ref.read(settingsProvider).listenBrainzUserToken.isEmpty) {
-        ref.read(settingsProvider.notifier).updateEnableListenBrainzScrobbling(false);
+      if (!saved &&
+          isEnabling &&
+          ref.read(settingsProvider).listenBrainzUserToken.isEmpty) {
+        ref
+            .read(settingsProvider.notifier)
+            .updateEnableListenBrainzScrobbling(false);
       }
     });
   }
@@ -2147,7 +2558,9 @@ class _CategoryChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Material(
-        color: isSelected ? accent.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.05),
+        color: isSelected
+            ? accent.withValues(alpha: 0.18)
+            : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
@@ -2157,7 +2570,9 @@ class _CategoryChip extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? accent.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.08),
+                color: isSelected
+                    ? accent.withValues(alpha: 0.4)
+                    : Colors.white.withValues(alpha: 0.08),
                 width: 1,
               ),
             ),
@@ -2175,7 +2590,9 @@ class _CategoryChip extends StatelessWidget {
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.white70,
                     fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -2216,7 +2633,9 @@ class _CategorySidebarTile extends StatelessWidget {
         message: label,
         waitDuration: const Duration(milliseconds: 400),
         child: Material(
-          color: isSelected ? selectedColor.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected
+              ? selectedColor.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             onTap: onTap,
@@ -2255,8 +2674,12 @@ class _CategorySidebarTile extends StatelessWidget {
                                 overflow: TextOverflow.clip,
                                 style: AppFonts.jostStyle(
                                   fontSize: 14.ts,
-                                  color: isSelected ? selectedColor : unselectedColor,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected
+                                      ? selectedColor
+                                      : unselectedColor,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -2301,7 +2724,8 @@ class _Section extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    final isDynamic = settings.enableDynamicTheming || settings.keepBackgroundGradient;
+    final isDynamic =
+        settings.enableDynamicTheming || settings.keepBackgroundGradient;
     final useBlur = isDynamic && !settings.disableBlur;
 
     return Column(
@@ -2482,10 +2906,7 @@ class _PremiumActionRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 16),
-                  trailing!,
-                ],
+                if (trailing != null) ...[const SizedBox(width: 16), trailing!],
               ],
             ),
           ),
@@ -2528,11 +2949,7 @@ class _PremiumDropdownRow<T> extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: Colors.white.withValues(alpha: 0.9),
-                size: 22,
-              ),
+              Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 22),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -2691,8 +3108,12 @@ class _PremiumSliderRow extends StatelessWidget {
                   activeTrackColor: Theme.of(context).colorScheme.primary,
                   inactiveTrackColor: Colors.white10,
                   thumbColor: Colors.white,
-                  overlayColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                  overlayColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.12),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 6,
+                  ),
                 ),
                 child: Slider(
                   value: value.clamp(min, max),
@@ -2846,7 +3267,11 @@ class _FontPickerTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 22),
+                Icon(
+                  icon,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  size: 22,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -2871,7 +3296,11 @@ class _FontPickerTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(LucideIcons.chevronRight, color: Colors.white38, size: 18),
+                const Icon(
+                  LucideIcons.chevronRight,
+                  color: Colors.white38,
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -2942,7 +3371,11 @@ class _FontSelectionDialogState extends State<_FontSelectionDialog> {
           children: [
             const Text(
               'Select Font Family',
-              style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
             ...families.map((fam) {
@@ -2967,7 +3400,11 @@ class _FontSelectionDialogState extends State<_FontSelectionDialog> {
             const SizedBox(height: 16),
             const Text(
               'Font Weight Adjustment',
-              style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Slider(
               value: _weightDelta.toDouble(),
@@ -2993,7 +3430,10 @@ class _FontSelectionDialogState extends State<_FontSelectionDialog> {
             widget.onSave(_useNewFont, _family, _weightDelta);
             Navigator.pop(context);
           },
-          child: const Text('Save', style: TextStyle(color: Colors.greenAccent)),
+          child: const Text(
+            'Save',
+            style: TextStyle(color: Colors.greenAccent),
+          ),
         ),
       ],
     );
@@ -3018,7 +3458,10 @@ class _PremiumLibraryFoldersList extends ConsumerWidget {
             Expanded(
               child: Text(
                 'No music folders added yet.',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
@@ -3036,7 +3479,11 @@ class _PremiumLibraryFoldersList extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(LucideIcons.folder, color: Colors.white70, size: 20),
+                  const Icon(
+                    LucideIcons.folder,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
@@ -3046,10 +3493,18 @@ class _PremiumLibraryFoldersList extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(LucideIcons.x, color: Colors.white38, size: 16),
+                    icon: const Icon(
+                      LucideIcons.x,
+                      color: Colors.white38,
+                      size: 16,
+                    ),
                     onPressed: () {
-                      final updated = folders.where((f) => f != folder).toList();
-                      ref.read(settingsProvider.notifier).updateLibraryFolders(updated);
+                      final updated = folders
+                          .where((f) => f != folder)
+                          .toList();
+                      ref
+                          .read(settingsProvider.notifier)
+                          .updateLibraryFolders(updated);
                     },
                   ),
                 ],
@@ -3077,14 +3532,6 @@ class _PremiumMaintainerSection extends StatelessWidget {
       title: 'Maintainers & Contributors',
       children: const [
         _AboutMaintainerTile(
-          name: 'Mikiyas Mechalo',
-          role: 'Active Contributor',
-          avatar: 'assets/about/miki_avatar.jpg',
-          github: 'https://github.com/mikiyasmechalo',
-          telegram: 'https://t.me/mikeme2',
-          isLast: false,
-        ),
-        _AboutMaintainerTile(
           name: 'Nilesh Suthar',
           role: 'Creator & Maintainer',
           avatar: 'assets/about/maintainer_avatar.png',
@@ -3101,8 +3548,17 @@ class _PremiumMaintainerSection extends StatelessWidget {
           isLast: false,
         ),
         _AboutMaintainerTile(
+          name: 'Mikiyas Mechalo',
+          role: 'Active Contributor',
+          avatar: 'assets/about/miki_avatar.jpg',
+          github: 'https://github.com/mikiyasmechalo',
+          telegram: 'https://t.me/mikeme2',
+          isLast: false,
+        ),
+        _AboutMaintainerTile(
           name: 'Madan Suthar',
           role: 'Active Contributor',
+          avatar: 'assets/about/free_rider_avatar.png',
           github: 'https://github.com/',
           telegram: 'https://t.me/madansthr',
           isLast: true,
@@ -3147,7 +3603,11 @@ class _AboutMaintainerTile extends StatelessWidget {
                 backgroundImage: hasAvatar ? AssetImage(avatar!) : null,
                 child: hasAvatar
                     ? null
-                    : const Icon(LucideIcons.user, color: Colors.white60, size: 20),
+                    : const Icon(
+                        LucideIcons.user,
+                        color: Colors.white60,
+                        size: 20,
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -3179,13 +3639,19 @@ class _AboutMaintainerTile extends StatelessWidget {
                     'assets/about/github_icon.svg',
                     width: 20,
                     height: 20,
-                    colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn),
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white70,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   tooltip: 'GitHub',
                   onPressed: () async {
                     final uri = Uri.parse(github);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   },
                 ),
@@ -3195,13 +3661,19 @@ class _AboutMaintainerTile extends StatelessWidget {
                     'assets/about/telegram_icon.svg',
                     width: 20,
                     height: 20,
-                    colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn),
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white70,
+                      BlendMode.srcIn,
+                    ),
                   ),
                   tooltip: 'Telegram',
                   onPressed: () async {
                     final uri = Uri.parse(telegram);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   },
                 ),

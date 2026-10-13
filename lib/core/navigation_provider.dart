@@ -11,6 +11,7 @@ enum NavItem {
   favorites,
   recentlyPlayed,
   lyrics,
+  analyze,
   settings,
   collectionDetail,
   queue,

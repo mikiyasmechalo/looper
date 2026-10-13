@@ -425,6 +425,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..showSidebarQueue = s.showSidebarQueue
       ..showSidebarGenres = s.showSidebarGenres
       ..showSidebarFolders = s.showSidebarFolders
+      ..showSidebarAnalyze = s.showSidebarAnalyze
       ..folderViewTreeMode = s.folderViewTreeMode
       ..enableUpdateNotifications = s.enableUpdateNotifications
       ..skippedUpdateVersion = s.skippedUpdateVersion;
@@ -482,6 +483,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateShowSidebarFolders(bool value) async {
     final newState = _clone(state)..showSidebarFolders = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarAnalyze(bool value) async {
+    final newState = _clone(state)..showSidebarAnalyze = value;
     await _save(newState);
   }
 
