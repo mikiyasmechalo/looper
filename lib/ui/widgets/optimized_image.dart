@@ -62,23 +62,31 @@ class OptimizedImage extends StatelessWidget {
     int? computedCacheHeight = cacheHeight;
 
     if (computedCacheWidth == null && computedCacheHeight == null) {
+      const int minThumbnailSize = 256;
+      const int maxMasterSize = 1024;
+
       if (width != null && width!.isFinite && width! <= 220) {
         // Thumbnail / list / tile mode:
         // Use a minimum resolution floor (256px) so downscaled thumbnails preserve
         // fine typography, intricate cover art, and crisp edges without pixelation.
-        const int minThumbnailSize = 256;
-        final int scaled = (width! * dpr * 2.0).round();
-        computedCacheWidth = scaled < minThumbnailSize ? minThumbnailSize : scaled.clamp(minThumbnailSize, 512);
+        final int scaled = (width! * dpr * 1.5).round();
+        computedCacheWidth = scaled.clamp(minThumbnailSize, 512);
       } else if (height != null && height!.isFinite && height! <= 220 && width == null) {
-        const int minThumbnailSize = 256;
-        final int scaled = (height! * dpr * 2.0).round();
-        computedCacheHeight = scaled < minThumbnailSize ? minThumbnailSize : scaled.clamp(minThumbnailSize, 512);
+        final int scaled = (height! * dpr * 1.5).round();
+        computedCacheHeight = scaled.clamp(minThumbnailSize, 512);
+      } else if (width != null && width!.isFinite) {
+        // Large player views / header banners with explicit width:
+        // Cap decode size to maxMasterSize (1024px) to avoid decoding 3000x3000px
+        // master files into ~36-64MB bitmaps while maintaining ultra-sharp 4K fidelity.
+        final int scaled = (width! * dpr).round();
+        computedCacheWidth = scaled.clamp(512, maxMasterSize);
+      } else if (height != null && height!.isFinite) {
+        // Large player views with explicit height:
+        final int scaled = (height! * dpr).round();
+        computedCacheHeight = scaled.clamp(512, maxMasterSize);
       } else {
-        // Fullscreen / large player views or unconstrained flexible containers:
-        // Do NOT downsample to a blurry default! Leaving cacheWidth null allows the full master image
-        // to decode at native studio resolution with maximum clarity.
-        computedCacheWidth = null;
-        computedCacheHeight = null;
+        // Unconstrained flexible containers:
+        computedCacheWidth = maxMasterSize;
       }
     }
 

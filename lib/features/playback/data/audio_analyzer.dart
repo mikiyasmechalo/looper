@@ -50,15 +50,21 @@ class AudioAnalysis {
 }
 
 class AudioAnalyzer {
+  static const int _maxCacheEntries = 50;
   static final Map<String, AudioAnalysis> _cache = {};
 
   static AudioAnalysis? getCachedAnalysis(String filePath) {
-    return _cache[filePath];
+    final cached = _cache.remove(filePath);
+    if (cached != null) {
+      _cache[filePath] = cached;
+    }
+    return cached;
   }
 
   static Future<AudioAnalysis?> analyze(String filePath) async {
-    if (_cache.containsKey(filePath)) {
-      return _cache[filePath];
+    final cached = getCachedAnalysis(filePath);
+    if (cached != null) {
+      return cached;
     }
     try {
       final session = await FFprobeKit.getMediaInformation(filePath);
@@ -110,6 +116,9 @@ class AudioAnalyzer {
         label: tags['label']?.toString() ?? tags['LABEL']?.toString() ?? tags['organization']?.toString(),
         encoder: tags['encoder']?.toString(),
       );
+      if (_cache.length >= _maxCacheEntries) {
+        _cache.remove(_cache.keys.first);
+      }
       _cache[filePath] = analysis;
       return analysis;
     } catch (e) {
@@ -162,17 +171,24 @@ class AudioAnalyzer {
 /// instead of a synthetic pattern.
 class WaveformAnalyzer {
   static const int _decodeSampleRate = 8000;
+  static const int _maxCacheEntries = 15;
 
   static final Map<String, List<double>> _cache = {};
 
-  static List<double>? getCached(String filePath) => _cache[filePath];
+  static List<double>? getCached(String filePath) {
+    final cached = _cache.remove(filePath);
+    if (cached != null) {
+      _cache[filePath] = cached;
+    }
+    return cached;
+  }
 
   /// Decodes the song and returns a fine-grained energy timeline (one RMS
   /// value per ~50 ms of audio, normalized to 0..1) so a seekbar can both
   /// render a real waveform profile and react to the energy at the current
   /// playback position.
   static Future<List<double>?> analyze(String filePath) async {
-    final cached = _cache[filePath];
+    final cached = getCached(filePath);
     if (cached != null) return cached;
 
     String? pcmPath;
@@ -205,6 +221,9 @@ class WaveformAnalyzer {
       await file.delete();
 
       final wave = await Isolate.run(() => _computeWaveform(bytes));
+      if (_cache.length >= _maxCacheEntries) {
+        _cache.remove(_cache.keys.first);
+      }
       _cache[filePath] = wave;
       return wave;
     } catch (_) {

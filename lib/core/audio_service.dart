@@ -153,17 +153,18 @@ class AudioService {
       await player.setRawProperty('audio-pitch-correction', 'no');
     } catch (e) {}
 
-    // SpatialFlow Audio Stream Buffering & Readahead Calculations
+    // SpatialFlow Audio Stream Buffering & Readahead Calculations:
+    // Tuned for high-fidelity audio (FLAC/MP3) with low RAM footprint (~40MB max cache instead of 350MB).
     try {
-      await player.setRawProperty('demuxer-max-bytes', '262144000'); // 250MB
+      await player.setRawProperty('demuxer-max-bytes', '33554432'); // 32MB forward cache
       await player.setRawProperty(
         'demuxer-readahead-secs',
-        '60',
-      ); // 60s forward readahead
+        '20',
+      ); // 20s forward readahead
       await player.setRawProperty(
         'demuxer-max-back-bytes',
-        '104857600',
-      ); // 100MB back-cache
+        '8388608',
+      ); // 8MB back-cache
     } catch (e) {}
 
     try {

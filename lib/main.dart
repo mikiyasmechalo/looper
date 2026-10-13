@@ -67,6 +67,10 @@ void main(List<String> args) async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Bound Flutter's in-memory image cache to prevent memory bloat during heavy library scrolling
+  PaintingBinding.instance.imageCache.maximumSize = 120;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 64 * 1024 * 1024; // 64 MB
+
   // Enforce single instance on desktop before initializing heavy components
   final isPrimary = await SingleInstanceService.ensureSingleInstance(args);
   if (!isPrimary) {
