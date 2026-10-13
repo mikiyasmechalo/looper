@@ -63,29 +63,29 @@ class OptimizedImage extends StatelessWidget {
 
     if (computedCacheWidth == null && computedCacheHeight == null) {
       const int minThumbnailSize = 128;
-      const int maxMasterSize = 768;
+      const int maxMasterSize = 512;
 
       if (width != null && width!.isFinite && width! <= 220) {
         // Thumbnail / list / tile mode:
-        // Use a resolution floor of 128px for small rows and clamp to 384px for tiles.
+        // Use a resolution floor of 128px for small rows and clamp to 256px for tiles.
         final int scaled = (width! * dpr).round();
-        computedCacheWidth = scaled.clamp(minThumbnailSize, 384);
+        computedCacheWidth = scaled.clamp(minThumbnailSize, 256);
       } else if (height != null && height!.isFinite && height! <= 220 && width == null) {
         final int scaled = (height! * dpr).round();
-        computedCacheHeight = scaled.clamp(minThumbnailSize, 384);
+        computedCacheHeight = scaled.clamp(minThumbnailSize, 256);
       } else if (width != null && width!.isFinite) {
         // Large player views / header banners with explicit width:
-        // Cap decode size to maxMasterSize (768px) to deliver pristine 4K fidelity at ~2.3MB.
+        // Cap decode size to maxMasterSize (512px) to deliver pristine fidelity at ~1.04MB bitmap.
         final int scaled = (width! * dpr).round();
-        computedCacheWidth = scaled.clamp(384, maxMasterSize);
+        computedCacheWidth = scaled.clamp(256, maxMasterSize);
       } else if (height != null && height!.isFinite) {
         // Large player views with explicit height:
         final int scaled = (height! * dpr).round();
-        computedCacheHeight = scaled.clamp(384, maxMasterSize);
+        computedCacheHeight = scaled.clamp(256, maxMasterSize);
       } else {
         // Unconstrained flexible containers (cards, collages, responsive boxes):
-        // Decodes at a lightweight 384px (~580KB) instead of bloated 4MB+ master decodes.
-        computedCacheWidth = 384;
+        // Decodes at a lean 256px (~262KB) instead of bloated master decodes.
+        computedCacheWidth = 256;
       }
     }
 

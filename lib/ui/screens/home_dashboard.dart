@@ -577,6 +577,8 @@ class HomeDashboard extends ConsumerWidget {
                                     images: artist.artistImages,
                                     imageUrl: artist.artistImageUrl,
                                     imagePath: artist.artPath,
+                                    width: isNarrow ? 100 : 120,
+                                    height: isNarrow ? 100 : 120,
                                     fit: BoxFit.cover,
                                     placeholder: Container(
                                       color: Colors.white.withValues(
@@ -892,6 +894,9 @@ class HomeDashboard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(16),
                     child: OptimizedImage(
                       imagePath: album.artPath,
+                      width: 140,
+                      height: 140,
+                      cacheWidth: 256,
                       fit: BoxFit.cover,
                     ),
                   ),

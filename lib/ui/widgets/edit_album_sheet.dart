@@ -271,12 +271,19 @@ class _EditAlbumSheetState extends ConsumerState<EditAlbumSheet> {
                                         borderRadius: BorderRadius.circular(20),
                                         child: _currentArtPath.isNotEmpty
                                             ? (_pickedArtPath != null && _pickedArtPath!.isNotEmpty
-                                                ? Image.file(
-                                                    File(_pickedArtPath!),
+                                                ? Image(
+                                                    image: ResizeImage(
+                                                      FileImage(File(_pickedArtPath!)),
+                                                      width: 280,
+                                                      height: 280,
+                                                    ),
                                                     fit: BoxFit.cover,
                                                   )
                                                 : OptimizedImage(
                                                     imagePath: _currentArtPath,
+                                                    width: 140,
+                                                    height: 140,
+                                                    cacheWidth: 256,
                                                     fit: BoxFit.cover,
                                                   ))
                                             : const Center(

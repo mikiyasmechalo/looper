@@ -153,28 +153,32 @@ class AudioService {
       await player.setRawProperty('audio-pitch-correction', 'no');
     } catch (e) {}
 
-    // Disable native video, video output, and subtitle engines entirely.
+    // Disable native video, video output, subtitle, OSD, and scripting engines entirely.
     // Looper is a dedicated audio player; disabling these prevents MPV from
     // spawning video decoding threads, ffmpeg video contexts, and frame queues
-    // when tracks contain embedded album art / APIC pictures.
+    // when tracks contain embedded album art / APIC pictures, while avoiding OSD/Lua heap.
     try {
       await player.setRawProperty('vid', 'no');
       await player.setRawProperty('vo', 'null');
       await player.setRawProperty('sub', 'no');
+      await player.setRawProperty('osd-bar', 'no');
+      await player.setRawProperty('osd-level', '0');
+      await player.setRawProperty('load-scripts', 'no');
+      await player.setRawProperty('audio-buffer', '0.15');
     } catch (_) {}
 
     // SpatialFlow Audio Stream Buffering & Readahead Calculations:
-    // Tuned for high-fidelity audio (FLAC/MP3) with low RAM footprint (~20MB max cache instead of 350MB).
+    // Tuned for lean local & streaming audio playback (~5MB total cache footprint).
     try {
-      await player.setRawProperty('demuxer-max-bytes', '16777216'); // 16MB forward cache
+      await player.setRawProperty('demuxer-max-bytes', '4194304'); // 4MB forward cache
       await player.setRawProperty(
         'demuxer-readahead-secs',
-        '15',
-      ); // 15s forward readahead
+        '8',
+      ); // 8s forward readahead
       await player.setRawProperty(
         'demuxer-max-back-bytes',
-        '4194304',
-      ); // 4MB back-cache
+        '1048576',
+      ); // 1MB back-cache
     } catch (e) {}
 
     try {

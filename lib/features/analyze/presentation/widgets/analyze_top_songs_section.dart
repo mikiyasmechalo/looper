@@ -192,7 +192,12 @@ class _TopSongRow extends StatelessWidget {
                     child: SizedBox(
                       width: 46,
                       height: 46,
-                      child: OptimizedImage(imagePath: stat.song.artPath),
+                      child: OptimizedImage(
+                        imagePath: stat.song.artPath,
+                        width: 46,
+                        height: 46,
+                        cacheWidth: 128,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),

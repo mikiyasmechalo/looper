@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/core/logger_helper.dart';
+import 'package:looper_player/core/memory_service.dart';
 
 class WindowState {
   final bool isMaximized;
@@ -174,6 +175,16 @@ class WindowStateService extends WindowListener {
   void _updatePlayerType(String type) {
     if (_currentState.playerType == type) return;
     saveSync(_currentState.copyWith(playerType: type));
+  }
+
+  @override
+  void onWindowMinimize() {
+    MemoryService.trimWorkingSet(clearImageCache: true);
+  }
+
+  @override
+  void onWindowBlur() {
+    MemoryService.trimWorkingSet(clearImageCache: true);
   }
 
   @override

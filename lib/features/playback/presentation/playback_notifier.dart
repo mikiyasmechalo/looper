@@ -12,6 +12,7 @@ import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/core/discord_rpc_service.dart';
 import 'package:looper_player/core/scrobbler_service.dart';
+import 'package:looper_player/core/memory_service.dart';
 import 'package:looper_player/features/library/data/scanner.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
@@ -1124,6 +1125,9 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         });
       }
     }
+
+    // Sweep previous track memory (decoded cover bitmaps, old metadata, transient buffers)
+    Future.delayed(const Duration(seconds: 2), MemoryService.trimWorkingSet);
   }
 
   /// Schedules the lastPlayed/playCount stamp ~10s after a play starts, so

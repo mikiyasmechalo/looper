@@ -1080,6 +1080,9 @@ class _AlbumResultCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     child: OptimizedImage(
                       imagePath: album.artPath,
+                      width: 120,
+                      height: 120,
+                      cacheWidth: 256,
                       fit: BoxFit.cover,
                       placeholder: Container(
                         color: Colors.white10,

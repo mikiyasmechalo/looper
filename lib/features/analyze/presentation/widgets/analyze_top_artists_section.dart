@@ -169,6 +169,9 @@ class _ArtistAvatarState extends State<_ArtistAvatar> {
                             imagePath: url != null && !isNetwork
                                 ? url
                                 : widget.stat.imagePath,
+                            width: 82,
+                            height: 82,
+                            cacheWidth: 192,
                             placeholder: Container(
                               color: Colors.white.withValues(alpha: 0.05),
                               child: const Icon(

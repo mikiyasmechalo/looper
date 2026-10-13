@@ -127,8 +127,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Check for application updates on GitHub
       UpdateService.checkForUpdates(ref: ref, context: context);
 
-      // Release transient startup memory and working set pages
-      Future.delayed(const Duration(seconds: 4), MemoryService.trimWorkingSet);
+      // Release transient startup memory and start background periodic sweep
+      Future.delayed(const Duration(seconds: 4), () {
+        MemoryService.trimWorkingSet();
+        MemoryService.startPeriodicTrimming();
+      });
 
       // Handle CLI / Startup arguments (e.g. Open With, Add to Queue)
       final startupArgs = ref.read(startupArgsProvider);

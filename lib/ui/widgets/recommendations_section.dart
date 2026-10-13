@@ -87,6 +87,9 @@ class RecommendationsSection extends ConsumerWidget {
                               height: 90,
                               child: OptimizedImage(
                                 imageUrl: track.thumbnailUrl,
+                                width: 104,
+                                height: 90,
+                                cacheWidth: 192,
                                 fit: BoxFit.cover,
                               ),
                             ),

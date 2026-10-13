@@ -102,7 +102,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
       }
 
       final colors = await FluidPaletteExtractor.extractColors(
-        FileImage(file),
+        ResizeImage(FileImage(file), width: 96, height: 96),
         count: 1,
       );
 

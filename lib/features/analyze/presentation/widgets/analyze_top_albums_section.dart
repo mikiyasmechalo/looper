@@ -102,7 +102,12 @@ class _AlbumCard extends StatelessWidget {
                     child: SizedBox(
                       width: 120,
                       height: 120,
-                      child: OptimizedImage(imagePath: stat.artPath),
+                      child: OptimizedImage(
+                        imagePath: stat.artPath,
+                        width: 120,
+                        height: 120,
+                        cacheWidth: 256,
+                      ),
                     ),
                   ),
                   Positioned(

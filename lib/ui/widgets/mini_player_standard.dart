@@ -548,6 +548,7 @@ class _StandardMiniPlayerState extends ConsumerState<StandardMiniPlayer>
                               child: song != null
                                   ? OptimizedImage(
                                       imagePath: song.artPath ?? "",
+                                      cacheWidth: 384,
                                       fit: BoxFit.cover,
                                       filterQuality: FilterQuality.low,
                                     )

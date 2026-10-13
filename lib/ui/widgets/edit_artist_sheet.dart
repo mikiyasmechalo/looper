@@ -224,10 +224,17 @@ class _EditArtistSheetState extends ConsumerState<EditArtistSheet> {
                                   ? (currentImage.startsWith('http')
                                       ? OptimizedImage(
                                           imagePath: currentImage,
+                                          width: 140,
+                                          height: 140,
+                                          cacheWidth: 256,
                                           fit: BoxFit.cover,
                                         )
-                                      : Image.file(
-                                          File(currentImage),
+                                      : Image(
+                                          image: ResizeImage(
+                                            FileImage(File(currentImage)),
+                                            width: 280,
+                                            height: 280,
+                                          ),
                                           fit: BoxFit.cover,
                                         ))
                                   : const Icon(

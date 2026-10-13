@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/core/logger_helper.dart';
+import 'package:looper_player/core/memory_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:looper_player/features/library/data/scanner.dart';
@@ -488,6 +489,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
       _fetchMissingArtistImages();
     } finally {
       _isScanRunning = false;
+      MemoryService.trimWorkingSet(clearImageCache: true);
     }
   }
 
@@ -564,6 +566,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     // flipping isScanning is a plain state change, so without this the
     // disk-relink fallback would never run this session.
     _fetchMissingArtistImages();
+    MemoryService.trimWorkingSet(clearImageCache: true);
   }
 
   String _normalizeArtistKey(String name) =>
