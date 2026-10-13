@@ -340,38 +340,40 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                 child: Builder(
                   builder: (context) {
                     final options = <Widget>[
-                      MenuOptionTile(
-                        label: l10n.playNext,
-                        icon: LucideIcons.playCircle,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ref.read(playbackProvider.notifier).addNext(song);
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.willPlayNext),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                      ),
-                      MenuOptionTile(
-                        label: l10n.addToQueue,
-                        icon: LucideIcons.listPlus,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          ref.read(playbackProvider.notifier).addToQueue(song);
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.addedToQueue),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                      ),
+                      if (currentSongPath != song.path) ...[
+                        MenuOptionTile(
+                          label: l10n.playNext,
+                          icon: LucideIcons.playCircle,
+                          iconColor: accentColor,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            ref.read(playbackProvider.notifier).addNext(song);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.willPlayNext),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        MenuOptionTile(
+                          label: l10n.addToQueue,
+                          icon: LucideIcons.listPlus,
+                          iconColor: accentColor,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            ref.read(playbackProvider.notifier).addToQueue(song);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(l10n.addedToQueue),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                       if (isFromQueue && targetIdx != -1)
                         MenuOptionTile(
                           label: 'Remove from Queue',
