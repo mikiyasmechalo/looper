@@ -1336,11 +1336,11 @@ class _QueuePanelContentState extends ConsumerState<_QueuePanelContent> {
             ? [...queue.sublist(0, idx), ...queue.sublist(idx)]
             : queue.sublist(idx));
 
-    // Auto-scroll to the current song when idx changes or panel first opens
-    if (showPlayed && idx >= 0 && idx != _lastScrolledIdx) {
+    // Auto-scroll to the current song only when panel first opens
+    if (showPlayed && idx >= 0 && _lastScrolledIdx == -1) {
       _lastScrolledIdx = idx;
       _scrollToCurrent(idx);
-    } else if (!showPlayed && _lastScrolledIdx != 0) {
+    } else if (!showPlayed && _lastScrolledIdx == -1) {
       _lastScrolledIdx = 0;
     }
 
@@ -1423,6 +1423,28 @@ class _QueuePanelContentState extends ConsumerState<_QueuePanelContent> {
                 ),
               ),
               const Spacer(),
+              if (showPlayed && idx >= 0) ...[
+                Tooltip(
+                  message: 'Jump to current song',
+                  child: GestureDetector(
+                    onTap: () => _scrollToCurrent(idx),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        LucideIcons.locateFixed,
+                        size: 13,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
               GestureDetector(
                 onTap: widget.onClose,
                 child: const Padding(
@@ -1444,9 +1466,13 @@ class _QueuePanelContentState extends ConsumerState<_QueuePanelContent> {
               padding: const EdgeInsets.only(right: 4),
               onReorder: (oldI, newI) {
                 final curDisp = showPlayed ? idx : 0;
-                if (idx != -1 && oldI <= curDisp) return;
+                // Block dragging the current song
+                if (idx != -1 && oldI == curDisp) return;
                 if (newI > oldI) newI -= 1;
-                if (idx != -1 && newI <= curDisp) newI = curDisp + 1;
+                // When played songs are hidden, don't allow dropping above current
+                if (!showPlayed && idx != -1 && newI <= curDisp) {
+                  newI = curDisp + 1;
+                }
                 if (oldI == newI) return;
                 final int oldOrig;
                 final int newOrig;
@@ -1473,7 +1499,7 @@ class _QueuePanelContentState extends ConsumerState<_QueuePanelContent> {
                 final isPlayed = idx != -1 &&
                     originalIndex != -1 &&
                     originalIndex < idx;
-                final isDraggable = !isPlayed && !isCurrent;
+                final isDraggable = !isCurrent;
 
                 return Opacity(
                   key: ValueKey('mps_${song.path}_$i'),

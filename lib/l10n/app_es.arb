@@ -320,7 +320,6 @@
   "songOptions": "Opciones de la canción",
   "fullscreen": "Pantalla completa",
   "exitFullscreen": "Salir de pantalla completa",
-
   "persistQueueTitle": "Persistir última cola",
   "selectFontFamily": "Seleccionar familia de fuentes",
   "sortAlbumAsc": "Álbum (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "Otros",
+  "lyricsSources": "Fuentes de letras",
+  "creditLrcRedDesc": "Letras sincronizadas por palabra (proveedor predeterminado)",
+  "creditLyricsPlusDesc": "Letras sincronizadas por palabra · servidor de código abierto de ibratabian17 (Apache-2.0), alojado por binimum",
+  "creditLrclibDesc": "Letras sincronizadas por línea · base de datos de letras libre y abierta",
+  "creditMusicBrainzDesc": "Encuentra el ISRC de cada canción para que lrc.red la identifique · base de datos musical abierta (datos CC0)",
+  "creditAmLyricsDesc": "Inspiró nuestras letras sincronizadas por palabra · de binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "Letras sincronizadas por palabra",
+  "creditMorpheDesc": "Referencia para las búsquedas en NetEase, KuGou, Musixmatch y Lyricify · GPL-3.0",
+  "lyricsCopyrightNote": "Las letras pertenecen a sus artistas y titulares de derechos. Looper solo las obtiene para mostrarlas de forma personal y las guarda en tu dispositivo."
 }

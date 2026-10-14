@@ -320,7 +320,6 @@
   "songOptions": "Opzioni del brano",
   "fullscreen": "Schermo intero",
   "exitFullscreen": "Esci a schermo intero",
-
   "persistQueueTitle": "Mantieni ultima coda",
   "selectFontFamily": "Seleziona famiglia caratteri",
   "sortAlbumAsc": "Album (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "Altri",
+  "lyricsSources": "Fonti dei testi",
+  "creditLrcRedDesc": "Testi sincronizzati parola per parola (fornitore predefinito)",
+  "creditLyricsPlusDesc": "Testi sincronizzati parola per parola · server open source di ibratabian17 (Apache-2.0), ospitato da binimum",
+  "creditLrclibDesc": "Testi sincronizzati riga per riga · database di testi libero e aperto",
+  "creditMusicBrainzDesc": "Trova l'ISRC di ogni brano così lrc.red può abbinarlo · database musicale aperto (dati CC0)",
+  "creditAmLyricsDesc": "Ha ispirato i nostri testi sincronizzati parola per parola · di binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "Testi sincronizzati parola per parola",
+  "creditMorpheDesc": "Riferimento per le ricerche su NetEase, KuGou, Musixmatch e Lyricify · GPL-3.0",
+  "lyricsCopyrightNote": "I testi appartengono ai rispettivi artisti e titolari dei diritti. Looper li recupera solo per la visualizzazione personale e li conserva sul tuo dispositivo."
 }

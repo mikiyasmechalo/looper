@@ -320,7 +320,6 @@
   "songOptions": "गीत विकल्प",
   "fullscreen": "फुलस्क्रीन",
   "exitFullscreen": "फुलस्क्रीन बंद करें",
-
   "persistQueueTitle": "आखिरी कतार सहेजें",
   "selectFontFamily": "फ़ॉन्ट परिवार चुनें",
   "sortAlbumAsc": "एल्बम (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "अन्य",
+  "lyricsSources": "बोल के स्रोत",
+  "creditLrcRedDesc": "शब्द-सिंक बोल (डिफ़ॉल्ट प्रदाता)",
+  "creditLyricsPlusDesc": "शब्द-सिंक बोल · ibratabian17 का ओपन-सोर्स सर्वर (Apache-2.0), binimum द्वारा होस्ट किया गया",
+  "creditLrclibDesc": "पंक्ति-सिंक बोल · मुफ़्त, खुला बोल डेटाबेस",
+  "creditMusicBrainzDesc": "हर गाने का ISRC ढूँढता है ताकि lrc.red उसे मिला सके · खुला संगीत डेटाबेस (CC0 डेटा)",
+  "creditAmLyricsDesc": "हमारे शब्द-सिंक बोल की प्रेरणा · binimum द्वारा (MPL-2.0)",
+  "creditWordSyncedDesc": "शब्द-सिंक बोल",
+  "creditMorpheDesc": "NetEase, KuGou, Musixmatch और Lyricify खोज के लिए संदर्भ · GPL-3.0",
+  "lyricsCopyrightNote": "बोल उनके कलाकारों और अधिकार धारकों के हैं। Looper उन्हें केवल निजी रूप से दिखाने के लिए लाता है और आपके डिवाइस पर ही रखता है।"
 }

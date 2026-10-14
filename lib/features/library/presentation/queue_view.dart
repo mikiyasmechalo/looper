@@ -36,16 +36,12 @@ class _QueueViewState extends ConsumerState<QueueView> {
 
     double initialOffset = scrollState.pageScrollOffset;
 
-    // Only when opening a song for the very first time (never scrolled for this song yet),
-    // start initially centered near the song rather than starting from 0 and freezing on animateTo.
-    if (currentSongPath != null &&
-        currentSongPath != scrollState.pageLastScrolledSongPath &&
-        currentIdx != -1) {
+    if (currentSongPath != null && currentIdx != -1) {
       final targetIdx = showPlayed ? currentIdx : 0;
-      initialOffset = (kTopPadding + targetIdx * kItemHeight).toDouble();
+      initialOffset = (kTopPadding + targetIdx * kItemHeight - 250).clamp(0.0, double.infinity);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _scrollToCurrent(targetIdx, currentSongPath);
+        _scrollToCurrent(targetIdx, currentSongPath, force: true);
       });
     }
 
@@ -104,17 +100,6 @@ class _QueueViewState extends ConsumerState<QueueView> {
         ref.watch(settingsProvider.select((s) => s.showPlayedSongsInQueue));
     final currentIdx = queue.indexWhere((s) => s.path == currentSongPath);
 
-    // Smoothly scroll to next song ONLY when the currently playing song actually changes
-    ref.listen(playbackProvider.select((s) => s.currentSong?.path), (prev, next) {
-      if (next != null && next != prev) {
-        final q = ref.read(playbackProvider).queue;
-        final newIdx = q.indexWhere((s) => s.path == next);
-        if (newIdx != -1) {
-          final curDisp = showPlayed ? newIdx : 0;
-          _scrollToCurrent(curDisp, next);
-        }
-      }
-    });
 
     // [played... (dimmed), current, upcoming...] — same layout as fullscreen player
     final List<Song> displayedQueue;
@@ -229,12 +214,12 @@ class _QueueViewState extends ConsumerState<QueueView> {
                       onReorder: (oldI, newI) {
                         // Index of current song in the displayed list
                         final curDisp = showPlayed ? currentIdx : 0;
-                        // Block dragging played songs or the current song
-                        if (currentIdx != -1 && oldI <= curDisp) return;
+                        // Block dragging the current song
+                        if (currentIdx != -1 && oldI == curDisp) return;
                         // Flutter's standard adjustment for downward moves
                         if (newI > oldI) newI -= 1;
-                        // Clamp: cannot drop at or before the current song
-                        if (currentIdx != -1 && newI <= curDisp) {
+                        // When played songs are hidden, don't allow dropping above current
+                        if (!showPlayed && currentIdx != -1 && newI <= curDisp) {
                           newI = curDisp + 1;
                         }
                         if (oldI == newI) return;
@@ -250,7 +235,7 @@ class _QueueViewState extends ConsumerState<QueueView> {
                         final originalIndex = displayedToOriginal(index);
                         final isPlayed =
                             currentIdx != -1 && originalIndex < currentIdx;
-                        final isDraggable = !isPlayed && !isCurrent;
+                        final isDraggable = !isCurrent;
                         final isStopTarget = playbackState.isSleepTimerActive &&
                             playbackState.sleepTimerSongsRemaining != null &&
                             currentIdx != -1 &&

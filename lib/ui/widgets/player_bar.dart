@@ -160,9 +160,8 @@ class _PremiumPlayerBar extends ConsumerWidget {
                               position: position,
                               duration: duration,
                               isPlaying: isPlayingVal,
-                              onSeek: (pos) => ref
-                                  .read(playbackProvider.notifier)
-                                  .seek(pos),
+                              onSeek: (pos) =>
+                                  ref.read(playbackProvider.notifier).seek(pos),
                               onSeekStart: () => ref
                                   .read(playbackProvider.notifier)
                                   .startScrubbing(),
@@ -429,6 +428,8 @@ class _PremiumPlayerBar extends ConsumerWidget {
     final bool isCompact = isTightActions || isVeryNarrow;
     final double buttonSize = isCompact ? 28.0 : 34.0;
     final double iconSize = isCompact ? 14.0 : 16.0;
+    // Favorite heart SVG has 24x24 viewBox padding so it needs a larger box to match visual icon weight
+    final double favoriteIconSize = isCompact ? 17.5 : 20.0;
     final double spacing = isCompact ? 2.0 : 4.0;
 
     return Row(
@@ -440,13 +441,16 @@ class _PremiumPlayerBar extends ConsumerWidget {
             message: 'Favorite',
             child: IconButton(
               padding: EdgeInsets.zero,
-              constraints: BoxConstraints.tightFor(width: buttonSize, height: buttonSize),
+              constraints: BoxConstraints.tightFor(
+                width: buttonSize,
+                height: buttonSize,
+              ),
               icon: SvgPicture.asset(
                 isFavorite
                     ? 'assets/music_bar_Icons/liked.svg'
                     : 'assets/music_bar_Icons/like.svg',
-                width: iconSize,
-                height: iconSize,
+                width: favoriteIconSize,
+                height: favoriteIconSize,
                 colorFilter: ColorFilter.mode(
                   isFavorite ? Colors.red : Colors.white54,
                   BlendMode.srcIn,
@@ -462,7 +466,10 @@ class _PremiumPlayerBar extends ConsumerWidget {
           message: 'Lyrics',
           child: IconButton(
             padding: EdgeInsets.zero,
-            constraints: BoxConstraints.tightFor(width: buttonSize, height: buttonSize),
+            constraints: BoxConstraints.tightFor(
+              width: buttonSize,
+              height: buttonSize,
+            ),
             icon: SvgPicture.asset(
               'assets/music_bar_Icons/lyrics.svg',
               width: iconSize,
@@ -482,7 +489,10 @@ class _PremiumPlayerBar extends ConsumerWidget {
           message: 'Queue',
           child: IconButton(
             padding: EdgeInsets.zero,
-            constraints: BoxConstraints.tightFor(width: buttonSize, height: buttonSize),
+            constraints: BoxConstraints.tightFor(
+              width: buttonSize,
+              height: buttonSize,
+            ),
             icon: Icon(
               LucideIcons.listMusic,
               size: iconSize,
@@ -842,10 +852,7 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
   final double? size;
   final double? iconSize;
 
-  const _MiniPlayerMenuButton({
-    this.size,
-    this.iconSize,
-  });
+  const _MiniPlayerMenuButton({this.size, this.iconSize});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -857,7 +864,9 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
       message: 'Mini player',
       child: IconButton(
         padding: size != null ? EdgeInsets.zero : null,
-        constraints: size != null ? BoxConstraints.tightFor(width: size, height: size) : null,
+        constraints: size != null
+            ? BoxConstraints.tightFor(width: size, height: size)
+            : null,
         icon: Icon(
           LucideIcons.minimize2,
           size: iconSize ?? 16,
@@ -945,10 +954,7 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Text(
                       'Minimize to Tray',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ],
                 ),
@@ -974,10 +980,7 @@ class _FullscreenButton extends ConsumerWidget {
   final double? size;
   final double? iconSize;
 
-  const _FullscreenButton({
-    this.size,
-    this.iconSize,
-  });
+  const _FullscreenButton({this.size, this.iconSize});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -985,7 +988,9 @@ class _FullscreenButton extends ConsumerWidget {
       message: 'Fullscreen Player',
       child: IconButton(
         padding: size != null ? EdgeInsets.zero : null,
-        constraints: size != null ? BoxConstraints.tightFor(width: size, height: size) : null,
+        constraints: size != null
+            ? BoxConstraints.tightFor(width: size, height: size)
+            : null,
         icon: Icon(
           LucideIcons.maximize,
           size: iconSize ?? 16,

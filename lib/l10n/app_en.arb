@@ -334,7 +334,6 @@
   "supportUsDesc": "Help keep Looper Player alive & open-source",
   "supportDevelopment": "Support the Development",
   "supportDevelopmentDesc": "Looper Player is 100% free and open-source. If you enjoy using it, please consider supporting the creator with a donation. Every contribution helps keep the project active!",
-
   "useCustomFont": "Use Custom Font",
   "useCustomFontDesc": "Use Jost or other custom fonts. Otherwise, DM Sans is used.",
   "selectFontFamily": "Select Font Family",
@@ -375,5 +374,137 @@
   "sortAlbumAsc": "Album (A-Z)",
   "sortDuration": "Duration",
   "showPlayedSongsInQueue": "Show played songs in queue",
-  "showPlayedSongsInQueueDesc": "Keep already played songs in the queue list with dimmed styling"
+  "showPlayedSongsInQueueDesc": "Keep already played songs in the queue list with dimmed styling",
+  "lyricsServices": "Lyrics services",
+  "lyricsServicesDesc": "Drag to set the order lyrics are looked up in. Services you switch off are skipped.",
+  "lyricsHighlightStyle": "Highlight style",
+  "lyricsStyleLine": "Line",
+  "lyricsStyleWord": "Word by word",
+  "lyricsStyleCharacter": "Letter by letter",
+  "lyricsWordSynced": "Word-synced",
+  "lyricsLineSynced": "Line-synced",
+  "lyricsNotSynced": "Not synced",
+  "findWordSyncedLyrics": "Find word-synced lyrics",
+  "searchingWordSyncedLyrics": "Searching for word-synced lyrics...",
+  "wordSyncedLyricsLoaded": "Word-synced lyrics loaded!",
+  "noWordSyncedLyricsFound": "No word-synced lyrics found",
+  "findSyncedLyrics": "Find synced lyrics",
+  "searchingSyncedLyrics": "Searching for synced lyrics...",
+  "syncedLyricsLoaded": "Synced lyrics loaded!",
+  "noSyncedLyricsFound": "No synced lyrics found",
+  "lyricsTiming": "Lyrics timing",
+  "lyricsTimingDesc": "Positive shows lyrics earlier, negative later. Saved for this song only.",
+  "lyricsTimingEarlier": "Earlier",
+  "lyricsTimingLater": "Later",
+  "lyricsTimingReset": "Reset",
+  "noLyricsSource": "No Lyrics Source",
+  "lyricsSourceLabel": "Source: {source}",
+  "@lyricsSourceLabel": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "lyricsSourceLocalSidecar": "Local Sidecar (.lrc)",
+  "lyricsSourceCustomFile": "Custom LRC File",
+  "lyricsSourceEmbedded": "Embedded Tags",
+  "lyricsSourceNotFoundOnline": "Not Found Online",
+  "lyricsProviderLocal": "Local",
+  "fetchingLyricsFrom": "Fetching lyrics from {provider}...",
+  "@fetchingLyricsFrom": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "loadedLocalLyrics": "Loaded local/embedded lyrics!",
+  "noLocalLyricsFound": "No local or embedded lyrics found",
+  "lyricsUpdatedFrom": "Lyrics updated from {provider}!",
+  "@lyricsUpdatedFrom": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "noLyricsFoundOn": "No lyrics found on {provider}",
+  "@noLyricsFoundOn": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "changeLyricsProvider": "Change lyrics provider",
+  "autoFallbackProviders": "Automatic fallback",
+  "autoFallbackProvidersDesc": "Try subsequent enabled providers if the selected provider has no lyrics",
+  "ambientColorBackground": "Ambient color background",
+  "ambientColorBackgroundDesc": "Tint the lyrics background using album artwork palette",
+  "exportLyricsLrc": "Export lyrics (.lrc)",
+  "saveLyricsToDevice": "Save LRC file to your computer",
+  "useCustomLyricsLrc": "Use custom lyrics (.lrc)",
+  "selectLocalLrcFile": "Load an LRC or TXT file from disk",
+  "noLyricsToExport": "No lyrics available to export",
+  "exportLyrics": "Export Lyrics",
+  "lyricsExportedTo": "Lyrics exported to: {path}",
+  "@lyricsExportedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToExportLyrics": "Failed to export lyrics: {error}",
+  "@failedToExportLyrics": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "customLyricsAppliedSuccess": "Custom lyrics applied!",
+  "lyricsSize": "Lyrics size",
+  "lyricsSizeDesc": "Text size on the lyrics screen",
+  "lyricsSizeSmaller": "Smaller lyrics",
+  "lyricsSizeLarger": "Larger lyrics",
+  "lyricsOptions": "Lyrics options",
+  "lyricsFullscreen": "Full screen lyrics",
+  "lyricsExitFullscreen": "Exit full screen",
+  "resync": "Re-sync",
+  "done": "Done",
+  "lyricsSourceLocalFile": "Local File",
+  "syncModeLine": "LINE",
+  "syncModeWord": "WORD",
+  "syncModeChar": "CHAR",
+  "lyricsProvidedBy": "Lyrics provided by {source}",
+  "@lyricsProvidedBy": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToImportLyrics": "Failed to import lyrics: {error}",
+  "@failedToImportLyrics": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "lyricsNotAvailable": "Lyrics not available.",
+  "lyricsNotAvailableHint": "Import a .lrc or .txt file to add lyrics for this song",
+  "importLyricsFile": "Import Lyrics File",
+  "others": "Others",
+  "lyricsSources": "Lyrics Sources",
+  "creditLrcRedDesc": "Word-synced lyrics (default provider)",
+  "creditLyricsPlusDesc": "Word-synced lyrics · open-source server by ibratabian17 (Apache-2.0), hosted by binimum",
+  "creditLrclibDesc": "Line-synced lyrics · free, open lyrics database",
+  "creditMusicBrainzDesc": "Finds each song's ISRC so lrc.red can match it · open music database (CC0 data)",
+  "creditAmLyricsDesc": "Inspired our word-synced lyrics · by binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "Word-synced lyrics",
+  "creditMorpheDesc": "Reference for the NetEase, KuGou, Musixmatch and Lyricify lookups · GPL-3.0",
+  "lyricsCopyrightNote": "Lyrics belong to their artists and rights holders. Looper only fetches them for personal display, and keeps them on your device."
 }

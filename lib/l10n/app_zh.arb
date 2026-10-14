@@ -354,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "其他",
+  "lyricsSources": "歌词来源",
+  "creditLrcRedDesc": "逐字同步歌词（默认来源）",
+  "creditLyricsPlusDesc": "逐字同步歌词 · ibratabian17 的开源服务器（Apache-2.0），由 binimum 托管",
+  "creditLrclibDesc": "逐行同步歌词 · 免费开放的歌词数据库",
+  "creditMusicBrainzDesc": "查找每首歌的 ISRC，以便 lrc.red 匹配 · 开放音乐数据库（CC0 数据）",
+  "creditAmLyricsDesc": "启发了我们的逐字同步歌词 · 作者 binimum（MPL-2.0）",
+  "creditWordSyncedDesc": "逐字同步歌词",
+  "creditMorpheDesc": "NetEase、KuGou、Musixmatch 和 Lyricify 查询的参考实现 · GPL-3.0",
+  "lyricsCopyrightNote": "歌词版权归艺术家及权利人所有。Looper 仅为个人显示而获取歌词，并保存在你的设备上。"
 }

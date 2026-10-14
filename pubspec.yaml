@@ -59,6 +59,9 @@ dependencies:
   permission_handler: ^12.0.2
   file_picker: ^8.3.7
   http: ^1.2.1
+  xml: ^6.5.0
+  skeletonizer: ^3.0.0
+  material_color_utilities: any
   youtube_explode_dart: ^2.4.5
   palette_generator: ^0.3.3+3
   cached_network_image: ^3.3.1

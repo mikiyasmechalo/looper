@@ -320,7 +320,6 @@
   "songOptions": "Opções da música",
   "fullscreen": "Tela cheia",
   "exitFullscreen": "Sair da tela cheia",
-
   "persistQueueTitle": "Persistir última fila",
   "selectFontFamily": "Selecionar família de fontes",
   "sortAlbumAsc": "Álbum (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "Outros",
+  "lyricsSources": "Fontes de letras",
+  "creditLrcRedDesc": "Letras sincronizadas por palavra (provedor padrão)",
+  "creditLyricsPlusDesc": "Letras sincronizadas por palavra · servidor de código aberto de ibratabian17 (Apache-2.0), hospedado por binimum",
+  "creditLrclibDesc": "Letras sincronizadas por linha · banco de letras livre e aberto",
+  "creditMusicBrainzDesc": "Encontra o ISRC de cada música para o lrc.red identificá-la · banco de dados musical aberto (dados CC0)",
+  "creditAmLyricsDesc": "Inspirou nossas letras sincronizadas por palavra · por binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "Letras sincronizadas por palavra",
+  "creditMorpheDesc": "Referência para as buscas no NetEase, KuGou, Musixmatch e Lyricify · GPL-3.0",
+  "lyricsCopyrightNote": "As letras pertencem aos seus artistas e detentores de direitos. O Looper apenas as busca para exibição pessoal e as mantém no seu dispositivo."
 }

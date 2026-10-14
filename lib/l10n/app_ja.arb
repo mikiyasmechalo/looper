@@ -320,7 +320,6 @@
   "songOptions": "曲のオプション",
   "fullscreen": "全画面",
   "exitFullscreen": "全画面を終了",
-
   "persistQueueTitle": "最後のキューを保持",
   "selectFontFamily": "フォントファミリーの選択",
   "sortAlbumAsc": "アルバム (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "その他",
+  "lyricsSources": "歌詞の提供元",
+  "creditLrcRedDesc": "単語同期の歌詞（デフォルトの提供元）",
+  "creditLyricsPlusDesc": "単語同期の歌詞 · ibratabian17 によるオープンソースサーバー（Apache-2.0）、binimum がホスト",
+  "creditLrclibDesc": "行同期の歌詞 · 無料のオープンな歌詞データベース",
+  "creditMusicBrainzDesc": "lrc.red が照合できるよう各曲の ISRC を検索 · オープンな音楽データベース（CC0 データ）",
+  "creditAmLyricsDesc": "単語同期歌詞のヒントになったプロジェクト · binimum 作（MPL-2.0）",
+  "creditWordSyncedDesc": "単語単位で同期した歌詞",
+  "creditMorpheDesc": "NetEase、KuGou、Musixmatch、Lyricify の検索処理の参考 · GPL-3.0",
+  "lyricsCopyrightNote": "歌詞の権利はアーティストおよび権利者に帰属します。Looper は個人的な表示のためだけに取得し、端末内に保存します。"
 }

@@ -320,7 +320,6 @@
   "songOptions": "خيارات الأغنية",
   "fullscreen": "ملء الشاشة",
   "exitFullscreen": "إنهاء ملء الشاشة",
-
   "persistQueueTitle": "حفظ آخر قائمة تشغيل",
   "selectFontFamily": "اختر عائلة الخط",
   "sortAlbumAsc": "الألبوم (أ-ي)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "أخرى",
+  "lyricsSources": "مصادر كلمات الأغاني",
+  "creditLrcRedDesc": "كلمات متزامنة كلمةً بكلمة (المزوّد الافتراضي)",
+  "creditLyricsPlusDesc": "كلمات متزامنة كلمةً بكلمة · خادم مفتوح المصدر من ibratabian17 (Apache-2.0)، يستضيفه binimum",
+  "creditLrclibDesc": "كلمات متزامنة سطرًا بسطر · قاعدة بيانات كلمات مجانية ومفتوحة",
+  "creditMusicBrainzDesc": "يعثر على رمز ISRC لكل أغنية ليطابقها lrc.red · قاعدة بيانات موسيقية مفتوحة (بيانات CC0)",
+  "creditAmLyricsDesc": "ألهم ميزة الكلمات المتزامنة كلمةً بكلمة · من binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "كلمات متزامنة كلمة بكلمة",
+  "creditMorpheDesc": "مرجع لعمليات البحث في NetEase وKuGou وMusixmatch وLyricify · GPL-3.0",
+  "lyricsCopyrightNote": "كلمات الأغاني ملك لفنانيها وأصحاب حقوقها. يجلبها Looper للعرض الشخصي فقط ويحتفظ بها على جهازك."
 }

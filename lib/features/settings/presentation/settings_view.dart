@@ -1212,8 +1212,13 @@ class SettingsCategoryScreen extends ConsumerWidget {
         const Divider(height: 1, indent: 72, color: Colors.white10),
         const UpdateNotificationsTile(),
         const Divider(height: 1, indent: 72, color: Colors.white10),
-        const LyricsProviderTile(),
-        const Divider(height: 1, indent: 72, color: Colors.white10),
+        AboutMaintainerRow(
+          name: 'Mikiyas Mechalo',
+          role: "This Fork's Maintainer",
+          avatar: 'assets/about/miki_avatar.jpg',
+          github: 'https://github.com/mikiyasmechalo',
+          telegram: 'https://t.me/mikeme2',
+        ),
         AboutMaintainerRow(
           name: 'Nilesh Suthar',
           role: l10n.creatorAndMaintainer,
@@ -1229,17 +1234,10 @@ class SettingsCategoryScreen extends ConsumerWidget {
           github: 'https://github.com/sthrkaran',
           telegram: 'https://t.me/karanwhy',
         ),
-        AboutMaintainerRow(
-          name: 'Mikiyas Mechalo',
-          role: 'Active Contributor',
-          avatar: 'assets/about/miki_avatar.jpg',
-          github: 'https://github.com/mikiyasmechalo',
-          telegram: 'https://t.me/mikeme2',
-        ),
         const Divider(height: 1, indent: 72, color: Colors.white10),
         AboutMaintainerRow(
           name: 'Madan Suthar',
-          role: 'Active Contributor',
+          role: 'Free Rider',
           avatar: 'assets/about/free_rider_avatar.png',
           github: 'https://github.com/',
           telegram: 'https://t.me/madansthr',
@@ -1287,6 +1285,8 @@ class SettingsCategoryScreen extends ConsumerWidget {
             ],
           ),
         ),
+        const Divider(height: 1, indent: 72, color: Colors.white10),
+        LyricsCreditsSection(accentColor: Color(settings.accentColor)),
       ];
     }
 

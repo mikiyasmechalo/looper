@@ -320,7 +320,6 @@
   "songOptions": "Şarkı seçenekleri",
   "fullscreen": "Tam ekran",
   "exitFullscreen": "Tam ekrandan çık",
-
   "persistQueueTitle": "Son Sırayı Koru",
   "selectFontFamily": "Yazı Tipi Ailesi Seçin",
   "sortAlbumAsc": "Albüm (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "Diğer",
+  "lyricsSources": "Şarkı Sözü Kaynakları",
+  "creditLrcRedDesc": "Kelime senkronlu şarkı sözleri (varsayılan sağlayıcı)",
+  "creditLyricsPlusDesc": "Kelime senkronlu şarkı sözleri · ibratabian17 tarafından açık kaynak sunucu (Apache-2.0), binimum tarafından barındırılıyor",
+  "creditLrclibDesc": "Satır senkronlu şarkı sözleri · ücretsiz, açık şarkı sözü veritabanı",
+  "creditMusicBrainzDesc": "lrc.red eşleştirebilsin diye her şarkının ISRC kodunu bulur · açık müzik veritabanı (CC0 verisi)",
+  "creditAmLyricsDesc": "Kelime senkronlu sözlerimize ilham verdi · binimum tarafından (MPL-2.0)",
+  "creditWordSyncedDesc": "Kelime kelime senkronize sözler",
+  "creditMorpheDesc": "NetEase, KuGou, Musixmatch ve Lyricify aramaları için referans · GPL-3.0",
+  "lyricsCopyrightNote": "Şarkı sözleri sanatçılarına ve hak sahiplerine aittir. Looper bunları yalnızca kişisel görüntüleme için alır ve cihazınızda saklar."
 }

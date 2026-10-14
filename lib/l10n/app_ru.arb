@@ -320,7 +320,6 @@
   "songOptions": "Параметры песни",
   "fullscreen": "Полный экран",
   "exitFullscreen": "Выйти из полноэкранного режима",
-
   "persistQueueTitle": "Сохранять последнюю очередь",
   "selectFontFamily": "Выбрать семейство шрифтов",
   "sortAlbumAsc": "Альбом (А-Я)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "Другое",
+  "lyricsSources": "Источники текстов",
+  "creditLrcRedDesc": "Тексты с синхронизацией по словам (провайдер по умолчанию)",
+  "creditLyricsPlusDesc": "Тексты с синхронизацией по словам · сервер с открытым кодом от ibratabian17 (Apache-2.0), размещён binimum",
+  "creditLrclibDesc": "Тексты с построчной синхронизацией · свободная открытая база текстов",
+  "creditMusicBrainzDesc": "Находит ISRC каждой песни, чтобы lrc.red мог её сопоставить · открытая музыкальная база (данные CC0)",
+  "creditAmLyricsDesc": "Вдохновил нашу синхронизацию по словам · от binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "Тексты с синхронизацией по словам",
+  "creditMorpheDesc": "Образец для запросов к NetEase, KuGou, Musixmatch и Lyricify · GPL-3.0",
+  "lyricsCopyrightNote": "Тексты песен принадлежат их исполнителям и правообладателям. Looper загружает их только для личного просмотра и хранит на вашем устройстве."
 }

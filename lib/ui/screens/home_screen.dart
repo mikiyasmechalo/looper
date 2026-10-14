@@ -184,6 +184,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Ensure lyrics pre-fetching is active
     ref.watch(lyricsProvider);
 
+    final lyricsOnly =
+        ref.watch(lyricsFullscreenProvider) && nav.activeItem == NavItem.lyrics;
+    ref.listen(appNavigationProvider.select((n) => n.activeItem), (_, item) {
+      if (item != NavItem.lyrics) {
+        ref.read(lyricsFullscreenProvider.notifier).set(false);
+      }
+    });
+
     final isSetupComplete = ref.watch(welcomeBypassedProvider);
     final bool showWelcome = !isSetupComplete;
     // Only below this width does the sidebar collapse into a drawer; above it
@@ -327,8 +335,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             return Row(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                // Sidebar - hidden only on very narrow screens
-                                if (!isNarrowLayout)
+                                // Sidebar - hidden on very narrow screens or during lyrics fullscreen
+                                if (!isNarrowLayout && !lyricsOnly)
                                   AnimatedContainer(
                                     duration: const Duration(milliseconds: 250),
                                     curve: Curves.easeInOutCubic,
@@ -474,7 +482,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                 ),
                 // Global Player Bar always at the bottom
-                if (!nav.isPlayerExpanded)
+                if (!nav.isPlayerExpanded && !lyricsOnly)
                   GestureDetector(
                     onVerticalDragUpdate: (details) {
                       if (Platform.isAndroid || Platform.isIOS) {

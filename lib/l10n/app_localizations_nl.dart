@@ -1132,4 +1132,261 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get showPlayedSongsInQueueDesc =>
       'Keep already played songs in the queue list with dimmed styling';
+
+  @override
+  String get lyricsServices => 'Lyrics services';
+
+  @override
+  String get lyricsServicesDesc =>
+      'Drag to set the order lyrics are looked up in. Services you switch off are skipped.';
+
+  @override
+  String get lyricsHighlightStyle => 'Highlight style';
+
+  @override
+  String get lyricsStyleLine => 'Line';
+
+  @override
+  String get lyricsStyleWord => 'Word by word';
+
+  @override
+  String get lyricsStyleCharacter => 'Letter by letter';
+
+  @override
+  String get lyricsWordSynced => 'Word-synced';
+
+  @override
+  String get lyricsLineSynced => 'Line-synced';
+
+  @override
+  String get lyricsNotSynced => 'Not synced';
+
+  @override
+  String get findWordSyncedLyrics => 'Find word-synced lyrics';
+
+  @override
+  String get searchingWordSyncedLyrics => 'Searching for word-synced lyrics...';
+
+  @override
+  String get wordSyncedLyricsLoaded => 'Word-synced lyrics loaded!';
+
+  @override
+  String get noWordSyncedLyricsFound => 'No word-synced lyrics found';
+
+  @override
+  String get findSyncedLyrics => 'Find synced lyrics';
+
+  @override
+  String get searchingSyncedLyrics => 'Searching for synced lyrics...';
+
+  @override
+  String get syncedLyricsLoaded => 'Synced lyrics loaded!';
+
+  @override
+  String get noSyncedLyricsFound => 'No synced lyrics found';
+
+  @override
+  String get lyricsTiming => 'Lyrics timing';
+
+  @override
+  String get lyricsTimingDesc =>
+      'Positive shows lyrics earlier, negative later. Saved for this song only.';
+
+  @override
+  String get lyricsTimingEarlier => 'Earlier';
+
+  @override
+  String get lyricsTimingLater => 'Later';
+
+  @override
+  String get lyricsTimingReset => 'Reset';
+
+  @override
+  String get noLyricsSource => 'No Lyrics Source';
+
+  @override
+  String lyricsSourceLabel(String source) {
+    return 'Source: $source';
+  }
+
+  @override
+  String get lyricsSourceLocalSidecar => 'Local Sidecar (.lrc)';
+
+  @override
+  String get lyricsSourceCustomFile => 'Custom LRC File';
+
+  @override
+  String get lyricsSourceEmbedded => 'Embedded Tags';
+
+  @override
+  String get lyricsSourceNotFoundOnline => 'Not Found Online';
+
+  @override
+  String get lyricsProviderLocal => 'Local';
+
+  @override
+  String fetchingLyricsFrom(String provider) {
+    return 'Fetching lyrics from $provider...';
+  }
+
+  @override
+  String get loadedLocalLyrics => 'Loaded local/embedded lyrics!';
+
+  @override
+  String get noLocalLyricsFound => 'No local or embedded lyrics found';
+
+  @override
+  String lyricsUpdatedFrom(String provider) {
+    return 'Lyrics updated from $provider!';
+  }
+
+  @override
+  String noLyricsFoundOn(String provider) {
+    return 'No lyrics found on $provider';
+  }
+
+  @override
+  String get changeLyricsProvider => 'Change lyrics provider';
+
+  @override
+  String get autoFallbackProviders => 'Automatic fallback';
+
+  @override
+  String get autoFallbackProvidersDesc =>
+      'Try subsequent enabled providers if the selected provider has no lyrics';
+
+  @override
+  String get ambientColorBackground => 'Ambient color background';
+
+  @override
+  String get ambientColorBackgroundDesc =>
+      'Tint the lyrics background using album artwork palette';
+
+  @override
+  String get exportLyricsLrc => 'Export lyrics (.lrc)';
+
+  @override
+  String get saveLyricsToDevice => 'Save LRC file to your computer';
+
+  @override
+  String get useCustomLyricsLrc => 'Use custom lyrics (.lrc)';
+
+  @override
+  String get selectLocalLrcFile => 'Load an LRC or TXT file from disk';
+
+  @override
+  String get noLyricsToExport => 'No lyrics available to export';
+
+  @override
+  String get exportLyrics => 'Export Lyrics';
+
+  @override
+  String lyricsExportedTo(String path) {
+    return 'Lyrics exported to: $path';
+  }
+
+  @override
+  String failedToExportLyrics(String error) {
+    return 'Failed to export lyrics: $error';
+  }
+
+  @override
+  String get customLyricsAppliedSuccess => 'Custom lyrics applied!';
+
+  @override
+  String get lyricsSize => 'Lyrics size';
+
+  @override
+  String get lyricsSizeDesc => 'Text size on the lyrics screen';
+
+  @override
+  String get lyricsSizeSmaller => 'Smaller lyrics';
+
+  @override
+  String get lyricsSizeLarger => 'Larger lyrics';
+
+  @override
+  String get lyricsOptions => 'Lyrics options';
+
+  @override
+  String get lyricsFullscreen => 'Full screen lyrics';
+
+  @override
+  String get lyricsExitFullscreen => 'Exit full screen';
+
+  @override
+  String get resync => 'Re-sync';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get lyricsSourceLocalFile => 'Local File';
+
+  @override
+  String get syncModeLine => 'LINE';
+
+  @override
+  String get syncModeWord => 'WORD';
+
+  @override
+  String get syncModeChar => 'CHAR';
+
+  @override
+  String lyricsProvidedBy(String source) {
+    return 'Lyrics provided by $source';
+  }
+
+  @override
+  String failedToImportLyrics(String error) {
+    return 'Failed to import lyrics: $error';
+  }
+
+  @override
+  String get lyricsNotAvailable => 'Lyrics not available.';
+
+  @override
+  String get lyricsNotAvailableHint =>
+      'Import a .lrc or .txt file to add lyrics for this song';
+
+  @override
+  String get importLyricsFile => 'Import Lyrics File';
+
+  @override
+  String get others => 'Overige';
+
+  @override
+  String get lyricsSources => 'Songtekstbronnen';
+
+  @override
+  String get creditLrcRedDesc =>
+      'Woord-gesynchroniseerde songteksten (standaardprovider)';
+
+  @override
+  String get creditLyricsPlusDesc =>
+      'Woord-gesynchroniseerde songteksten · open-source server van ibratabian17 (Apache-2.0), gehost door binimum';
+
+  @override
+  String get creditLrclibDesc =>
+      'Regel-gesynchroniseerde songteksten · vrije, open songtekstdatabase';
+
+  @override
+  String get creditMusicBrainzDesc =>
+      'Zoekt de ISRC van elk nummer zodat lrc.red het kan koppelen · open muziekdatabase (CC0-gegevens)';
+
+  @override
+  String get creditAmLyricsDesc =>
+      'Inspiratie voor onze woord-gesynchroniseerde songteksten · door binimum (MPL-2.0)';
+
+  @override
+  String get creditWordSyncedDesc =>
+      'Woord voor woord gesynchroniseerde songteksten';
+
+  @override
+  String get creditMorpheDesc =>
+      'Referentie voor het opzoeken bij NetEase, KuGou, Musixmatch en Lyricify · GPL-3.0';
+
+  @override
+  String get lyricsCopyrightNote =>
+      'Songteksten zijn van hun artiesten en rechthebbenden. Looper haalt ze alleen op voor persoonlijke weergave en bewaart ze op je apparaat.';
 }

@@ -2161,6 +2161,462 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep already played songs in the queue list with dimmed styling'**
   String get showPlayedSongsInQueueDesc;
+
+  /// No description provided for @lyricsServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics services'**
+  String get lyricsServices;
+
+  /// No description provided for @lyricsServicesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to set the order lyrics are looked up in. Services you switch off are skipped.'**
+  String get lyricsServicesDesc;
+
+  /// No description provided for @lyricsHighlightStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight style'**
+  String get lyricsHighlightStyle;
+
+  /// No description provided for @lyricsStyleLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Line'**
+  String get lyricsStyleLine;
+
+  /// No description provided for @lyricsStyleWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Word by word'**
+  String get lyricsStyleWord;
+
+  /// No description provided for @lyricsStyleCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Letter by letter'**
+  String get lyricsStyleCharacter;
+
+  /// No description provided for @lyricsWordSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Word-synced'**
+  String get lyricsWordSynced;
+
+  /// No description provided for @lyricsLineSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Line-synced'**
+  String get lyricsLineSynced;
+
+  /// No description provided for @lyricsNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced'**
+  String get lyricsNotSynced;
+
+  /// No description provided for @findWordSyncedLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Find word-synced lyrics'**
+  String get findWordSyncedLyrics;
+
+  /// No description provided for @searchingWordSyncedLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching for word-synced lyrics...'**
+  String get searchingWordSyncedLyrics;
+
+  /// No description provided for @wordSyncedLyricsLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Word-synced lyrics loaded!'**
+  String get wordSyncedLyricsLoaded;
+
+  /// No description provided for @noWordSyncedLyricsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No word-synced lyrics found'**
+  String get noWordSyncedLyricsFound;
+
+  /// No description provided for @findSyncedLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Find synced lyrics'**
+  String get findSyncedLyrics;
+
+  /// No description provided for @searchingSyncedLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching for synced lyrics...'**
+  String get searchingSyncedLyrics;
+
+  /// No description provided for @syncedLyricsLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced lyrics loaded!'**
+  String get syncedLyricsLoaded;
+
+  /// No description provided for @noSyncedLyricsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No synced lyrics found'**
+  String get noSyncedLyricsFound;
+
+  /// No description provided for @lyricsTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics timing'**
+  String get lyricsTiming;
+
+  /// No description provided for @lyricsTimingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Positive shows lyrics earlier, negative later. Saved for this song only.'**
+  String get lyricsTimingDesc;
+
+  /// No description provided for @lyricsTimingEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get lyricsTimingEarlier;
+
+  /// No description provided for @lyricsTimingLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get lyricsTimingLater;
+
+  /// No description provided for @lyricsTimingReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get lyricsTimingReset;
+
+  /// No description provided for @noLyricsSource.
+  ///
+  /// In en, this message translates to:
+  /// **'No Lyrics Source'**
+  String get noLyricsSource;
+
+  /// No description provided for @lyricsSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {source}'**
+  String lyricsSourceLabel(String source);
+
+  /// No description provided for @lyricsSourceLocalSidecar.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Sidecar (.lrc)'**
+  String get lyricsSourceLocalSidecar;
+
+  /// No description provided for @lyricsSourceCustomFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom LRC File'**
+  String get lyricsSourceCustomFile;
+
+  /// No description provided for @lyricsSourceEmbedded.
+  ///
+  /// In en, this message translates to:
+  /// **'Embedded Tags'**
+  String get lyricsSourceEmbedded;
+
+  /// No description provided for @lyricsSourceNotFoundOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Found Online'**
+  String get lyricsSourceNotFoundOnline;
+
+  /// No description provided for @lyricsProviderLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get lyricsProviderLocal;
+
+  /// No description provided for @fetchingLyricsFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching lyrics from {provider}...'**
+  String fetchingLyricsFrom(String provider);
+
+  /// No description provided for @loadedLocalLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded local/embedded lyrics!'**
+  String get loadedLocalLyrics;
+
+  /// No description provided for @noLocalLyricsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No local or embedded lyrics found'**
+  String get noLocalLyricsFound;
+
+  /// No description provided for @lyricsUpdatedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics updated from {provider}!'**
+  String lyricsUpdatedFrom(String provider);
+
+  /// No description provided for @noLyricsFoundOn.
+  ///
+  /// In en, this message translates to:
+  /// **'No lyrics found on {provider}'**
+  String noLyricsFoundOn(String provider);
+
+  /// No description provided for @changeLyricsProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Change lyrics provider'**
+  String get changeLyricsProvider;
+
+  /// No description provided for @autoFallbackProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic fallback'**
+  String get autoFallbackProviders;
+
+  /// No description provided for @autoFallbackProvidersDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Try subsequent enabled providers if the selected provider has no lyrics'**
+  String get autoFallbackProvidersDesc;
+
+  /// No description provided for @ambientColorBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambient color background'**
+  String get ambientColorBackground;
+
+  /// No description provided for @ambientColorBackgroundDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tint the lyrics background using album artwork palette'**
+  String get ambientColorBackgroundDesc;
+
+  /// No description provided for @exportLyricsLrc.
+  ///
+  /// In en, this message translates to:
+  /// **'Export lyrics (.lrc)'**
+  String get exportLyricsLrc;
+
+  /// No description provided for @saveLyricsToDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Save LRC file to your computer'**
+  String get saveLyricsToDevice;
+
+  /// No description provided for @useCustomLyricsLrc.
+  ///
+  /// In en, this message translates to:
+  /// **'Use custom lyrics (.lrc)'**
+  String get useCustomLyricsLrc;
+
+  /// No description provided for @selectLocalLrcFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Load an LRC or TXT file from disk'**
+  String get selectLocalLrcFile;
+
+  /// No description provided for @noLyricsToExport.
+  ///
+  /// In en, this message translates to:
+  /// **'No lyrics available to export'**
+  String get noLyricsToExport;
+
+  /// No description provided for @exportLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Lyrics'**
+  String get exportLyrics;
+
+  /// No description provided for @lyricsExportedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics exported to: {path}'**
+  String lyricsExportedTo(String path);
+
+  /// No description provided for @failedToExportLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to export lyrics: {error}'**
+  String failedToExportLyrics(String error);
+
+  /// No description provided for @customLyricsAppliedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom lyrics applied!'**
+  String get customLyricsAppliedSuccess;
+
+  /// No description provided for @lyricsSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics size'**
+  String get lyricsSize;
+
+  /// No description provided for @lyricsSizeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size on the lyrics screen'**
+  String get lyricsSizeDesc;
+
+  /// No description provided for @lyricsSizeSmaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Smaller lyrics'**
+  String get lyricsSizeSmaller;
+
+  /// No description provided for @lyricsSizeLarger.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger lyrics'**
+  String get lyricsSizeLarger;
+
+  /// No description provided for @lyricsOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics options'**
+  String get lyricsOptions;
+
+  /// No description provided for @lyricsFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Full screen lyrics'**
+  String get lyricsFullscreen;
+
+  /// No description provided for @lyricsExitFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit full screen'**
+  String get lyricsExitFullscreen;
+
+  /// No description provided for @resync.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-sync'**
+  String get resync;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @lyricsSourceLocalFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Local File'**
+  String get lyricsSourceLocalFile;
+
+  /// No description provided for @syncModeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'LINE'**
+  String get syncModeLine;
+
+  /// No description provided for @syncModeWord.
+  ///
+  /// In en, this message translates to:
+  /// **'WORD'**
+  String get syncModeWord;
+
+  /// No description provided for @syncModeChar.
+  ///
+  /// In en, this message translates to:
+  /// **'CHAR'**
+  String get syncModeChar;
+
+  /// No description provided for @lyricsProvidedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics provided by {source}'**
+  String lyricsProvidedBy(String source);
+
+  /// No description provided for @failedToImportLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to import lyrics: {error}'**
+  String failedToImportLyrics(String error);
+
+  /// No description provided for @lyricsNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics not available.'**
+  String get lyricsNotAvailable;
+
+  /// No description provided for @lyricsNotAvailableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a .lrc or .txt file to add lyrics for this song'**
+  String get lyricsNotAvailableHint;
+
+  /// No description provided for @importLyricsFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Lyrics File'**
+  String get importLyricsFile;
+
+  /// No description provided for @others.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get others;
+
+  /// No description provided for @lyricsSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics Sources'**
+  String get lyricsSources;
+
+  /// No description provided for @creditLrcRedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Word-synced lyrics (default provider)'**
+  String get creditLrcRedDesc;
+
+  /// No description provided for @creditLyricsPlusDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Word-synced lyrics · open-source server by ibratabian17 (Apache-2.0), hosted by binimum'**
+  String get creditLyricsPlusDesc;
+
+  /// No description provided for @creditLrclibDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Line-synced lyrics · free, open lyrics database'**
+  String get creditLrclibDesc;
+
+  /// No description provided for @creditMusicBrainzDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Finds each song\'s ISRC so lrc.red can match it · open music database (CC0 data)'**
+  String get creditMusicBrainzDesc;
+
+  /// No description provided for @creditAmLyricsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspired our word-synced lyrics · by binimum (MPL-2.0)'**
+  String get creditAmLyricsDesc;
+
+  /// No description provided for @creditWordSyncedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Word-synced lyrics'**
+  String get creditWordSyncedDesc;
+
+  /// No description provided for @creditMorpheDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference for the NetEase, KuGou, Musixmatch and Lyricify lookups · GPL-3.0'**
+  String get creditMorpheDesc;
+
+  /// No description provided for @lyricsCopyrightNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics belong to their artists and rights holders. Looper only fetches them for personal display, and keeps them on your device.'**
+  String get lyricsCopyrightNote;
 }
 
 class _AppLocalizationsDelegate

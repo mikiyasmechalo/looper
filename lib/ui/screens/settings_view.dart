@@ -23,6 +23,7 @@ import 'package:looper_player/core/system_tray_service.dart';
 import 'package:looper_player/features/library/presentation/library_cleanup_view.dart';
 import 'package:looper_player/core/update_service.dart';
 import 'package:looper_player/ui/screens/android/player/android_equalizer_screen.dart';
+import 'package:looper_player/core/utils/lyrics_credits.dart';
 
 enum SettingsCategory {
   appearance,
@@ -374,6 +375,7 @@ class SettingsView extends ConsumerWidget {
           ] else if (category == SettingsCategory.about) ...[
             _buildAboutSection(context, ref, settings, l10n),
             const _PremiumMaintainerSection(),
+            _buildOthersSection(context, ref, settings, l10n),
           ],
         ],
       ),
@@ -2190,35 +2192,73 @@ class SettingsView extends ConsumerWidget {
                   .read(settingsProvider.notifier)
                   .updateSkippedUpdateVersion('');
             },
-            isLast: false,
+            isLast: true,
           ),
-        _PremiumActionRow(
-          icon: LucideIcons.music,
-          title: l10n.lyricsProvider,
-          subtitle: l10n.lyricsProviderDesc,
-          onTap: () async {
-            final url = Uri.parse('https://lrclib.net');
-            if (await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            }
-          },
-          isLast: false,
-        ),
+      ],
+    );
+  }
+
+  Widget _buildOthersSection(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+    AppLocalizations l10n,
+  ) {
+    final credits = lyricsCredits(l10n);
+
+    return _Section(
+      title: l10n.others,
+      children: [
         _PremiumActionRow(
           icon: LucideIcons.gitFork,
           title: l10n.sourceCode,
           subtitle: l10n.visitOfficialRepository,
+          trailing: const Icon(
+            LucideIcons.externalLink,
+            size: 14,
+            color: Colors.white38,
+          ),
           onTap: () async {
             final url = Uri.parse('https://github.com/mikiyasmechalo/looper');
             if (await canLaunchUrl(url)) {
               await launchUrl(url, mode: LaunchMode.externalApplication);
             }
           },
-          isLast: true,
+          isLast: false,
+        ),
+        for (final credit in credits)
+          _PremiumActionRow(
+            icon: LucideIcons.music,
+            title: credit.name,
+            subtitle: credit.description,
+            trailing: const Icon(
+              LucideIcons.externalLink,
+              size: 14,
+              color: Colors.white38,
+            ),
+            onTap: () async {
+              final url = Uri.parse(credit.url);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            isLast: false,
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+          child: Text(
+            l10n.lyricsCopyrightNote,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.5,
+              color: Colors.white.withValues(alpha: 0.35),
+            ),
+          ),
         ),
       ],
     );
   }
+
 
   // ─── Dialogs ──────────────────────────────────────────────────────────────
 
@@ -3532,6 +3572,14 @@ class _PremiumMaintainerSection extends StatelessWidget {
       title: 'Maintainers & Contributors',
       children: const [
         _AboutMaintainerTile(
+          name: 'Mikiyas Mechalo',
+          role: "This Fork's Maintainer",
+          avatar: 'assets/about/miki_avatar.jpg',
+          github: 'https://github.com/mikiyasmechalo',
+          telegram: 'https://t.me/mikeme2',
+          isLast: false,
+        ),
+        _AboutMaintainerTile(
           name: 'Nilesh Suthar',
           role: 'Creator & Maintainer',
           avatar: 'assets/about/maintainer_avatar.png',
@@ -3548,16 +3596,8 @@ class _PremiumMaintainerSection extends StatelessWidget {
           isLast: false,
         ),
         _AboutMaintainerTile(
-          name: 'Mikiyas Mechalo',
-          role: 'Active Contributor',
-          avatar: 'assets/about/miki_avatar.jpg',
-          github: 'https://github.com/mikiyasmechalo',
-          telegram: 'https://t.me/mikeme2',
-          isLast: false,
-        ),
-        _AboutMaintainerTile(
           name: 'Madan Suthar',
-          role: 'Active Contributor',
+          role: 'Free Rider',
           avatar: 'assets/about/free_rider_avatar.png',
           github: 'https://github.com/',
           telegram: 'https://t.me/madansthr',

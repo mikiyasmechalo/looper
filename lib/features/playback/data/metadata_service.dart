@@ -1,13 +1,18 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:ffmpeg_kit_flutter_new_full/ffprobe_kit.dart';
+
+import 'lyrics_formats/id3_sylt_reader.dart';
 
 class MetadataService {
   static Future<String?> getEmbeddedLyrics(String path) async {
-    if (Platform.isLinux) {
+    // Synced lyrics (ID3 SYLT) first: tag readers only return the
+    // unsynced USLT copy stored next to them.
+    if (path.toLowerCase().endsWith('.mp3')) {
+      final synced = await Id3SyltReader.readFile(path);
+      if (synced != null && synced.isNotEmpty) return synced;
+    }
+    if (Platform.isLinux || Platform.isWindows) {
       return await _getLyricsLinux(path);
-    } else if (Platform.isAndroid) {
-      return await _getLyricsAndroid(path);
     }
     return null;
   }
@@ -15,35 +20,19 @@ class MetadataService {
   static Future<String?> _getLyricsLinux(String path) async {
     try {
       final result = await Process.run('ffprobe', [
-        '-v', 'quiet',
-        '-print_format', 'json',
+        '-v',
+        'quiet',
+        '-print_format',
+        'json',
         '-show_format',
-        path
+        path,
       ]);
 
       if (result.exitCode == 0) {
         final data = jsonDecode(result.stdout);
         return _extractLyricsFromJson(data);
       }
-    } catch (e) {
-
-    }
-    return null;
-  }
-
-  static Future<String?> _getLyricsAndroid(String path) async {
-    try {
-      final session = await FFprobeKit.getMediaInformation(path);
-      final info = session.getMediaInformation();
-      if (info == null) return null;
-      
-      final tags = info.getTags();
-      if (tags != null) {
-        return _extractLyricsFromMap(Map<String, dynamic>.from(tags));
-      }
-    } catch (e) {
-
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -56,12 +45,11 @@ class MetadataService {
   }
 
   static String? _extractLyricsFromMap(Map<String, dynamic> tags) {
-    // Look for common lyrics tags (case-insensitive)
     for (final key in tags.keys) {
       final lowerKey = key.toLowerCase();
-      if (lowerKey == 'lyrics' || 
-          lowerKey == 'unsync-lyrics' || 
-          lowerKey == 'unsyncedlyrics' || 
+      if (lowerKey == 'lyrics' ||
+          lowerKey == 'unsync-lyrics' ||
+          lowerKey == 'unsyncedlyrics' ||
           lowerKey == 'uslt') {
         return tags[key]?.toString();
       }

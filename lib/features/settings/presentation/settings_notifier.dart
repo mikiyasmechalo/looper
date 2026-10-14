@@ -178,6 +178,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.settingsV5 = true;
         needsSave = true;
       }
+      if (!settings.autoLyricsFallbackMigrated) {
+        settings.autoLyricsFallback = true;
+        settings.autoLyricsFallbackMigrated = true;
+        needsSave = true;
+      }
       if (settings.globalEqualizerGains.length < 48) {
         settings.globalEqualizerGains = _createDefaultGains();
         needsSave = true;
@@ -398,6 +403,19 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..audioBackCacheSizeMB = s.audioBackCacheSizeMB
       ..exclusiveHardwareMode = s.exclusiveHardwareMode
       ..lyricsProvider = s.lyricsProvider
+      ..autoLyricsFallback = s.autoLyricsFallback
+      ..autoLyricsFallbackMigrated = s.autoLyricsFallbackMigrated
+      ..lyricsProviderOrder = List.from(s.lyricsProviderOrder)
+      ..lyricsProvidersOff = List.from(s.lyricsProvidersOff)
+      ..lyricsProviderWordSyncMigrated = s.lyricsProviderWordSyncMigrated
+      ..lyricsSyncStyle = s.lyricsSyncStyle
+      ..lyricsOffsetMs = s.lyricsOffsetMs
+      ..lyricsOffsetPerSongMigrated = s.lyricsOffsetPerSongMigrated
+      ..lyricsOffsetEarlierMigrated = s.lyricsOffsetEarlierMigrated
+      ..lyricsFontScale = s.lyricsFontScale
+      ..activeLyricsIntensity = s.activeLyricsIntensity
+      ..activeLyricsSoftColor = s.activeLyricsSoftColor
+      ..ambientColorBackground = s.ambientColorBackground
       ..equalizerGlobalMode = s.equalizerGlobalMode
       ..firstTimeEqualizer = s.firstTimeEqualizer
       ..enableDiscordRpc = s.enableDiscordRpc
@@ -607,6 +625,74 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateLyricsProvider(String value) async {
     final newState = _clone(state)..lyricsProvider = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateLyricsProviderOrder(List<String> order) async {
+    final newState = _clone(state)..lyricsProviderOrder = List.from(order);
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> setLyricsProviderEnabled(String id, bool enabled) async {
+    final newState = _clone(state)
+      ..lyricsProvidersOff = [
+        ...state.lyricsProvidersOff.where((p) => p != id),
+        if (!enabled) id,
+      ];
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateAutoLyricsFallback(bool value) async {
+    final newState = _clone(state)..autoLyricsFallback = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateLyricsSyncStyle(String value) async {
+    final newState = _clone(state)..lyricsSyncStyle = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateLyricsFontScale(double value) async {
+    final newState = _clone(state)..lyricsFontScale = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateActiveLyricsIntensity(double value) async {
+    final newState = _clone(state)..activeLyricsIntensity = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateActiveLyricsSoftColor(bool value) async {
+    final newState = _clone(state)..activeLyricsSoftColor = value;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(newState);
+    });
+    state = newState;
+  }
+
+  Future<void> updateAmbientColorBackground(bool value) async {
+    final newState = _clone(state)..ambientColorBackground = value;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(newState);
     });

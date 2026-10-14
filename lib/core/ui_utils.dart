@@ -3,6 +3,7 @@ import 'dart:io';
 class UiUtils {
   static bool get isAndroid => Platform.isAndroid;
   static bool get isLinux => Platform.isLinux;
+  static bool get isDesktop => Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
   /// Returns a scaling factor for UI components.
   /// Android gets a smaller scale (0.85) to fit more content.

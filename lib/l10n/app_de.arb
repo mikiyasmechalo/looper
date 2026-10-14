@@ -320,7 +320,6 @@
   "songOptions": "Songoptionen",
   "fullscreen": "Vollbild",
   "exitFullscreen": "Vollbild beenden",
-
   "persistQueueTitle": "Letzte Warteschlange beibehalten",
   "selectFontFamily": "Schriftfamilie auswählen",
   "sortAlbumAsc": "Album (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "Sonstiges",
+  "lyricsSources": "Songtext-Quellen",
+  "creditLrcRedDesc": "Wortgenaue Songtexte (Standardanbieter)",
+  "creditLyricsPlusDesc": "Wortgenaue Songtexte · Open-Source-Server von ibratabian17 (Apache-2.0), gehostet von binimum",
+  "creditLrclibDesc": "Zeilengenaue Songtexte · freie, offene Songtext-Datenbank",
+  "creditMusicBrainzDesc": "Findet die ISRC jedes Songs, damit lrc.red ihn zuordnen kann · offene Musikdatenbank (CC0-Daten)",
+  "creditAmLyricsDesc": "Vorbild für unsere wortgenauen Songtexte · von binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "Wortgenaue Songtexte",
+  "creditMorpheDesc": "Vorlage für die Abfragen bei NetEase, KuGou, Musixmatch und Lyricify · GPL-3.0",
+  "lyricsCopyrightNote": "Songtexte gehören ihren Künstlern und Rechteinhabern. Looper ruft sie nur zur persönlichen Anzeige ab und speichert sie auf deinem Gerät."
 }

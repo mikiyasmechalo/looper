@@ -2006,19 +2006,28 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     if (oldOriginalIdx < 0 || oldOriginalIdx >= _playlist.length) return;
     if (newOriginalIdx < 0 || newOriginalIdx >= _playlist.length) return;
 
+    final wasManual = _manualQueueCount > 0 &&
+        oldOriginalIdx > _currentIndex &&
+        oldOriginalIdx <= _currentIndex + _manualQueueCount;
+
     final song = _playlist.removeAt(oldOriginalIdx);
     // After removal, if newOriginalIdx was after oldOriginalIdx it shifted down,
     // but we want to insert AT the slot the target song occupied visually —
     // no additional ±1 needed here; the caller already applied Flutter's adjustment.
     _playlist.insert(newOriginalIdx, song);
 
+    if (state.currentSong != null) {
+      _currentIndex = _playlist.indexWhere((s) => s.path == state.currentSong!.path);
+    }
+
+    if (wasManual && newOriginalIdx < _currentIndex) {
+      if (_manualQueueCount > 0) _manualQueueCount--;
+    }
+
     if (!state.isShuffle) {
       _originalPlaylist = List.from(_playlist);
     }
     state = state.copyWith(queue: List.from(_playlist));
-    if (state.currentSong != null) {
-      _currentIndex = _playlist.indexWhere((s) => s.path == state.currentSong!.path);
-    }
     await _saveQueueState();
   }
 
@@ -2292,6 +2301,18 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       state = state.copyWith(currentSong: song, queue: List.from(_playlist));
     } else {
       state = state.copyWith(queue: List.from(_playlist));
+    }
+  }
+
+  void updateSongLyricsOffset(int songId, int? offsetMs) {
+    final idx = _playlist.indexWhere((s) => s.id == songId);
+    if (idx != -1) {
+      _playlist[idx].lyricsOffsetMs = offsetMs;
+    }
+
+    final song = state.currentSong;
+    if (song != null && song.id == songId) {
+      song.lyricsOffsetMs = offsetMs;
     }
   }
 

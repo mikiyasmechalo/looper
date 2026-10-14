@@ -9,6 +9,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/core/update_service.dart';
+import 'package:looper_player/core/utils/lyrics_credits.dart';
 
 class LooperVersionTile extends StatelessWidget {
   const LooperVersionTile({super.key});
@@ -391,6 +392,109 @@ class AboutMaintainerRow extends StatelessWidget {
                 width: 24,
                 height: 24,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LyricsCreditsSection extends StatelessWidget {
+  final Color accentColor;
+
+  const LyricsCreditsSection({super.key, required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.others.toUpperCase(),
+            style: AppFonts.jostStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: accentColor.withValues(alpha: 0.8),
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () async {
+              HapticFeedback.lightImpact();
+              try {
+                await launchUrl(
+                  Uri.parse('https://github.com/mikiyasmechalo/looper'),
+                  mode: LaunchMode.externalApplication,
+                );
+              } catch (_) {}
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InfoSubTile(
+                      icon: LucideIcons.gitFork,
+                      title: l10n.sourceCode,
+                      description: l10n.visitOfficialRepository,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    LucideIcons.externalLink,
+                    size: 14.s,
+                    color: Colors.white38,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          for (final credit in lyricsCredits(l10n))
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                HapticFeedback.lightImpact();
+                try {
+                  await launchUrl(
+                    Uri.parse(credit.url),
+                    mode: LaunchMode.externalApplication,
+                  );
+                } catch (_) {}
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InfoSubTile(
+                        icon: LucideIcons.music,
+                        title: credit.name,
+                        description: credit.description,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      LucideIcons.externalLink,
+                      size: 14.s,
+                      color: Colors.white38,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.lyricsCopyrightNote,
+            style: AppFonts.jostStyle(
+              fontSize: 11,
+              height: 1.5,
+              color: Colors.white.withValues(alpha: 0.35),
             ),
           ),
         ],

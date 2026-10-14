@@ -61,7 +61,7 @@ class _AndroidLyricsScreenState extends ConsumerState<AndroidLyricsScreen> {
 
     // Reset manual scroll provider when opening lyrics screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(lyricsManualScrollProvider.notifier).state = false;
+      ref.read(lyricsManualScrollProvider.notifier).set(false);
     });
   }
 
@@ -113,7 +113,7 @@ class _AndroidLyricsScreenState extends ConsumerState<AndroidLyricsScreen> {
 
   void _onUserScrolled() {
     if (!mounted) return;
-    ref.read(lyricsManualScrollProvider.notifier).state = true;
+    ref.read(lyricsManualScrollProvider.notifier).set(true);
     if (!_showController) {
       setState(() {
         _showController = true;
@@ -695,7 +695,7 @@ class _AndroidLyricsScreenState extends ConsumerState<AndroidLyricsScreen> {
                       child: GestureDetector(
                         onTap: () {
                           HapticFeedback.mediumImpact();
-                          ref.read(lyricsManualScrollProvider.notifier).state = false;
+                          ref.read(lyricsManualScrollProvider.notifier).set(false);
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(

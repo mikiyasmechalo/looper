@@ -320,7 +320,6 @@
   "songOptions": "Nummeropties",
   "fullscreen": "Volledig scherm",
   "exitFullscreen": "Volledig scherm verlaten",
-
   "persistQueueTitle": "Laatste wachtrij behouden",
   "selectFontFamily": "Selecteer lettertypefamilie",
   "sortAlbumAsc": "Album (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "Overige",
+  "lyricsSources": "Songtekstbronnen",
+  "creditLrcRedDesc": "Woord-gesynchroniseerde songteksten (standaardprovider)",
+  "creditLyricsPlusDesc": "Woord-gesynchroniseerde songteksten · open-source server van ibratabian17 (Apache-2.0), gehost door binimum",
+  "creditLrclibDesc": "Regel-gesynchroniseerde songteksten · vrije, open songtekstdatabase",
+  "creditMusicBrainzDesc": "Zoekt de ISRC van elk nummer zodat lrc.red het kan koppelen · open muziekdatabase (CC0-gegevens)",
+  "creditAmLyricsDesc": "Inspiratie voor onze woord-gesynchroniseerde songteksten · door binimum (MPL-2.0)",
+  "creditWordSyncedDesc": "Woord voor woord gesynchroniseerde songteksten",
+  "creditMorpheDesc": "Referentie voor het opzoeken bij NetEase, KuGou, Musixmatch en Lyricify · GPL-3.0",
+  "lyricsCopyrightNote": "Songteksten zijn van hun artiesten en rechthebbenden. Looper haalt ze alleen op voor persoonlijke weergave en bewaart ze op je apparaat."
 }

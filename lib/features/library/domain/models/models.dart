@@ -179,6 +179,9 @@ class AppSettings {
   bool resumeOnStart = false;
   bool permanentAudioFocusChange = false;
   bool dynamicColorActiveLyrics = true;
+  double activeLyricsIntensity = 0.0;
+  bool activeLyricsSoftColor = false;
+  bool ambientColorBackground = true;
   String lyricsAlignment = 'left'; // 'left', 'center', 'right'
   bool dynamicAccentColor = true;
   int sortStrategyIndex = 0;
@@ -220,7 +223,18 @@ class AppSettings {
   int audioCacheSecs = 120;
   int audioBackCacheSizeMB = 100;
   bool exclusiveHardwareMode = false;
-  String lyricsProvider = 'LRCLIB';
+  String lyricsProvider = 'lrc.red';
+  bool autoLyricsFallback = true;
+  bool autoLyricsFallbackMigrated = false;
+  List<String> lyricsProviderOrder = [];
+  List<String> lyricsProvidersOff = [];
+  bool lyricsProviderWordSyncMigrated = false;
+  String lyricsSyncStyle = 'char';
+  static const int defaultLyricsOffsetMs = 200;
+  int lyricsOffsetMs = defaultLyricsOffsetMs;
+  bool lyricsOffsetPerSongMigrated = false;
+  bool lyricsOffsetEarlierMigrated = false;
+  double lyricsFontScale = 1.0;
 
   // SpatialFlow Operational Mode & Network Streaming
   int playbackModeIndex = 0; // 0: hybrid, 1: localOnly, 2: onlineOnly

@@ -320,7 +320,6 @@
   "songOptions": "노래 옵션",
   "fullscreen": "전체 화면",
   "exitFullscreen": "전체 화면 종료",
-
   "persistQueueTitle": "마지막 대기열 유지",
   "selectFontFamily": "글꼴 패밀리 선택",
   "sortAlbumAsc": "앨범 (A-Z)",
@@ -355,5 +354,15 @@
   "shuffleTitle": "Shuffle",
   "shuffleDisabledDesc": "Play songs in their original queue order. Turning shuffle off keeps the current song playing and restores the remaining queue to its original sequence without affecting playback or playback history.",
   "shuffleEnabledDesc": "Randomize the remaining songs while keeping the current song unchanged. The generated shuffle order remains consistent until the queue changes or a new shuffle is requested, preventing repeated or skipped tracks.",
-  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled."
+  "shuffleSwitchingDesc": "Toggling shuffle never restarts the current song. It only changes the order of upcoming tracks—randomized when enabled and restored to the original queue order when disabled.",
+  "others": "기타",
+  "lyricsSources": "가사 출처",
+  "creditLrcRedDesc": "단어 단위 싱크 가사 (기본 제공자)",
+  "creditLyricsPlusDesc": "단어 단위 싱크 가사 · ibratabian17의 오픈 소스 서버 (Apache-2.0), binimum 호스팅",
+  "creditLrclibDesc": "줄 단위 싱크 가사 · 무료 공개 가사 데이터베이스",
+  "creditMusicBrainzDesc": "lrc.red가 곡을 찾을 수 있도록 각 곡의 ISRC를 조회 · 공개 음악 데이터베이스(CC0 데이터)",
+  "creditAmLyricsDesc": "단어 단위 싱크 가사에 영감을 준 프로젝트 · binimum 제작 (MPL-2.0)",
+  "creditWordSyncedDesc": "단어 단위로 동기화된 가사",
+  "creditMorpheDesc": "NetEase, KuGou, Musixmatch, Lyricify 조회의 참고 자료 · GPL-3.0",
+  "lyricsCopyrightNote": "가사의 권리는 아티스트와 권리자에게 있습니다. Looper는 개인적인 표시 용도로만 가져오며 기기에 보관합니다."
 }
