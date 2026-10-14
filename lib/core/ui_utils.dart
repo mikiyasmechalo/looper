@@ -1,22 +1,20 @@
 import 'dart:io';
 
 class UiUtils {
-  static bool get isAndroid => Platform.isAndroid;
   static bool get isLinux => Platform.isLinux;
   static bool get isDesktop => Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
   /// Returns a scaling factor for UI components.
-  /// Android gets a smaller scale (0.85) to fit more content.
-  static double get scale => isAndroid ? 0.85 : 1.0;
+  static double get scale => 1.0;
 
   /// Scales a value based on the platform.
-  static double s(double value) => value * scale;
+  static double s(double value) => value;
 
   /// Scales text size.
-  static double ts(double value) => value * scale;
+  static double ts(double value) => value;
 
-  /// Returns a smaller spacing for Android.
-  static double spacing(double value) => isAndroid ? value * 0.7 : value;
+  /// Returns spacing.
+  static double spacing(double value) => value;
 
   /// Formats a Duration object into a string (e.g. 'm:ss' or 'h:mm:ss').
   static String formatDuration(Duration d) {

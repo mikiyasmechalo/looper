@@ -19,7 +19,7 @@ import 'package:looper_player/features/playback/presentation/mini_player_overlay
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 
 enum _ExpandedView { none, queue, lyrics }
 
@@ -1355,7 +1355,7 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
                                   const SizedBox(width: 6),
                                   isPlaying
                                       ? Image.asset(
-                                          'assets/android_icons/Playing.gif',
+                                          'assets/icons/Playing.gif',
                                           width: 13,
                                           height: 13,
                                           color: accent,
@@ -1462,7 +1462,7 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
                                   const SizedBox(width: 6),
                                   isPlaying
                                       ? Image.asset(
-                                          'assets/android_icons/Playing.gif',
+                                          'assets/icons/Playing.gif',
                                           width: 14,
                                           height: 14,
                                           color: accent,

@@ -6,26 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-/// Opens the sleep timer modal dialog on desktop or bottom sheet on mobile.
+/// Opens the sleep timer modal dialog on desktop.
 void showSleepTimer(BuildContext context, [WidgetRef? ref]) {
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    showDialog(
-      context: context,
-      builder: (ctx) => const _SleepTimerDesktopDialog(),
-    );
-  } else {
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
-      isScrollControlled: true,
-      builder: (modalContext) => const SleepTimerSheetContent(),
-    );
-  }
+  showDialog(
+    context: context,
+    builder: (ctx) => const _SleepTimerDesktopDialog(),
+  );
 }
 
 /// Backwards compatibility alias for showSleepTimer

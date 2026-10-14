@@ -19,7 +19,7 @@ import 'package:looper_player/core/db_service.dart';
 import 'package:isar/isar.dart';
 
 import 'package:looper_player/l10n/app_localizations.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 
 import 'package:looper_player/core/ui_utils.dart';
@@ -103,9 +103,9 @@ class SongsList extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.only(
-            left: (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
-            right: (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
+          padding: const EdgeInsets.only(
+            left: 10,
+            right: 14,
             top: 8,
             bottom: 8,
           ),
@@ -118,7 +118,7 @@ class SongsList extends ConsumerWidget {
                     '${songs.length} ${l10n.songs}',
                     style: AppFonts.jostStyle(color: Colors.grey, fontSize: 13),
                   ),
-                  if (showShuffleButton && !Platform.isAndroid) ...[
+                  if (showShuffleButton) ...[
                     const SizedBox(width: 4),
                     IconButton(
                       onPressed: songs.isEmpty
@@ -169,9 +169,8 @@ class SongsList extends ConsumerWidget {
                       foregroundColor: Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                  if (!Platform.isAndroid)
-                    TextButton.icon(
-                      onPressed: () async {
+                  TextButton.icon(
+                    onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
@@ -219,12 +218,7 @@ class SongsList extends ConsumerWidget {
                   controller: controller,
                   shrinkWrap: true,
                   physics: physics ?? const BouncingScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(
-                    (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
-                    8,
-                    (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
-                    180,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(10, 8, 14, 180),
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 180,
                     crossAxisSpacing: 12,
@@ -256,12 +250,7 @@ class SongsList extends ConsumerWidget {
                           const AlwaysScrollableScrollPhysics(
                             parent: BouncingScrollPhysics(),
                           ),
-                      padding: EdgeInsets.fromLTRB(
-                        (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
-                        8,
-                        (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
-                        180,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(10, 8, 14, 180),
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: 180,
@@ -438,7 +427,7 @@ class SongTile extends ConsumerWidget {
                                   color: Colors.black.withValues(alpha: 0.4),
                                   child: Center(
                                     child: Image.asset(
-                                      'assets/android_icons/Playing.gif',
+                                      'assets/icons/Playing.gif',
                                       width: 24,
                                       height: 24,
                                       color: Colors.white,
@@ -934,7 +923,7 @@ class _SongTileBouncyTapState extends State<_SongTileBouncyTap>
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = !Platform.isAndroid && !Platform.isIOS;
+    const isDesktop = true;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -1340,7 +1329,7 @@ class _SongCompactTile extends ConsumerWidget {
                               color: Colors.black.withValues(alpha: 0.4),
                               child: Center(
                                 child: Image.asset(
-                                  'assets/android_icons/Playing.gif',
+                                  'assets/icons/Playing.gif',
                                   width: 18,
                                   height: 18,
                                   color: Colors.white,
@@ -1471,7 +1460,7 @@ class _SongTextOnlyTile extends ConsumerWidget {
                 child: isCurrent && isPlaying
                     ? Center(
                         child: Image.asset(
-                          'assets/android_icons/Playing.gif',
+                          'assets/icons/Playing.gif',
                           width: 14,
                           height: 14,
                           color: accent,
@@ -1653,7 +1642,7 @@ class _SongGridCardState extends ConsumerState<_SongGridCard> {
                             ),
                             child: Center(
                               child: Image.asset(
-                                'assets/android_icons/Playing.gif',
+                                'assets/icons/Playing.gif',
                                 width: 28,
                                 height: 28,
                                 color: Colors.white,

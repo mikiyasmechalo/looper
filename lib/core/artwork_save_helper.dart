@@ -154,13 +154,11 @@ class ArtworkSaveHelper {
         if (userProfile != null) {
           picturesDir = Directory(p.join(userProfile, 'Pictures', 'Looper'));
         }
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        try {
-          final dirs = await getExternalStorageDirectories(type: StorageDirectory.pictures);
-          if (dirs != null && dirs.isNotEmpty) {
-            picturesDir = Directory(p.join(dirs.first.path, 'Looper'));
-          }
-        } catch (_) {}
+      } else if (Platform.isLinux) {
+        final home = Platform.environment['HOME'];
+        if (home != null) {
+          picturesDir = Directory(p.join(home, 'Pictures', 'Looper'));
+        }
       }
 
       if (picturesDir == null) {
@@ -186,16 +184,18 @@ class ArtworkSaveHelper {
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFF2E7D32),
           duration: const Duration(seconds: 3),
-          action: Platform.isWindows
-              ? SnackBarAction(
-                  label: 'Open Folder',
-                  textColor: Colors.white,
-                  onPressed: () {
-                    scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
-                    Process.run('explorer.exe', ['/select,', savePath]);
-                  },
-                )
-              : null,
+          action: SnackBarAction(
+            label: 'Open Folder',
+            textColor: Colors.white,
+            onPressed: () {
+              scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+              if (Platform.isWindows) {
+                Process.run('explorer.exe', ['/select,', savePath]);
+              } else if (Platform.isLinux) {
+                Process.run('xdg-open', [picturesDir?.path ?? p.dirname(savePath)]);
+              }
+            },
+          ),
         ),
       );
     } catch (e) {

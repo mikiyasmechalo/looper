@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'squiggly_slider/slider.dart';
 import 'package:looper_player/core/ui_utils.dart';
-import 'package:looper_player/core/ui_calculations.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
@@ -118,10 +117,10 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
-    final double progress = UiCalculations.getProgressFraction(
-      widget.position,
-      widget.duration,
-    );
+    final double progress = widget.duration.inMilliseconds > 0
+        ? (widget.position.inMilliseconds / widget.duration.inMilliseconds)
+            .clamp(0.0, 1.0)
+        : 0.0;
 
     final displayValue = _dragValue ?? progress;
     final bool enableWave = widget.isPlaying && displayValue > 0.12;

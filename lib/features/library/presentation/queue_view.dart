@@ -123,23 +123,21 @@ class _QueueViewState extends ConsumerState<QueueView> {
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: 24,
-            vertical: Platform.isAndroid ? 12 : 24,
+            vertical: 24,
           ),
           child: Row(
             children: [
-              if (!Platform.isAndroid) ...[
-                Text(
-                  l10n.playQueue,
-                  style: AppFonts.jostStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.normal,
-                  ),
+              Text(
+                l10n.playQueue,
+                style: AppFonts.jostStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.normal,
                 ),
-                const SizedBox(width: 16),
-                const QueueSelectorDropdown(),
-              ],
+              ),
+              const SizedBox(width: 16),
+              const QueueSelectorDropdown(),
               const Spacer(),
               if (currentIdx != -1 && currentSongPath != null)
                 IconButton(
@@ -208,7 +206,7 @@ class _QueueViewState extends ConsumerState<QueueView> {
                         left: 24,
                         right: 24,
                         top: kTopPadding,
-                        bottom: Platform.isAndroid ? 200 : 16,
+                        bottom: 16,
                       ),
                       itemCount: displayedQueue.length,
                       onReorder: (oldI, newI) {

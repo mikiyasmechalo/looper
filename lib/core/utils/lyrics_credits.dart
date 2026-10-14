@@ -1,8 +1,7 @@
 import 'package:looper_player/core/utils/app_links.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 
-/// Services and projects Looper's online lyrics rely on, credited in About on
-/// both Android and desktop.
+/// Services and projects Looper's online lyrics rely on, credited in About.
 typedef LyricsCredit = ({String name, String description, String url});
 
 List<LyricsCredit> lyricsCredits(AppLocalizations l10n) => [

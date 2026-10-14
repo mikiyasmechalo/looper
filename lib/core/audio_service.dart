@@ -17,10 +17,6 @@ class AudioService {
   String? _lastArtPath;
   MediaSessionArtwork _lastArtwork = MediaSessionArtwork.embedded;
   InterruptionPolicy _interruptionPolicy = InterruptionPolicy.pauseAndResume;
-  bool _requestFocusOnPlay = true;
-  bool _releaseFocusOnPause = true;
-  bool _stopOnOtherSession = true;
-  bool _restartOnFocusGain = true;
 
   Timer? _liveEqThrottleTimer;
   List<double>? _throttledGains;
@@ -34,39 +30,8 @@ class AudioService {
   static String? _resolvedResamplerFilter;
   static bool _resamplerProbed = false;
 
-  static const _broadcastChannel = MethodChannel('com.looper.player/broadcast');
-
-  Future<bool> isOnCall() async {
-    if (!Platform.isAndroid) return false;
-    try {
-      final bool? result = await _broadcastChannel.invokeMethod<bool>(
-        'isOnCall',
-      );
-      return result ?? false;
-    } catch (e) {
-      return false;
-    }
-  }
-
   Future<void> restartApp() async {
-    if (Platform.isAndroid) {
-      try {
-        await _broadcastChannel.invokeMethod('restartApp');
-      } catch (_) {
-        exit(0);
-      }
-    } else {
-      exit(0);
-    }
-  }
-
-  Future<void> setStopOnTaskRemoved(bool value) async {
-    if (!Platform.isAndroid) return;
-    try {
-      await _broadcastChannel.invokeMethod('setStopOnTaskRemoved', {
-        'value': value,
-      });
-    } catch (_) {}
+    exit(0);
   }
 
   // Callbacks for UI/Queue control bindings
@@ -198,16 +163,8 @@ class AudioService {
 
   void _initMediaSession({
     InterruptionPolicy interruptionPolicy = InterruptionPolicy.pauseAndResume,
-    bool requestFocusOnPlay = true,
-    bool releaseFocusOnPause = true,
-    bool stopOnOtherSession = true,
-    bool restartOnFocusGain = true,
   }) {
     _interruptionPolicy = interruptionPolicy;
-    _requestFocusOnPlay = requestFocusOnPlay;
-    _releaseFocusOnPause = releaseFocusOnPause;
-    _stopOnOtherSession = stopOnOtherSession;
-    _restartOnFocusGain = restartOnFocusGain;
 
     player.setMediaSession(
       MediaSession(
@@ -231,21 +188,12 @@ class AudioService {
     );
   }
 
-  /// Call this when the audioFocus setting changes so the interruption
-  /// policy is re-published to the native media session.
+  /// Re-publishes the interruption policy to the native desktop media session.
   void applyAudioFocusPolicy(
-    InterruptionPolicy interruptionPolicy, {
-    bool requestFocusOnPlay = true,
-    bool releaseFocusOnPause = true,
-    bool stopOnOtherSession = true,
-    bool restartOnFocusGain = true,
-  }) {
+    InterruptionPolicy interruptionPolicy,
+  ) {
     _initMediaSession(
       interruptionPolicy: interruptionPolicy,
-      requestFocusOnPlay: requestFocusOnPlay,
-      releaseFocusOnPause: releaseFocusOnPause,
-      stopOnOtherSession: stopOnOtherSession,
-      restartOnFocusGain: restartOnFocusGain,
     );
   }
 
@@ -466,10 +414,6 @@ class AudioService {
     bool? equalizerEnabled,
     String? customFilter,
     InterruptionPolicy interruptionPolicy = InterruptionPolicy.pauseAndResume,
-    bool requestFocusOnPlay = true,
-    bool releaseFocusOnPause = true,
-    bool stopOnOtherSession = true,
-    bool restartOnFocusGain = true,
   }) async {
     LoggerHelper.write(
       'AudioService: play() requested for path: $path, title: ${metadata?['title']}, play: $play',
@@ -485,10 +429,6 @@ class AudioService {
     }
 
     _interruptionPolicy = interruptionPolicy;
-    _requestFocusOnPlay = requestFocusOnPlay;
-    _releaseFocusOnPause = releaseFocusOnPause;
-    _stopOnOtherSession = stopOnOtherSession;
-    _restartOnFocusGain = restartOnFocusGain;
 
     // Signal that we want EQ applied once FILE_LOADED fires.
     // This replaces the post-open() immediate call that always raced

@@ -7,17 +7,6 @@ import 'package:looper_player/core/battery_saver_provider.dart';
 import 'package:looper_player/core/battery_service.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
-import 'settings_widgets.dart';
-
-TextStyle _tileTitleStyle() => AppFonts.jostStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w500,
-    );
-
-TextStyle _tileSubtitleStyle() => AppFonts.jostStyle(
-      color: Colors.white54,
-      fontSize: 12,
-    );
 
 /// Live status banner showing battery status and active power-saving status.
 class BatterySaverStatusBanner extends ConsumerWidget {
@@ -32,7 +21,6 @@ class BatterySaverStatusBanner extends ConsumerWidget {
 
     final isActive = settings.isBatterySaverActive;
     final isCharging = battery.isCharging;
-    final level = battery.level;
 
     final Color badgeColor;
     final Color badgeBg;
@@ -132,119 +120,6 @@ class BatterySaverStatusBanner extends ConsumerWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-/// Switch tile for toggling Auto Battery Saver.
-class AutoBatterySaverTile extends ConsumerWidget {
-  const AutoBatterySaverTile({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(settingsProvider);
-    final persisted = ref.watch(settingsProvider.notifier).persistedSettings;
-    final l10n = AppLocalizations.of(context)!;
-
-    return SwitchListTile(
-      secondary: const Icon(LucideIcons.zap, color: Colors.white70),
-      title: Text(
-        l10n.autoBatterySaver,
-        style: _tileTitleStyle(),
-      ),
-      subtitle: Text(
-        l10n.autoBatterySaverDesc,
-        style: _tileSubtitleStyle(),
-      ),
-      activeThumbColor: Theme.of(context).colorScheme.primary,
-      value: persisted.autoBatterySaver,
-      onChanged: (value) {
-        HapticFeedback.lightImpact();
-        ref.read(settingsProvider.notifier).updateAutoBatterySaver(value);
-      },
-    );
-  }
-}
-
-/// Selector tile for the Auto Battery Saver threshold.
-class BatterySaverThresholdTile extends ConsumerWidget {
-  const BatterySaverThresholdTile({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(settingsProvider);
-    final persisted = ref.watch(settingsProvider.notifier).persistedSettings;
-    final l10n = AppLocalizations.of(context)!;
-    final currentVal = persisted.batterySaverThreshold;
-
-    return SettingsSliderTile(
-      icon: LucideIcons.gauge,
-      title: l10n.batterySaverThreshold,
-      subtitle: l10n.turnOnAt(currentVal),
-      value: currentVal.toDouble().clamp(5.0, 50.0),
-      min: 5.0,
-      max: 50.0,
-      divisions: 9,
-      suffix: '%',
-      onChanged: (val) {
-        ref
-            .read(settingsProvider.notifier)
-            .updateBatterySaverThreshold(val.round());
-      },
-    );
-  }
-}
-
-/// Switch tile for manually forcing Battery Saver on.
-class ManualBatterySaverTile extends ConsumerWidget {
-  const ManualBatterySaverTile({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(settingsProvider);
-    final persisted = ref.watch(settingsProvider.notifier).persistedSettings;
-    final l10n = AppLocalizations.of(context)!;
-
-    return SwitchListTile(
-      secondary: const Icon(LucideIcons.power, color: Colors.white70),
-      title: Text(
-        l10n.manualBatterySaver,
-        style: _tileTitleStyle(),
-      ),
-      subtitle: Text(
-        l10n.manualBatterySaverDesc,
-        style: _tileSubtitleStyle(),
-      ),
-      activeThumbColor: Theme.of(context).colorScheme.primary,
-      value: persisted.manualBatterySaver,
-      onChanged: (value) {
-        HapticFeedback.lightImpact();
-        ref.read(settingsProvider.notifier).updateManualBatterySaver(value);
-      },
-    );
-  }
-}
-
-/// Full Battery Saver section combining the banner and tiles.
-class BatterySaverSection extends ConsumerWidget {
-  const BatterySaverSection({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(settingsProvider);
-    final persisted = ref.watch(settingsProvider.notifier).persistedSettings;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AutoBatterySaverTile(),
-        if (persisted.autoBatterySaver) ...[
-          const Divider(height: 1, indent: 72, color: Colors.white10),
-          const BatterySaverThresholdTile(),
-        ],
-        const Divider(height: 1, indent: 72, color: Colors.white10),
-        const ManualBatterySaverTile(),
-      ],
     );
   }
 }
@@ -350,4 +225,3 @@ class BatterySaverFloatingBadge extends ConsumerWidget {
     );
   }
 }
-

@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:looper_player/core/ui_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p;
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/providers.dart';
@@ -36,17 +34,9 @@ class WelcomeScreen extends ConsumerStatefulWidget {
   ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
-    with WidgetsBindingObserver {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   WelcomeState _currentState = WelcomeState.initial;
   String _scanStatusMessage = "Initializing scanner...";
-
-  bool _permissionGranted =
-      false; // true if standard audio/storage OR all files is granted
-  bool _notificationGranted = false;
-  bool _audioGranted = false;
-  bool _allFilesGranted = false;
-  bool _autoScanTriggered = false;
   final List<String> _desktopFolders = [];
 
   int _scannedSongsCount = 0;
@@ -57,8 +47,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _checkPermissionStatus();
     final existingFolders = ref.read(settingsProvider).libraryFolders;
     if (existingFolders.isNotEmpty) {
       _desktopFolders.addAll(existingFolders);
@@ -142,64 +130,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     }
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkPermissionStatus();
-    }
-  }
-
-  Future<void> _checkPermissionStatus() async {
-    bool notif = false;
-    bool aud = false;
-    bool all = false;
-
-    if (Platform.isAndroid) {
-      notif = await Permission.notification.isGranted;
-      all = await Permission.manageExternalStorage.isGranted;
-      aud =
-          (await Permission.audio.isGranted) ||
-          (await Permission.storage.isGranted);
-    } else {
-      notif = true;
-      aud = true;
-      all = true;
-    }
-
-    if (mounted) {
-      setState(() {
-        _notificationGranted = notif;
-        _audioGranted = aud;
-        _allFilesGranted = all;
-        _permissionGranted = aud || all; // Sufficient to scan
-      });
-    }
-  }
-
-  Future<void> _requestNotificationPermission() async {
-    HapticFeedback.lightImpact();
-    await Permission.notification.request();
-    await _checkPermissionStatus();
-  }
-
-  Future<void> _requestAudioPermission() async {
-    HapticFeedback.lightImpact();
-    await Permission.audio.request();
-    await Permission.storage.request();
-    await _checkPermissionStatus();
-  }
-
-  Future<void> _requestAllFilesPermission() async {
-    HapticFeedback.lightImpact();
-    await Permission.manageExternalStorage.request();
-    await _checkPermissionStatus();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -389,92 +320,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         ),
         const SizedBox(height: 24),
 
-        // Interactive Permission Checklist (Android Setup)
-        if (Platform.isAndroid) ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.02),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.05),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      LucideIcons.shieldCheck,
-                      size: 16.s,
-                      color: Color(settings.accentColor),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.systemPermissionChecklist.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12.ts,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white.withValues(alpha: 0.8),
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // 1. Notification Permission Row
-                _buildPermissionRow(
-                  title: l10n.notificationAccess.toUpperCase(),
-                  description: l10n.welcomeNotificationDesc,
-                  isGranted: _notificationGranted,
-                  onGrant: _requestNotificationPermission,
-                  colorScheme: colorScheme,
-                  accentColor: Color(settings.accentColor),
-                  l10n: l10n,
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.0),
-                  child: Divider(height: 1, color: Colors.white10),
-                ),
-
-                // 2. Music & Audio Permission Row
-                _buildPermissionRow(
-                  title: l10n.musicAudioAccess.toUpperCase(),
-                  description: l10n.welcomeMusicAudioDesc,
-                  isGranted: _audioGranted,
-                  onGrant: _requestAudioPermission,
-                  colorScheme: colorScheme,
-                  accentColor: Color(settings.accentColor),
-                  l10n: l10n,
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.0),
-                  child: Divider(height: 1, color: Colors.white10),
-                ),
-
-                // 3. All Files Permission Row (Highly recommended)
-                _buildPermissionRow(
-                  title: l10n.allFilesAccess.toUpperCase(),
-                  description: l10n.welcomeAllFilesDesc,
-                  isGranted: _allFilesGranted,
-                  onGrant: _requestAllFilesPermission,
-                  colorScheme: colorScheme,
-                  accentColor: Color(settings.accentColor),
-                  l10n: l10n,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-        ],
-
         // Desktop Multi-Folder Selection UI
-        if (!Platform.isAndroid) ...[
-          Container(
+        Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
@@ -671,21 +518,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
             ),
           ),
           const SizedBox(height: 32),
-        ],
 
         // Modern Action Button area
         Column(
           children: [
-            // GO START Button (Activated when permission is granted on Android, or at least 1 folder is selected on Desktop)
             _PremiumButton(
-              onPressed: Platform.isAndroid
-                  ? (_permissionGranted ? _startStorageScanFlow : null)
-                  : (_desktopFolders.isNotEmpty ? _startDesktopScanFlow : null),
+              onPressed: _desktopFolders.isNotEmpty ? _startDesktopScanFlow : null,
               label: l10n.goStart,
               icon: LucideIcons.playCircle,
-              gradientColors: (Platform.isAndroid
-                      ? _permissionGranted
-                      : _desktopFolders.isNotEmpty)
+              gradientColors: _desktopFolders.isNotEmpty
                   ? [
                       Color(settings.accentColor),
                       Color(settings.accentColor).withValues(alpha: 0.75),
@@ -698,7 +539,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
             const SizedBox(height: 24),
 
             // Scan Completion Status feedback
-            if (_permissionGranted && librarySongs.isNotEmpty) ...[
+            if (librarySongs.isNotEmpty) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -735,129 +576,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               ),
               const SizedBox(height: 24),
             ],
-
-            if (Platform.isAndroid)
-              TextButton.icon(
-                onPressed: _permissionGranted ? _selectCustomFolder : null,
-                icon: Icon(
-                  LucideIcons.folderSearch,
-                  size: 16.s,
-                  color: _permissionGranted ? Colors.white60 : Colors.white24,
-                ),
-                label: Text(
-                  l10n.selectSpecificFolder,
-                  style: TextStyle(
-                    fontSize: 12.ts,
-                    color: _permissionGranted ? Colors.white70 : Colors.white24,
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildPermissionRow({
-    required String title,
-    required String description,
-    required bool isGranted,
-    required VoidCallback onGrant,
-    required ColorScheme colorScheme,
-    required Color accentColor,
-    required AppLocalizations l10n,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 2.0),
-          padding: const EdgeInsets.all(6.0),
-          decoration: BoxDecoration(
-            color: isGranted
-                ? accentColor.withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.03),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            isGranted ? LucideIcons.check : LucideIcons.shieldAlert,
-            size: 16.s,
-            color: isGranted ? accentColor : Colors.white60,
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 11.ts,
-                  height: 1.4,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        if (!isGranted)
-          SizedBox(
-            height: 30.s,
-            child: TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: accentColor.withValues(alpha: 0.15),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14.0,
-                  vertical: 0.0,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
-              onPressed: onGrant,
-              child: Text(
-                l10n.grant,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11.ts,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10.0,
-              vertical: 4.0,
-            ),
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              l10n.granted,
-              style: TextStyle(
-                color: accentColor,
-                fontSize: 11.ts,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -1081,7 +801,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
         // Quick Retry/Actions
         _PremiumButton(
-          onPressed: _startStorageScanFlow,
+          onPressed: _startDesktopScanFlow,
           label: l10n.rescanStorage,
           icon: LucideIcons.refreshCw,
           gradientColors: [
@@ -1171,208 +891,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
         ],
       ),
     );
-  }
-
-  // Scan & Permission Flow Functions
-  Future<void> _startStorageScanFlow() async {
-    _autoScanTriggered = true;
-    ref.read(forceWelcomeProvider.notifier).state = true;
-    if (mounted) {
-      setState(() {
-        _currentState = WelcomeState.scanning;
-        _scannedSongsCount = 0;
-        _processedBatchCount = 0;
-        _totalBatchCount = 0;
-        _currentScanningFolder = '';
-        _scanStatusMessage = "Clearing old data...";
-      });
-    }
-
-    await ref.read(libraryProvider.notifier).clearAllData();
-
-    if (mounted) {
-      setState(() {
-        _scanStatusMessage = "Checking system permissions...";
-      });
-    }
-
-    // Check again
-    await _checkPermissionStatus();
-
-    if (Platform.isAndroid && !_permissionGranted) {
-      if (mounted) {
-        final localizations = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizations.storagePermissionRequired)),
-        );
-        setState(() {
-          _currentState = WelcomeState.initial;
-        });
-      }
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _scanStatusMessage =
-            "Traversing standard device directories recursively...";
-      });
-    }
-
-    // Determine scan roots including all popular directories for maximum coverage
-    final List<String> scanRoots = [];
-    if (Platform.isLinux) {
-      String defaultPath = '${Platform.environment['HOME']}/Music';
-      try {
-        final result = await Process.run('xdg-user-dir', ['MUSIC']);
-        if (result.exitCode == 0 &&
-            result.stdout.toString().trim().isNotEmpty) {
-          defaultPath = result.stdout.toString().trim();
-        }
-      } catch (_) {}
-      scanRoots.add(defaultPath);
-    } else if (Platform.isAndroid) {
-      final List<String> commonPaths = [
-        '/storage/emulated/0/Music',
-        '/storage/emulated/0/Download',
-        '/storage/emulated/0/Documents',
-        '/storage/emulated/0/Audiobooks',
-        '/storage/emulated/0/Podcasts',
-        '/storage/emulated/0/Recordings',
-        '/storage/emulated/0/Ringtones',
-        '/storage/emulated/0/Alarms',
-        '/storage/emulated/0/Notifications',
-        '/storage/emulated/0/DCIM',
-        '/storage/emulated/0/Pictures',
-        '/storage/emulated/0/Movies',
-      ];
-      int sdkInt = 0;
-      try {
-        final sdkMatch = RegExp(r'API\s+(\d+)').firstMatch(Platform.operatingSystemVersion);
-        if (sdkMatch != null) {
-          sdkInt = int.parse(sdkMatch.group(1)!);
-        }
-      } catch (_) {}
-
-      final isAllFilesGranted = await Permission.manageExternalStorage.isGranted;
-      final isLegacyStorageGranted = sdkInt < 30 && await Permission.storage.isGranted;
-      final canScanRoot = isAllFilesGranted || isLegacyStorageGranted;
-
-      if (canScanRoot) {
-        scanRoots.add('/storage/emulated/0');
-      } else {
-        scanRoots.addAll(commonPaths);
-      }
-      // Check for SD Card mount points
-      try {
-        final storageDir = Directory('/storage');
-        if (await storageDir.exists()) {
-          final List<FileSystemEntity> entities = await storageDir
-              .list()
-              .toList();
-          for (final entity in entities) {
-            final name = p.context.basename(entity.path);
-            if (name != 'emulated' &&
-                name != 'self' &&
-                name != 'knox-emulated' &&
-                !name.contains('-')) {
-              if (canScanRoot) {
-                scanRoots.add(entity.path);
-              } else {
-                scanRoots.add('${entity.path}/Music');
-                scanRoots.add('${entity.path}/Download');
-              }
-            }
-          }
-        }
-      } catch (_) {}
-    }
-
-    int cumulativeBase = 0;
-    int totalSongsDiscovered = 0;
-
-    // Run scans
-    for (final path in scanRoots) {
-      if (Directory(path).existsSync()) {
-        final folderName = p.context.basename(path);
-        if (mounted) {
-          setState(() {
-            _currentScanningFolder = folderName;
-            _scanStatusMessage = "Analyzing path: $folderName...";
-          });
-        }
-        final count = await ref.read(libraryProvider.notifier).scanLibrary(
-          path,
-          onProgress: (found, processed, total) {
-            if (mounted) {
-              setState(() {
-                _scannedSongsCount = cumulativeBase + found;
-                _processedBatchCount = processed;
-                _totalBatchCount = total;
-              });
-            }
-          },
-        );
-        cumulativeBase += count;
-        totalSongsDiscovered += count;
-      }
-    }
-
-    if (totalSongsDiscovered == 0) {
-      if (mounted) {
-        setState(() {
-          _currentState = WelcomeState.noSongs;
-        });
-      }
-    } else {
-      ref.read(forceWelcomeProvider.notifier).state = false;
-    }
-  }
-
-  // Choose Custom Folder Backup Function
-  Future<void> _selectCustomFolder() async {
-    await _checkPermissionStatus();
-    if (Platform.isAndroid && !_permissionGranted) return;
-
-    final String? path = await FilePicker.platform.getDirectoryPath();
-    if (path != null) {
-      ref.read(forceWelcomeProvider.notifier).state = true;
-      await ref.read(libraryProvider.notifier).clearAllData();
-
-      final folderName = p.context.basename(path);
-      if (mounted) {
-        setState(() {
-          _currentState = WelcomeState.scanning;
-          _scannedSongsCount = 0;
-          _processedBatchCount = 0;
-          _totalBatchCount = 0;
-          _currentScanningFolder = folderName;
-          _scanStatusMessage = "Scanning selected path: $folderName...";
-        });
-      }
-
-      final count = await ref.read(libraryProvider.notifier).scanLibrary(
-        path,
-        onProgress: (found, processed, total) {
-          if (mounted) {
-            setState(() {
-              _scannedSongsCount = found;
-              _processedBatchCount = processed;
-              _totalBatchCount = total;
-            });
-          }
-        },
-      );
-      if (count == 0) {
-        if (mounted) {
-          setState(() {
-            _currentState = WelcomeState.noSongs;
-          });
-        }
-      } else {
-        ref.read(forceWelcomeProvider.notifier).state = false;
-      }
-    }
   }
 }
 

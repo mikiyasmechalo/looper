@@ -9,7 +9,7 @@ import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/folder_picker_helper.dart';
 import 'package:looper_player/features/shortcuts/presentation/shortcuts_settings_view.dart';
 import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_cheatsheet_dialog.dart';
@@ -22,7 +22,7 @@ import 'package:looper_player/core/ui_utils.dart';
 import 'package:looper_player/core/system_tray_service.dart';
 import 'package:looper_player/features/library/presentation/library_cleanup_view.dart';
 import 'package:looper_player/core/update_service.dart';
-import 'package:looper_player/ui/screens/android/player/android_equalizer_screen.dart';
+import 'package:looper_player/ui/screens/equalizer_screen.dart';
 import 'package:looper_player/core/utils/lyrics_credits.dart';
 
 enum SettingsCategory {
@@ -663,7 +663,7 @@ class SettingsView extends ConsumerWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const AndroidEqualizerScreen(),
+                builder: (context) => const EqualizerScreen(),
               ),
             );
           },
@@ -1209,28 +1209,6 @@ class SettingsView extends ConsumerWidget {
                 .read(settingsProvider.notifier)
                 .updateDisableAnimatedDuration(value);
           },
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.move,
-          title: l10n.verticalMotionEffectPlayer,
-          subtitle: l10n.verticalMotionEffectPlayerDesc,
-          value: settings.enableSlideGesture,
-          onChanged: (value) {
-            HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateEnableSlideGesture(value);
-          },
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.power,
-          title: l10n.stopServiceOnAppDismissal,
-          subtitle: l10n.stopServiceOnAppDismissalDesc,
-          value: settings.stopOnTaskRemoved,
-          onChanged: (value) {
-            HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateStopOnTaskRemoved(value);
-          },
           isLast: true,
         ),
       ],
@@ -1514,7 +1492,7 @@ class SettingsView extends ConsumerWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const AndroidEqualizerScreen(),
+                builder: (context) => const EqualizerScreen(),
               ),
             );
           },
@@ -1606,7 +1584,7 @@ class SettingsView extends ConsumerWidget {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateFadePlayPauseStop(value);
           },
-          isLast: false,
+          isLast: !settings.fadePlayPauseStop,
         ),
         if (settings.fadePlayPauseStop)
           _PremiumSliderRow(
@@ -1623,56 +1601,8 @@ class SettingsView extends ConsumerWidget {
                   .read(settingsProvider.notifier)
                   .updatePlayPauseStopFadeLength(value.round());
             },
-            isLast: false,
-          ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.phoneCall,
-          title: l10n.manageAudioFocusTitle,
-          subtitle: l10n.manageAudioFocusDesc,
-          value: settings.audioFocus,
-          onChanged: (value) {
-            HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateAudioFocus(value);
-          },
-          isLast: !settings.audioFocus,
-        ),
-        if (settings.audioFocus) ...[
-          _PremiumSwitchRow(
-            icon: LucideIcons.phoneCall,
-            title: l10n.resumeAfterCallTitle,
-            subtitle: l10n.resumeAfterCallDesc,
-            value: settings.resumeAfterCall,
-            onChanged: (value) {
-              HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateResumeAfterCall(value);
-            },
-            isLast: false,
-          ),
-          _PremiumSwitchRow(
-            icon: LucideIcons.power,
-            title: l10n.resumeOnStartTitle,
-            subtitle: l10n.resumeOnStartDesc,
-            value: settings.resumeOnStart,
-            onChanged: (value) {
-              HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateResumeOnStart(value);
-            },
-            isLast: false,
-          ),
-          _PremiumSwitchRow(
-            icon: LucideIcons.alertCircle,
-            title: l10n.permanentFocusChangePause,
-            subtitle: l10n.permanentFocusChangePauseDesc,
-            value: settings.permanentAudioFocusChange,
-            onChanged: (value) {
-              HapticFeedback.lightImpact();
-              ref
-                  .read(settingsProvider.notifier)
-                  .updatePermanentAudioFocusChange(value);
-            },
             isLast: true,
           ),
-        ],
       ],
     );
   }

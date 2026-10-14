@@ -1,6 +1,6 @@
 class AppIcons {
   // Base Path
-  static const String _base = 'assets/android_icons/';
+  static const String _base = 'assets/icons/';
 
   // Tab Icons
   static const String home = '${_base}home_tab_icon.svg';

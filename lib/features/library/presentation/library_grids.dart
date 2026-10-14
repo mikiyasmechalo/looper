@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
+import 'package:looper_player/features/library/domain/models/library_sort_options.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
@@ -16,9 +17,8 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/ui/widgets/global_playing_indicator.dart';
 import 'package:isar/isar.dart';
 import 'package:looper_player/features/library/presentation/library_notifier.dart';
-import 'package:looper_player/ui/screens/android/tabs/views/library_categories_views.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
 
 // Providers for Albums and Artists

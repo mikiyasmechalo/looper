@@ -19,7 +19,7 @@ import 'package:looper_player/features/playback/presentation/mini_player_overlay
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/premium_progress_bar.dart';
 
 class StandardMiniPlayer extends ConsumerStatefulWidget {
@@ -1574,7 +1574,7 @@ class _QueuePanelContentState extends ConsumerState<_QueuePanelContent> {
                                   const SizedBox(width: 6),
                                   isPlaying
                                       ? Image.asset(
-                                          'assets/android_icons/Playing.gif',
+                                          'assets/icons/Playing.gif',
                                           width: 13,
                                           height: 13,
                                           color: accent,
@@ -1661,7 +1661,7 @@ class _QueuePanelContentState extends ConsumerState<_QueuePanelContent> {
                                   const SizedBox(width: 6),
                                   isPlaying
                                       ? Image.asset(
-                                          'assets/android_icons/Playing.gif',
+                                          'assets/icons/Playing.gif',
                                           width: 14,
                                           height: 14,
                                           color: accent,

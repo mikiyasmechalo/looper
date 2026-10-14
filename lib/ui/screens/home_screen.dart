@@ -42,8 +42,7 @@ import 'package:looper_player/features/playback/presentation/widgets/overlay_lyr
 import 'package:looper_player/core/update_service.dart';
 import 'package:looper_player/core/memory_service.dart';
 
-import 'android/android_main_screen.dart';
-import 'android/widgets/empty_library_view.dart';
+import '../widgets/empty_library_view.dart';
 import 'package:looper_player/features/library/presentation/folder_browser_view.dart';
 import 'package:looper_player/ui/widgets/mini_player_standard.dart';
 import 'package:looper_player/ui/widgets/mini_player_corner_widget.dart';
@@ -167,10 +166,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid) {
-      return const AndroidMainScreen();
-    }
-
     WindowStateService.instance.attach(ref);
 
     final library = ref.watch(libraryProvider);
@@ -484,18 +479,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 // Global Player Bar always at the bottom
                 if (!nav.isPlayerExpanded && !lyricsOnly)
-                  GestureDetector(
-                    onVerticalDragUpdate: (details) {
-                      if (Platform.isAndroid || Platform.isIOS) {
-                        if (details.delta.dy < -10) {
-                          ref
-                              .read(appNavigationProvider.notifier)
-                              .setPlayerExpansion(true);
-                        }
-                      }
-                    },
-                    child: const PlayerBar(),
-                  ),
+                  const PlayerBar(),
               ],
             ),
           ),
@@ -674,9 +658,6 @@ class CustomTitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid || Platform.isIOS) {
-      return const SizedBox.shrink();
-    }
     return WindowCaption(
       brightness: Brightness.dark,
       backgroundColor: Colors.transparent,

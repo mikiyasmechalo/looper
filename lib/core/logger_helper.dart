@@ -85,15 +85,10 @@ class LoggerHelper {
         'Stacktrace:\n$stack\n'
         '==================================\n';
 
-    // Target 1: Public Download folder on Android/Linux
+    // Target 1: Public Download folder on desktop
     try {
-      String? downloadDirPath;
-      if (Platform.isAndroid) {
-        downloadDirPath = '/storage/emulated/0/Download';
-      } else {
-        final dir = await getDownloadsDirectory();
-        downloadDirPath = dir?.path;
-      }
+      final dir = await getDownloadsDirectory();
+      final downloadDirPath = dir?.path;
 
       if (downloadDirPath != null) {
         final downloadDir = Directory(downloadDirPath);
@@ -105,20 +100,6 @@ class LoggerHelper {
       }
     } catch (e) {
       debugPrint('Failed to save crash log to Downloads: $e');
-    }
-
-    // Target 2: External Storage (Android specific app folder)
-    try {
-      if (Platform.isAndroid) {
-        final dir = await getExternalStorageDirectory();
-        if (dir != null) {
-          final file = File('${dir.path}/looper_player_crash-logs.txt');
-          await file.writeAsString(crashContent, mode: FileMode.write, flush: true);
-          return file.path;
-        }
-      }
-    } catch (e) {
-      debugPrint('Failed to save crash log to External Storage: $e');
     }
 
     // Target 3: App Support Directory (Private, always works)

@@ -12,16 +12,16 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/features/library/presentation/library_notifier.dart';
 import 'package:looper_player/features/playlists/presentation/playlist_view.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
-import 'package:looper_player/ui/screens/android/widgets/song_details_bottom_sheet.dart';
-import 'package:looper_player/ui/screens/android/song/song_info_screen.dart';
+import 'package:looper_player/ui/widgets/song_details_bottom_sheet.dart';
+import 'package:looper_player/ui/screens/song_info_screen.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/features/playlists/data/playlist_service.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/core/providers.dart';
-import 'package:looper_player/ui/screens/android/player/android_equalizer_screen.dart';
+import 'package:looper_player/ui/screens/equalizer_screen.dart';
 
 // Extracted modular components
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
@@ -494,7 +494,7 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                           Navigator.push(
                             parentContext,
                             MaterialPageRoute(
-                              builder: (context) => const AndroidEqualizerScreen(),
+                              builder: (context) => const EqualizerScreen(),
                             ),
                           );
                         },

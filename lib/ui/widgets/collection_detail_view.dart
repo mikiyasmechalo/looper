@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/ui/widgets/artist_image.dart';
@@ -188,16 +188,10 @@ class CollectionDetailView extends ConsumerWidget {
                   child: Column(
                     children: [
                       // Desktop Top Spacer to prevent header overlay issues
-                      if (!Platform.isAndroid && !Platform.isIOS)
-                        const SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       // Header - Now always a Row for cover and name
                       Container(
-                        padding: EdgeInsets.fromLTRB(
-                          (!Platform.isAndroid && !Platform.isIOS) ? 10 : 16,
-                          8,
-                          (!Platform.isAndroid && !Platform.isIOS) ? 14 : 16,
-                          16,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(10, 8, 14, 16),
                         child: isNarrow
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,9 +266,7 @@ class CollectionDetailView extends ConsumerWidget {
                   ),
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    // On mobile the bottom navigation bar overlaps the list,
-                    // so keep generous padding. Desktop has no overlay.
-                    height: (Platform.isAndroid || Platform.isIOS) ? 200 : 32,
+                    height: 32,
                   ),
                 ),
               ],

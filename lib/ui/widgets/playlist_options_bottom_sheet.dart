@@ -11,7 +11,7 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/features/playlists/presentation/playlist_view.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/app_input_dialog.dart';
 import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/core/import_export_service.dart';

@@ -57,7 +57,6 @@ class DiscordRpcService {
 
   /// Connect to the local Discord client IPC socket.
   Future<bool> _connect() async {
-    if (Platform.isAndroid || Platform.isIOS) return false;
     if (_isConnected) return true;
 
     try {

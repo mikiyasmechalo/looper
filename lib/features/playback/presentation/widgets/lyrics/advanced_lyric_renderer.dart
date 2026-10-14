@@ -320,7 +320,7 @@ class _AdvancedLyricRendererState extends ConsumerState<AdvancedLyricRenderer>
   /// Updates lyricsActiveLineVisibleProvider based on whether the active
   /// line's row currently overlaps this renderer's own visible bounds (which
   /// match the list's viewport, since the ListView is this widget's only
-  /// child) - used by AndroidLyricsScreen to only show its "re-sync" button
+  /// child) - used to only show the "re-sync" button
   /// once the active line has actually scrolled off screen, not on every
   /// scroll touch regardless of whether the line ever left view.
   DateTime _lastVisibilityCheck = DateTime.fromMillisecondsSinceEpoch(0);
@@ -561,7 +561,7 @@ class _AdvancedLyricRendererState extends ConsumerState<AdvancedLyricRenderer>
           // react to the user scrolling the list, and that's exactly the
           // case where the active line's on-screen position moves without
           // _updateActiveLine ever running. Returning false lets
-          // AndroidLyricsScreen's own ScrollNotification listener (which
+          // the parent ScrollNotification listener (which
           // drives _onUserScrolled/lyricsManualScrollProvider) still see it.
           _checkActiveLineVisibility();
           if (notification is ScrollStartNotification) {
@@ -582,8 +582,7 @@ class _AdvancedLyricRendererState extends ConsumerState<AdvancedLyricRenderer>
               // Enough room below the last line for it to reach the anchor
               // like every other line.
               bottom: math.max(
-                widget.bottomPadding ??
-                    ((Platform.isAndroid || Platform.isIOS) ? 120.s : 400.s),
+                widget.bottomPadding ?? 400.s,
                 constraints.maxHeight * 0.8,
               ),
               left: widget.horizontalPadding ?? 24.s,

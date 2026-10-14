@@ -242,7 +242,7 @@ class _LyricsViewState extends ConsumerState<LyricsView> {
                   fit: StackFit.expand,
                   children: [
                     ...previous,
-                    if (current != null) current,
+                    ?current,
                   ],
                 ),
                 child: lyricsState.isLoading

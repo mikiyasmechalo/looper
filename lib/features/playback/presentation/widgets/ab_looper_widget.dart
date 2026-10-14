@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,21 +5,12 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 
-/// Shows the A-B Looper modal dialog on desktop or bottom sheet on mobile.
+/// Shows the A-B Looper modal dialog on desktop.
 void showABLooper(BuildContext context) {
-  if (Platform.isAndroid || Platform.isIOS) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => const _ABLooperBottomSheet(),
-    );
-  } else {
-    showDialog(
-      context: context,
-      builder: (ctx) => const _ABLooperDialog(),
-    );
-  }
+  showDialog(
+    context: context,
+    builder: (ctx) => const _ABLooperDialog(),
+  );
 }
 
 class _ABLooperDialog extends StatelessWidget {
@@ -42,47 +32,6 @@ class _ABLooperDialog extends StatelessWidget {
           padding: EdgeInsets.all(24.0),
           child: ABLooperContent(),
         ),
-      ),
-    );
-  }
-}
-
-class _ABLooperBottomSheet extends StatelessWidget {
-  const _ABLooperBottomSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF18181B),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
-          left: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-          right: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        MediaQuery.of(context).padding.bottom + 20,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            width: 36,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const ABLooperContent(),
-        ],
       ),
     );
   }

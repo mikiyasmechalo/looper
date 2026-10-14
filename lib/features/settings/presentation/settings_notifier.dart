@@ -207,9 +207,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       _persistedSettings = settings;
     } else {
       // Initialize default settings
-      // Default to off on Android, but enabled on Linux
       final defaultSettings = AppSettings()
-        ..enableDynamicTheming = !Platform.isAndroid
+        ..enableDynamicTheming = true
         ..bgBrightness = 0.5
         ..bgOpacity = 0.3
         ..showHomeArtists = true
@@ -697,15 +696,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _save(newState);
   }
 
-  Future<void> updateEnableSlideGesture(bool value) async {
-    final newState = _clone(state)..enableSlideGesture = value;
-    await _save(newState);
-  }
-
-  Future<void> updateStopOnTaskRemoved(bool value) async {
-    final newState = _clone(state)..stopOnTaskRemoved = value;
-    await _save(newState);
-  }
   Future<void> updateFadePlayPauseStop(bool value) async {
     final newState = _clone(state)..fadePlayPauseStop = value;
     await _save(newState);
@@ -713,25 +703,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updatePlayPauseStopFadeLength(int value) async {
     final newState = _clone(state)..playPauseStopFadeLength = value;
-    await _save(newState);
-  }
-  Future<void> updateResumeAfterCall(bool value) async {
-    final newState = _clone(state)..resumeAfterCall = value;
-    await _save(newState);
-  }
-
-  Future<void> updatePauseOnDuck(bool value) async {
-    final newState = _clone(state)..pauseOnDuck = value;
-    await _save(newState);
-  }
-
-  Future<void> updateResumeOnBluetoothConnect(bool value) async {
-    final newState = _clone(state)..resumeOnBluetoothConnect = value;
-    await _save(newState);
-  }
-
-  Future<void> updateResumeOnStart(bool value) async {
-    final newState = _clone(state)..resumeOnStart = value;
     await _save(newState);
   }
 
@@ -820,10 +791,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _save(newState);
   }
 
-  Future<void> updatePermanentAudioFocusChange(bool value) async {
-    final newState = _clone(state)..permanentAudioFocusChange = value;
-    await _save(newState);
-  }
 
   Future<void> updateDownloadArtwork(bool enabled) async {
     final newState = _clone(state)..downloadArtwork = enabled;
@@ -897,30 +864,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _save(newState);
   }
 
-  Future<void> updateAudioFocus(bool enabled) async {
-    final newState = _clone(state)..audioFocus = enabled;
-    await _save(newState);
-  }
-
-  Future<void> updateAudioFocusRequestOnPlay(bool enabled) async {
-    final newState = _clone(state)..audioFocusRequestOnPlay = enabled;
-    await _save(newState);
-  }
-
-  Future<void> updateAudioFocusReleaseOnPause(bool enabled) async {
-    final newState = _clone(state)..audioFocusReleaseOnPause = enabled;
-    await _save(newState);
-  }
-
-  Future<void> updateAudioFocusStopOnOtherSession(bool enabled) async {
-    final newState = _clone(state)..audioFocusStopOnOtherSession = enabled;
-    await _save(newState);
-  }
-
-  Future<void> updateAudioFocusRestartOnGain(bool enabled) async {
-    final newState = _clone(state)..audioFocusRestartOnGain = enabled;
-    await _save(newState);
-  }
 
   Future<void> updateDynamicTheming(bool enabled) async {
     final newState = _clone(state)..enableDynamicTheming = enabled;

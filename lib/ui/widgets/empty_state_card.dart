@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:looper_player/core/app_fonts.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 
 /// Shared "nothing here yet" layout (icon badge + bold title + dimmed
 /// subtitle, optionally followed by an action).

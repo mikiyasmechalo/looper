@@ -1,15 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mpv_audio_kit/mpv_audio_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
-import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:flutter_performance_optimizer/flutter_performance_optimizer.dart';
 
@@ -212,27 +209,6 @@ void main(List<String> args) async {
     } catch (e, s) {
       LoggerHelper.write('Failed to initialize MpvAudioKit', e, s);
     }
-    try {
-      await FlutterDisplayMode.setHighRefreshRate();
-    } catch (_) {}
-  }();
-
-  // Check permissions in parallel
-  bool permissionsGranted = true;
-  final Future<void> permissionCheck = () async {
-    if (Platform.isAndroid) {
-      try {
-        final results = await Future.wait([
-          Permission.audio.isGranted,
-          Permission.storage.isGranted,
-          Permission.manageExternalStorage.isGranted,
-        ]);
-        permissionsGranted = results.any((granted) => granted);
-      } catch (e, s) {
-        LoggerHelper.write('Failed to check permissions on startup', e, s);
-        permissionsGranted = false;
-      }
-    }
   }();
 
   // Wait for all boot-up stages concurrently
@@ -241,7 +217,6 @@ void main(List<String> args) async {
     desktopInit,
     dbInit,
     nativePluginsInit,
-    permissionCheck,
   ]);
 
   runApp(
@@ -249,7 +224,6 @@ void main(List<String> args) async {
       overrides: [
         startupFileProvider.overrideWithValue(initialFile),
         startupArgsProvider.overrideWithValue(args),
-        forceWelcomeProvider.overrideWith((ref) => !permissionsGranted),
         initialWindowStateProvider.overrideWithValue(windowState),
         if (windowState.playerType == 'full')
           appNavigationProvider.overrideWith(
@@ -347,15 +321,7 @@ class MyApp extends ConsumerWidget {
       );
     }
 
-    if (!Platform.isAndroid || settings == null || !settings.enableDynamicTheming) {
-      return buildMaterialApp(colorScheme);
-    }
-
-    return DynamicColorBuilder(
-      builder: (lightDynamic, darkDynamic) {
-        return buildMaterialApp(colorScheme);
-      },
-    );
+    return buildMaterialApp(colorScheme);
   }
 }
 

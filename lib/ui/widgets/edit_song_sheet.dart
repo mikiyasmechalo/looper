@@ -11,7 +11,7 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/core/artwork_save_helper.dart';
 import 'package:looper_player/ui/widgets/app_loading_indicator.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class EditSongSheet extends ConsumerStatefulWidget {

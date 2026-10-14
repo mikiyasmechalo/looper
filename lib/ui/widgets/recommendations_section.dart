@@ -6,7 +6,7 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/features/streaming/data/recommendations_service.dart';
 import 'package:looper_player/features/streaming/domain/models/online_track.dart';
 import 'package:looper_player/features/streaming/presentation/streaming_notifier.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 

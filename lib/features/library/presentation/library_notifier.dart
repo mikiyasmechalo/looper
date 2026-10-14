@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/core/logger_helper.dart';
 import 'package:looper_player/core/memory_service.dart';
 import 'package:path/path.dart' as p;
-import 'package:permission_handler/permission_handler.dart';
 import 'package:looper_player/features/library/data/scanner.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/core/db_service.dart';
@@ -335,51 +334,6 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     state = state.copyWith(isScanning: false);
   }
 
-  Future<bool> _requestPermissions() async {
-    if (!Platform.isAndroid) return true;
-
-    int sdkInt = 0;
-    try {
-      final sdkMatch = RegExp(r'API\s+(\d+)').firstMatch(Platform.operatingSystemVersion);
-      if (sdkMatch != null) {
-        sdkInt = int.parse(sdkMatch.group(1)!);
-      }
-    } catch (_) {}
-
-    // Check if standard or manage external storage permissions are already granted
-    // to bypass all slow OS request dialogues entirely.
-    final bool hasAudio = await Permission.audio.isGranted;
-    final bool hasManage = await Permission.manageExternalStorage.isGranted;
-    final bool hasStorage = sdkInt < 33 && await Permission.storage.isGranted;
-
-    if (hasAudio || hasManage || hasStorage) {
-      return true;
-    }
-
-    // 1. Request Notification permission (required for Android 13+)
-    await Permission.notification.request();
-
-    // 2. Check for "All Files Access" (Android 11+)
-    // This is the most powerful permission and usually what users mean by "all files"
-    if (await Permission.manageExternalStorage.isGranted) {
-      return true;
-    }
-
-    bool isGranted = false;
-    if (sdkInt >= 33) {
-      isGranted = await Permission.audio.request().isGranted;
-    } else {
-      isGranted = await Permission.storage.request().isGranted;
-    }
-
-    // If still not granted, try requesting manageExternalStorage explicitly
-    if (!isGranted) {
-      isGranted = await Permission.manageExternalStorage.request().isGranted;
-    }
-
-    return isGranted;
-  }
-
   Future<void> scanSavedFolders({bool showVisualIndicator = true}) async {
     if (_isScanRunning || state.isScanning) {
       LoggerHelper.write('LibraryNotifier.scanSavedFolders: Scan already in progress, ignoring.');
@@ -387,9 +341,6 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     }
     _isScanRunning = true;
     try {
-      if (!await _requestPermissions()) {
-        return;
-      }
       final folders = _ref.read(settingsProvider).libraryFolders;
       
       if (folders.isEmpty) {
@@ -406,57 +357,10 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
             }
           } catch (_) {}
           scanRoots.add(defaultPath);
-        } else if (Platform.isAndroid) {
-          // Start with common folders
-          final List<String> commonPaths = [
-            '/storage/emulated/0/Music',
-            '/storage/emulated/0/Download',
-            '/storage/emulated/0/Documents',
-            '/storage/emulated/0/Audiobooks',
-            '/storage/emulated/0/Podcasts',
-          ];
-
-          int sdkInt = 0;
-          try {
-            final sdkMatch = RegExp(r'API\s+(\d+)').firstMatch(Platform.operatingSystemVersion);
-            if (sdkMatch != null) {
-              sdkInt = int.parse(sdkMatch.group(1)!);
-            }
-          } catch (_) {}
-
-          final isAllFilesGranted = await Permission.manageExternalStorage.isGranted;
-          final isLegacyStorageGranted = sdkInt < 30 && await Permission.storage.isGranted;
-          final canScanRoot = isAllFilesGranted || isLegacyStorageGranted;
-
-          // If we have "All Files Access" or legacy storage access, we can just scan the root /storage/emulated/0
-          // to find music in non-standard folders (Telegram, WhatsApp, etc.)
-          if (canScanRoot) {
-            scanRoots.add('/storage/emulated/0');
-          } else {
-            scanRoots.addAll(commonPaths);
-          }
-
-          // Try to find SD cards
-          try {
-            final storageDir = Directory('/storage');
-            if (await storageDir.exists()) {
-              final List<FileSystemEntity> entities = await storageDir.list().toList();
-              for (final entity in entities) {
-                final name = p.context.basename(entity.path);
-                // Avoid emulated and system internal paths
-                if (name != 'emulated' && name != 'self' && name != 'knox-emulated' && !name.contains('-')) {
-                  // This is likely an SD card mount point
-                  if (canScanRoot) {
-                    scanRoots.add(entity.path);
-                  } else {
-                    scanRoots.add('${entity.path}/Music');
-                    scanRoots.add('${entity.path}/Download');
-                  }
-                }
-              }
-            }
-          } catch (e) {
-
+        } else if (Platform.isWindows) {
+          final userProfile = Platform.environment['USERPROFILE'];
+          if (userProfile != null) {
+            scanRoots.add('$userProfile\\Music');
           }
         }
 
@@ -505,7 +409,6 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
   }
 
   Future<void> resetAndRescan() async {
-    if (!await _requestPermissions()) return;
     state = state.copyWith(isScanning: true);
 
     // Preserve downloaded artist images across the reset so they aren't
@@ -577,8 +480,6 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     bool updateIsScanning = true,
     void Function(int found, int processed, int total)? onProgress,
   }) async {
-    if (!await _requestPermissions()) return 0;
-
     if (updateIsScanning) {
       state = state.copyWith(isScanning: true);
     }

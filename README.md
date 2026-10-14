@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Android-blueviolet?style=for-the-badge&logo=linux&logoColor=white" />
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blueviolet?style=for-the-badge&logo=linux&logoColor=white" />
   <img src="https://img.shields.io/badge/UI--UX-Glassmorphism%20%2F%20Neo--Blur-FF007F?style=for-the-badge&logo=figma&logoColor=white" />
   <img src="https://img.shields.io/badge/Built%20With-Flutter%20%26%20Dart-02569B?style=for-the-badge&logo=flutter&logoColor=white" />
   <img src="https://img.shields.io/github/v/release/SthrNilshaaa/looper?style=for-the-badge&logo=GitHub&color=%23000000&cacheBust=1"/>
@@ -21,7 +21,7 @@
 
 ## 🔮 Experience Music in Cyber-Glass Aesthetics
 
-**Looper Player** is a state-of-the-art, high-fidelity local music player engineered for both **Android** and **Linux**. It redefines local music playback by wrapping a high-performance audio engine in a futuristic **Glassmorphic** interface that adapts instantly to the album art of whatever you are listening to.
+**Looper Player** is a state-of-the-art, high-fidelity local music player engineered for **Desktop** (**Windows** and **Linux**). It redefines local music playback by wrapping a high-performance audio engine in a futuristic **Glassmorphic** interface that adapts instantly to the album art of whatever you are listening to.
 
 Designed with an **offline-first, private-by-default** philosophy, Looper Player keeps your library, lyrics, playback statistics, and custom configurations safely on your local device—completely independent of external telemetry or subscription models.
 
@@ -32,49 +32,39 @@ Designed with an **offline-first, private-by-default** philosophy, Looper Player
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        LOOPER PLAYER FEATURES                          │
-│├───────────────────────────────────────┬────────────────────────────────┤
-│🔮 GLASSMORPHIC CYBER-UI              │ ⚡ ULTRA-PERFORMANT ENGINE     │
-│  Full real-time blur and glowing     │   Sub-millisecond local scans, │
-│  gradients that match album art.     │   indexing libraries of 50k+.  │
-│├───────────────────────────────────────┼────────────────────────────────┤
-│🎤 SYNCHRONIZED LRC LYRICS            │ 📱 CROSS-PLATFORM PARITY       │
-│  Real-time fluid line animations     │   Seamlessly engineered for    │
-│  and interactive lyrics search.      │   both Linux and Android.      │
-│├───────────────────────────────────────┼────────────────────────────────┤
-│🔒 100% PRIVATE & OFFLINE             │ 🎵 CUSTOMIZABLE AUDIO CONTROL  │
-│  Zero trackers. Zero telemetry.      │   Gapless playback and advanced│
-│  All data stays local.               │   audio focus management.      │
-└───────────────────────────────────────┴────────────────────────────────┘
+├────────────────────────────────────────┬───────────────────────────────┤
+│🔮 GLASSMORPHIC CYBER-UI               │ ⚡ ULTRA-PERFORMANT ENGINE     │
+│  Full real-time blur and glowing      │   Sub-millisecond local scans, │
+│  gradients that match album art.      │   indexing libraries of 50k+.  │
+├────────────────────────────────────────┼───────────────────────────────┤
+│🎤 SYNCHRONIZED LRC LYRICS             │ 💻 DESKTOP-NATIVE DESIGN       │
+│  Real-time fluid line animations      │   MPRIS, Discord RPC, Tray,    │
+│  and interactive lyrics search.       │   and floating mini-players.   │
+├────────────────────────────────────────┼───────────────────────────────┤
+│🔒 100% PRIVATE & OFFLINE              │ 🎵 CUSTOMIZABLE AUDIO CONTROL  │
+│  Zero trackers. Zero telemetry.       │   Gapless playback and 18-band │
+│  All data stays local.                │   graphical equalizer curve.   │
+└────────────────────────────────────────┴───────────────────────────────┘
 ```
 
 - **Dynamic Theme & Neo-Blur Aesthetics**: The entire interface—buttons, borders, text accents, and ambient background blurs—morphs dynamically to blend beautifully with the album art of the active song, featuring smooth crossfade transitions.
-- **Advanced Lyrics Engine**: Synchronized scrolling LRC lyrics with dynamic, tactile line-by-line animations, interactive tap-to-seek playback integration, font scaling, and display keep-awake modes. Supports dynamic fluid or blurred album art background layouts on both Linux and Android.
+- **Advanced Lyrics Engine**: Synchronized scrolling LRC lyrics with dynamic, tactile line-by-line animations, interactive tap-to-seek playback integration, font scaling, and display keep-awake modes.
 - **Interactive 18-Band Graphical Equalizer**: Drag-to-shape 18-band custom equalizer curve with decibel grid lines, decibel ranges (+/- 20 dB), frequency bands (65Hz to 20kHz), zero-snapping logic, and real-time FFI filter adjustments.
-- **Play/Pause Loop State Machine**: Non-blocking control structure that updates UI button states and system notification widgets instantly while processing volume fades and native player changes sequentially in the background.
+- **Play/Pause Loop State Machine**: Non-blocking control structure that updates UI button states instantly while processing volume fades and native player changes sequentially in the background.
 - **Playback Persistence & Queue Restore**: Automatically saves and restores the last active playlist queue, currently loaded song, and precise seek position (down to the millisecond) when restarting the app.
 - **Resilient Offline File Operations**: Full audio engine state release and file-lock management when renaming or deleting tracks on local storage, backed by immediate, colorful alerts through custom glassmorphic SnackBars.
-- **Fully Responsive & Adaptive Layouts**: The dashboard and detail pages (such as the playlist header) intelligently reflow between horizontal rows and vertical columns to fit perfectly on standard, large, and extremely narrow devices alike.
+- **Fully Responsive Desktop Layout**: Responsive navigation rail, desktop title bar, standard and corner mini-player modes, and keyboard shortcut integrations.
 - **Sub-Second Search & Local Library Scans**: Instant global scanning and indexing of 50k+ local libraries, with micro-latency search matching song titles, artists, albums, and even specific lyric phrases.
-- **Interactive Android & Linux Parity**: Native media keys, MPRIS controls on Linux, automatic audio focus transitions, and persistent notification control on Android even when the app is swiped away from task cards.
+- **Native Desktop Integration**: Native media keys, MPRIS controls on Linux, Discord Rich Presence, system tray integration, and customizable mini player modes.
 
 ---
 
 ## 📸 Gallery
 
-### 📱 Android
+### 💻 Desktop Screenshots
 
-<p align="center">
-  <img src="assets/android_ss/screenshot_01.jpg" width="19%" />
-  <img src="assets/android_ss/screensho_02.jpg" width="19%" />
-  <img src="assets/android_ss/screenshot_03.jpg" width="19%" />
-  <img src="assets/android_ss/screenshot_04.jpg" width="19%" />
-  <img src="assets/android_ss/screenshot_05.jpg" width="19%" />
-</p>
-
-### 💻 Linux
-
-<details>
-<summary><b>📐 Click to View Linux Screenshots</b></summary>
+<details open>
+<summary><b>📐 Click to Toggle Screenshots</b></summary>
 <br/>
 
 <p align="center">
@@ -109,11 +99,9 @@ Designed with an **offline-first, private-by-default** philosophy, Looper Player
         ├────────────────────────────────────────────────────────┤
         │  UI Framework      │  Flutter & Dart (Neo-Material 3)  │
         ├────────────────────┼───────────────────────────────────┤
-        │  Database          │  Isar DB (High-Speed Local SQL)   │
+        │  Database          │  Isar DB (High-Speed Local DB)    │
         ├────────────────────┼───────────────────────────────────┤
-        │  Playback (Linux)  │  Media Kit (C-bindings to libmpv) │
-        ├────────────────────┼───────────────────────────────────┤
-        │  Playback (Android)│  Native Kotlin Audio Handler      │
+        │  Playback Engine   │  Media Kit (libmpv C-bindings)    │
         ├────────────────────┼───────────────────────────────────┤
         │  State Manager     │  Riverpod (Immutable Observables) │
         └────────────────────┴───────────────────────────────────┘
@@ -123,14 +111,7 @@ Designed with an **offline-first, private-by-default** philosophy, Looper Player
 
 ## 📦 Installation & Setup
 
-Download the signed production build for your specific platform from our [Releases](https://github.com/SthrNilshaaa/looper/releases) page.
-
-### 📱 Android (`.apk`)
-We distribute clean, cryptographically signed production APKs built directly on our automated pipeline:
-- **Download the APK** matching your architecture (e.g. `arm64-v8a` for modern smartphones, `armeabi-v7a` for older devices, or `x86_64` for emulators).
-- Open the package and tap **Install** (ensure "Install from Unknown Sources" is enabled in your Android settings).
-
----
+Download the production build for your platform from our [Releases](https://github.com/SthrNilshaaa/looper/releases) page.
 
 ### 💻 Linux Packages
 

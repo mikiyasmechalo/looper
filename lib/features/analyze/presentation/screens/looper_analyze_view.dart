@@ -16,7 +16,7 @@ import 'package:looper_player/features/analyze/presentation/widgets/analyze_top_
 import 'package:looper_player/features/analyze/presentation/widgets/analyze_trend_chart.dart';
 import 'package:looper_player/features/analyze/presentation/widgets/staggered_reveal.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/empty_state_card.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/core/l10n.dart';

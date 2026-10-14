@@ -17,7 +17,7 @@ import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/app_icons.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
-import 'package:looper_player/ui/screens/android/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/ui/widgets/premium_progress_bar.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
@@ -66,7 +66,6 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
   @override
   void initState() {
     super.initState();
-    if (Platform.isAndroid || Platform.isIOS) return;
     windowManager.addListener(this);
     _syncFullscreen();
     _maybeAutoFullscreen();
@@ -93,11 +92,9 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
   @override
   void dispose() {
     _fullscreenSettingSub?.close();
-    if (!(Platform.isAndroid || Platform.isIOS)) {
-      windowManager.removeListener(this);
-      if (_autoEnteredFullscreen) {
-        windowManager.setFullScreen(false);
-      }
+    windowManager.removeListener(this);
+    if (_autoEnteredFullscreen) {
+      windowManager.setFullScreen(false);
     }
     super.dispose();
   }
@@ -446,11 +443,9 @@ class _HeaderMenu extends ConsumerWidget {
   }
 
   Future<void> _openSettings(BuildContext context, WidgetRef ref) async {
-    if (!(Platform.isAndroid || Platform.isIOS)) {
-      final isFs = await windowManager.isFullScreen();
-      if (isFs) await windowManager.setFullScreen(false);
-      if (!context.mounted) return;
-    }
+    final isFs = await windowManager.isFullScreen();
+    if (isFs) await windowManager.setFullScreen(false);
+    if (!context.mounted) return;
     final notifier = ref.read(appNavigationProvider.notifier);
     // Let the popup menu route close before collapsing the player so the
     // navigation happens against a live widget tree.
@@ -539,7 +534,6 @@ class _WindowControlsState extends State<_WindowControls> with WindowListener {
   @override
   void initState() {
     super.initState();
-    if (Platform.isAndroid || Platform.isIOS) return;
     windowManager.addListener(this);
     _refresh();
   }
@@ -557,10 +551,6 @@ class _WindowControlsState extends State<_WindowControls> with WindowListener {
 
   @override
   void dispose() {
-    if (Platform.isAndroid || Platform.isIOS) {
-      super.dispose();
-      return;
-    }
     windowManager.removeListener(this);
     super.dispose();
   }
@@ -592,7 +582,7 @@ class _WindowControlsState extends State<_WindowControls> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid || Platform.isIOS || widget.fullscreen) {
+    if (widget.fullscreen) {
       return const SizedBox.shrink();
     }
     return Row(
@@ -2901,7 +2891,7 @@ class _QueueListState extends ConsumerState<_QueueList> {
                                               ),
                                               child: Center(
                                                 child: Image.asset(
-                                                  'assets/android_icons/Playing.gif',
+                                                  'assets/icons/Playing.gif',
                                                   width: 20,
                                                   height: 20,
                                                   color: Colors.white,

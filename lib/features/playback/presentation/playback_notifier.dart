@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:looper_player/core/logger_helper.dart';
-import 'package:looper_player/core/android_audio_focus_manager.dart';
 import 'package:mpv_audio_kit/mpv_audio_kit.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/providers.dart';
@@ -26,7 +23,6 @@ import 'package:local_notifier/local_notifier.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:looper_player/core/tag_writer_service.dart';
 import 'package:looper_player/features/streaming/data/youtube_stream_service.dart';
 import 'package:looper_player/features/playback/data/queue_repository.dart';
@@ -166,7 +162,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   Timer? _songCompletionTimer;
   Timer? _playCountTimer;
   String? _playCountedPath;
-  int _lastWidgetPositionUpdate = 0;
+  int _lastPositionPersistTime = 0;
   int _manualQueueCount = 0;
   DateTime _lastSeekTime = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastPlayTime = DateTime.fromMillisecondsSinceEpoch(0);
@@ -175,9 +171,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   String _activeQueueName = '';
 
   PlaybackNotifier(this.ref) : super(PlaybackState()) {
-    if (Platform.isAndroid) {
-      ref.read(androidAudioFocusManagerProvider);
-    }
     player = ref.read(audioServiceProvider).player;
     ref.read(audioServiceProvider).onNext = skipNext;
     ref.read(audioServiceProvider).onPrevious = skipPrevious;
@@ -193,41 +186,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     };
     ref.read(audioServiceProvider).onPlayPause = togglePlay;
     _init();
-    _initWidgetChannel();
-    ref.listen<LyricsState>(lyricsProvider, (previous, next) {
-      if (next.songId == state.currentSong?.id && !next.isLoading) {
-        _updateWidgetState();
-      }
-    });
     ref.listen<AppSettings>(settingsProvider, (previous, next) {
-      if (previous?.audioFocus != next.audioFocus ||
-          previous?.resumeAfterCall != next.resumeAfterCall ||
-          previous?.pauseOnDuck != next.pauseOnDuck ||
-          previous?.resumeOnBluetoothConnect != next.resumeOnBluetoothConnect ||
-          previous?.permanentAudioFocusChange != next.permanentAudioFocusChange ||
-          previous?.audioFocusRequestOnPlay != next.audioFocusRequestOnPlay ||
-          previous?.audioFocusReleaseOnPause != next.audioFocusReleaseOnPause ||
-          previous?.audioFocusStopOnOtherSession != next.audioFocusStopOnOtherSession ||
-          previous?.audioFocusRestartOnGain != next.audioFocusRestartOnGain) {
-        if (Platform.isAndroid) {
-          ref.read(audioServiceProvider).applyAudioFocusPolicy(
-            _getInterruptionPolicy(),
-            requestFocusOnPlay: false,
-            releaseFocusOnPause: false,
-            stopOnOtherSession: false,
-            restartOnFocusGain: false,
-          );
-          ref.read(androidAudioFocusManagerProvider).syncSettings();
-        } else {
-          ref.read(audioServiceProvider).applyAudioFocusPolicy(
-            _getInterruptionPolicy(),
-            requestFocusOnPlay: next.audioFocusRequestOnPlay,
-            releaseFocusOnPause: next.audioFocusReleaseOnPause,
-            stopOnOtherSession: next.audioFocusStopOnOtherSession,
-            restartOnFocusGain: next.audioFocusRestartOnGain,
-          );
-        }
-      }
       if (previous?.enableAudioCache != next.enableAudioCache ||
           previous?.audioCacheSizeMB != next.audioCacheSizeMB ||
           previous?.audioCacheSecs != next.audioCacheSecs ||
@@ -247,9 +206,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       }
       if (previous?.autoTrimSilence != next.autoTrimSilence) {
         ref.read(equalizerProvider.notifier).setSilenceTrimEnabled(next.autoTrimSilence);
-      }
-      if (previous?.stopOnTaskRemoved != next.stopOnTaskRemoved) {
-        ref.read(audioServiceProvider).setStopOnTaskRemoved(next.stopOnTaskRemoved);
       }
     });
   }
@@ -281,7 +237,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         windowManager.setTitle('Looper');
       }
     }
-    _updateWidgetState();
   }
 
   Future<void> _init() async {
@@ -352,7 +307,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       if (!state.isScrubbing) {
         state = state.copyWith(position: position);
       }
-      _checkAndUpdateLyrics();
 
       // Check and trigger automatic crossfade
       if (state.isPlaying &&
@@ -374,9 +328,8 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       }
 
       final now = DateTime.now().millisecondsSinceEpoch;
-      if (state.isPlaying && now - _lastWidgetPositionUpdate > 2000) {
-        _lastWidgetPositionUpdate = now;
-        _updateWidgetState();
+      if (state.isPlaying && now - _lastPositionPersistTime > 2000) {
+        _lastPositionPersistTime = now;
         if (ref.read(settingsProvider).persistQueue) {
           ref.read(settingsProvider.notifier).updateLastPosition(position.inMilliseconds);
         }
@@ -473,7 +426,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
           
           if (songToPlay != null) {
             _autoCrossfadeTriggered = false;
-            _lastWidgetLyricLine = '';
             state = state.copyWith(
               currentSong: songToPlay,
               duration: songToPlay.duration != null ? Duration(milliseconds: songToPlay.duration!) : Duration.zero,
@@ -492,7 +444,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
               customFilter: equalizerState.customFilterString,
             );
             
-            _updateWidgetState();
             _updateNotification();
             _armPlayCount(songToPlay);
             
@@ -547,24 +498,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     // Apply cache and hardware configurations
     final audioSvc = ref.read(audioServiceProvider);
-    if (Platform.isAndroid) {
-      audioSvc.applyAudioFocusPolicy(
-        _getInterruptionPolicy(),
-        requestFocusOnPlay: false,
-        releaseFocusOnPause: false,
-        stopOnOtherSession: false,
-        restartOnFocusGain: false,
-      );
-      ref.read(androidAudioFocusManagerProvider).syncSettings();
-    } else {
-      audioSvc.applyAudioFocusPolicy(
-        _getInterruptionPolicy(),
-        requestFocusOnPlay: settings.audioFocusRequestOnPlay,
-        releaseFocusOnPause: settings.audioFocusReleaseOnPause,
-        stopOnOtherSession: settings.audioFocusStopOnOtherSession,
-        restartOnFocusGain: settings.audioFocusRestartOnGain,
-      );
-    }
+    audioSvc.applyAudioFocusPolicy(_getInterruptionPolicy());
     await audioSvc.configureCache(
       enabled: settings.enableAudioCache,
       maxBytes: settings.audioCacheSizeMB * 1024 * 1024,
@@ -572,7 +506,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       backBytes: settings.audioBackCacheSizeMB * 1024 * 1024,
     );
     await audioSvc.configureHardwareExclusive(settings.exclusiveHardwareMode);
-    await audioSvc.setStopOnTaskRemoved(settings.stopOnTaskRemoved);
 
     final savedSongIds = settings.lastQueueSongIds;
     final savedIndex = settings.lastQueueIndex;
@@ -601,7 +534,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         );
         ref.read(lyricsProvider.notifier).fetchForSong(song);
         ref.read(equalizerProvider.notifier).onSongChanged(song);
-        _updateWidgetState();
         
         final initialPos = Duration(milliseconds: settings.lastPositionMs);
         Future.delayed(const Duration(milliseconds: 500), () async {
@@ -623,7 +555,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         ref.read(equalizerProvider.notifier).onSongChanged(song);
         _playlist = [song];
         _currentIndex = 0;
-        _updateWidgetState(); // Sync initial song data with home screen widgets on launch
         
         final initialPos = Duration(milliseconds: settings.lastPositionMs);
         Future.delayed(const Duration(milliseconds: 500), () async {
@@ -879,22 +810,9 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     _silenceTimer?.cancel();
     _songCompletionTimer?.cancel();
     _playCountTimer?.cancel();
-    final settings = ref.read(settingsProvider);
-    if (play && settings.audioFocus) {
-      final onCall = await ref.read(audioServiceProvider).isOnCall();
-      if (onCall) {
-
-        _showErrorSnackBar(
-          'Playback blocked: Cannot play music during an active call',
-          (l10n) => l10n.activeCallCannotPlay,
-        );
-        return;
-      }
-    }
 
     final isUrl = song.isOnlineStream || song.path.startsWith('http://') || song.path.startsWith('https://');
     if (!isUrl) {
-      await _requestStoragePermissions();
       final file = File(song.path);
       if (!await file.exists()) {
 
@@ -951,7 +869,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
   Future<void> _playDirect(Song song, int crossfadeId, {bool play = true, Duration? initialPosition}) async {
     _autoCrossfadeTriggered = false;
-    _lastWidgetLyricLine = '';
     state = state.copyWith(
       currentSong: song,
       duration: song.duration != null ? Duration(milliseconds: song.duration!) : Duration.zero,
@@ -975,12 +892,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     };
     final double targetVol = state.volume;
     bool targetPlay = play;
-    if (targetPlay && Platform.isAndroid && settings.audioFocus) {
-      final granted = await ref.read(androidAudioFocusManagerProvider).requestAudioFocus();
-      if (!granted) {
-        targetPlay = false;
-      }
-    }
     final isManualCrossfade = _isLastPlayManual &&
         (settings.crossfadeMode == 0 || settings.crossfadeMode == 2) &&
         settings.crossfadeDuration > 0;
@@ -1007,10 +918,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       equalizerEnabled: settings.equalizerEnabled,
       customFilter: customFilter,
       interruptionPolicy: _getInterruptionPolicy(),
-      requestFocusOnPlay: Platform.isAndroid ? false : settings.audioFocusRequestOnPlay,
-      releaseFocusOnPause: Platform.isAndroid ? false : settings.audioFocusReleaseOnPause,
-      stopOnOtherSession: Platform.isAndroid ? false : settings.audioFocusStopOnOtherSession,
-      restartOnFocusGain: Platform.isAndroid ? false : settings.audioFocusRestartOnGain,
     );
 
     if (targetPlay) {
@@ -1022,8 +929,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
 
     if (crossfadeId != _activeCrossfadeId) return;
-
-    _updateWidgetState(); // Update home screen widgets instantly with the new song metadata
 
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       await windowManager.setTitle(
@@ -1636,27 +1541,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
         final audioSvc = ref.read(audioServiceProvider);
 
-        if (targetPlaying) {
-          if (settings.audioFocus) {
-            final onCall = await ref.read(audioServiceProvider).isOnCall();
-            if (onCall) {
-              _showErrorSnackBar(
-                'Playback blocked: Cannot play music during an active call',
-                (l10n) => l10n.activeCallCannotPlay,
-              );
-              break;
-            }
-          }
-          if (Platform.isAndroid && settings.audioFocus) {
-            final granted = await ref.read(androidAudioFocusManagerProvider).requestAudioFocus();
-            if (!granted) {
-              state = state.copyWith(isPlaying: false);
-              _updateNotification();
-              break;
-            }
-          }
-        }
-
         if (!targetPlaying) {
           if (settings.fadePlayPauseStop && settings.playPauseStopFadeLength > 0) {
             await _fadeVolume(0.0, Duration(milliseconds: settings.playPauseStopFadeLength));
@@ -1666,9 +1550,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
             }
           }
           await audioSvc.pause();
-          if (Platform.isAndroid && settings.audioFocus && settings.audioFocusReleaseOnPause) {
-            await ref.read(androidAudioFocusManagerProvider).abandonAudioFocus();
-          }
         } else {
           Song? songToPlay = state.currentSong;
           if (songToPlay == null) {
@@ -1891,7 +1772,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         .values[(state.repeatMode.index + 1) % RepeatMode.values.length];
     state = state.copyWith(repeatMode: nextMode);
     ref.read(settingsProvider.notifier).updateRepeatMode(nextMode.index);
-    _updateWidgetState();
   }
 
   void setVolume(double volume) {
@@ -2130,57 +2010,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     await ref.read(audioServiceProvider).setLiveVocalReducer(enabled, strength: strength);
   }
 
-  Future<bool> _requestStoragePermissions() async {
-    if (!Platform.isAndroid) return true;
-    try {
-      final audioStatusBefore = await Permission.audio.status;
-      final storageStatusBefore = await Permission.storage.status;
-      final manageStatusBefore = await Permission.manageExternalStorage.status;
-
-
-      // Check if we already have permissions
-      if (audioStatusBefore.isGranted ||
-          storageStatusBefore.isGranted ||
-          manageStatusBefore.isGranted) {
-
-        return true;
-      }
-
-      // Request permissions
-      Map<Permission, PermissionStatus> statuses = await [
-        Permission.audio,
-        Permission.storage,
-      ].request();
-
-      final audioStatusAfter = statuses[Permission.audio] ?? PermissionStatus.denied;
-      final storageStatusAfter = statuses[Permission.storage] ?? PermissionStatus.denied;
-
-
-      bool isGranted = audioStatusAfter.isGranted || storageStatusAfter.isGranted;
-
-      if (!isGranted) {
-
-        final manageStatusAfter = await Permission.manageExternalStorage.request();
-
-        if (manageStatusAfter.isGranted) {
-          isGranted = true;
-        }
-      }
-
-      return isGranted;
-    } catch (e) {
-
-      return true; // Fallback to let the app try physical operations
-    }
-  }
-
   Future<FileActionResult> renameSong(Song song, String newTitle) async {
-    try {
-      await _requestStoragePermissions();
-    } catch (e) {
-
-    }
-
     final sanitizedTitle = newTitle.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
     if (sanitizedTitle.isEmpty) {
       return FileActionResult.failure;
@@ -2598,12 +2428,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   }
 
   Future<FileActionResult> deleteAlbum(Album album, List<Song> songs, {required bool deleteFromStorage}) async {
-    try {
-      if (deleteFromStorage) {
-        await _requestStoragePermissions();
-      }
-    } catch (_) {}
-
     final currentInAlbum = songs.any((s) => s.id == state.currentSong?.id);
     final wasPlaying = state.isPlaying;
 
@@ -2675,12 +2499,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   }
 
   Future<FileActionResult> deleteArtist(Artist artist, List<Song> songs, {required bool deleteFromStorage}) async {
-    try {
-      if (deleteFromStorage) {
-        await _requestStoragePermissions();
-      }
-    } catch (_) {}
-
     final currentInArtist = songs.any((s) => s.id == state.currentSong?.id);
     final wasPlaying = state.isPlaying;
 
@@ -2752,12 +2570,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   }
 
   Future<FileActionResult> deleteSong(Song song) async {
-    try {
-      await _requestStoragePermissions();
-    } catch (e) {
-
-    }
-
     final isCurrent = state.currentSong?.id == song.id;
     final wasPlaying = state.isPlaying;
 
@@ -3027,122 +2839,9 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     );
   }
 
-  static const _widgetChannel = MethodChannel('com.looper.player/widget');
-  String _lastWidgetLyricLine = '';
 
-  void _initWidgetChannel() {
-    if (!Platform.isAndroid) return;
-    _widgetChannel.setMethodCallHandler((call) async {
-      switch (call.method) {
-        case 'onWidgetAction':
-          final action = call.arguments as String?;
-          if (action == 'com.looper.player.ACTION_PLAY_PAUSE') {
-            togglePlay();
-          } else if (action == 'com.looper.player.ACTION_NEXT') {
-            skipNext();
-          } else if (action == 'com.looper.player.ACTION_PREV') {
-            skipPrevious();
-          } else if (action == 'com.looper.player.ACTION_SHUFFLE') {
-            toggleShuffle();
-          } else if (action == 'com.looper.player.ACTION_REPEAT') {
-            nextRepeatMode();
-          }
-          break;
-      }
-    });
-  }
 
-  void _checkAndUpdateLyrics() {
-    if (!Platform.isAndroid) return;
-    try {
-      final lyricsState = ref.read(lyricsProvider);
-      final currentPosition = state.position;
-      String currentLine = "";
-      if (lyricsState.rawLrc != null) {
-        int activeLineIndex = lyricsState.parsedLines.indexWhere(
-          (line) => currentPosition >= line.startTime && currentPosition < line.endTime,
-        );
-        if (activeLineIndex == -1 && lyricsState.parsedLines.isNotEmpty) {
-          if (currentPosition < lyricsState.parsedLines.first.startTime) {
-            activeLineIndex = 0;
-          } else if (currentPosition >= lyricsState.parsedLines.last.endTime) {
-            activeLineIndex = lyricsState.parsedLines.length - 1;
-          }
-        }
-        if (activeLineIndex != -1) {
-          currentLine = lyricsState.parsedLines[activeLineIndex].text;
-        }
-      }
-      if (currentLine != _lastWidgetLyricLine) {
-        _lastWidgetLyricLine = currentLine;
-        _updateWidgetState();
-      }
-    } catch (e) {
 
-    }
-  }
-
-  Future<void> _updateWidgetState() async {
-    if (!Platform.isAndroid) return;
-    try {
-      final song = state.currentSong;
-      final lyricsState = ref.read(lyricsProvider);
-      final currentPosition = state.position;
-      String currentLine = "";
-      String nextLine = "";
-      if (lyricsState.rawLrc != null) {
-        int activeLineIndex = lyricsState.parsedLines.indexWhere(
-          (line) => currentPosition >= line.startTime && currentPosition < line.endTime,
-        );
-        if (activeLineIndex == -1 && lyricsState.parsedLines.isNotEmpty) {
-          if (currentPosition < lyricsState.parsedLines.first.startTime) {
-            activeLineIndex = 0;
-          } else if (currentPosition >= lyricsState.parsedLines.last.endTime) {
-            activeLineIndex = lyricsState.parsedLines.length - 1;
-          }
-        }
-        if (activeLineIndex != -1) {
-          currentLine = lyricsState.parsedLines[activeLineIndex].text;
-          if (activeLineIndex + 1 < lyricsState.parsedLines.length) {
-            nextLine = lyricsState.parsedLines[activeLineIndex + 1].text;
-          }
-        }
-      }
-
-      final accentColor = ref.read(settingsProvider).accentColor;
-
-      await HomeWidget.saveWidgetData<String>('title', song?.title ?? 'No song playing');
-      await HomeWidget.saveWidgetData<String>('artist', song?.artist ?? '');
-      await HomeWidget.saveWidgetData<bool>('isPlaying', state.isPlaying);
-      await HomeWidget.saveWidgetData<bool>('isShuffle', state.isShuffle);
-      await HomeWidget.saveWidgetData<int>('repeatMode', state.repeatMode.index);
-      await HomeWidget.saveWidgetData<String>('lyrics', currentLine);
-      await HomeWidget.saveWidgetData<String>('nextLyrics', nextLine);
-      await HomeWidget.saveWidgetData<String>('artPath', song?.artPath ?? '');
-      await HomeWidget.saveWidgetData<int>('accentColor', accentColor);
-      await HomeWidget.saveWidgetData<int>('position', currentPosition.inMilliseconds);
-      await HomeWidget.saveWidgetData<int>('duration', state.duration.inMilliseconds);
-
-      await HomeWidget.updateWidget(
-        name: 'PlayerWidgetProvider',
-        qualifiedAndroidName: 'com.looper.player.PlayerWidgetProvider',
-      );
-      await HomeWidget.updateWidget(
-        name: 'PlayerWidgetProviderSquareArtwork',
-        qualifiedAndroidName: 'com.looper.player.PlayerWidgetProviderSquareArtwork',
-      );
-      await HomeWidget.updateWidget(
-        name: 'PlayerWidgetProviderSquareProgress',
-        qualifiedAndroidName: 'com.looper.player.PlayerWidgetProviderSquareProgress',
-      );
-      await HomeWidget.updateWidget(
-        name: 'PlayerWidgetProviderLargeLyrics',
-        qualifiedAndroidName: 'com.looper.player.PlayerWidgetProviderLargeLyrics',
-      );
-    } catch (e) {
-
-    }
-  }
 
   Timer? _sleepTimer;
 
@@ -3474,18 +3173,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   }
 
   InterruptionPolicy _getInterruptionPolicy() {
-    final settings = ref.read(settingsProvider);
-    if (Platform.isAndroid) {
-      // With custom Android AudioFocusManager, we always let mpv_audio_kit keep playing,
-      // so our custom Kotlin manager takes exclusive control of focus and commands.
-      return InterruptionPolicy.keepPlaying;
-    }
-    if (!settings.audioFocus) {
-      return InterruptionPolicy.keepPlaying;
-    }
-    return settings.resumeAfterCall
-        ? InterruptionPolicy.pauseAndResume
-        : InterruptionPolicy.pauseOnly;
+    return InterruptionPolicy.pauseAndResume;
   }
 
   Timer? _fadeVolumeTimer;
@@ -3527,7 +3215,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   }
 
   void pauseForInterruption({required bool permanent}) {
-    final settings = ref.read(settingsProvider);
     if (!state.isPlaying) return;
 
     _silenceTimer?.cancel();
@@ -3536,19 +3223,11 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     ref.read(audioServiceProvider).pause();
     state = state.copyWith(isPlaying: false);
     _updateNotification();
-
-    if (permanent) {
-      ref.read(androidAudioFocusManagerProvider).setPlaybackInterrupted(false);
-      ref.read(androidAudioFocusManagerProvider).abandonAudioFocus();
-    } else {
-      ref.read(androidAudioFocusManagerProvider).setPlaybackInterrupted(true);
-    }
   }
 
   void resumeAfterInterruption() {
     if (state.isPlaying) return;
 
-    ref.read(androidAudioFocusManagerProvider).setPlaybackInterrupted(false);
     _lastPlayTime = DateTime.now();
     ref.read(audioServiceProvider).resume();
     state = state.copyWith(isPlaying: true);
@@ -3578,9 +3257,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     ref.read(audioServiceProvider).pause();
     state = state.copyWith(isPlaying: false);
     _updateNotification();
-
-    ref.read(androidAudioFocusManagerProvider).setPlaybackInterrupted(false);
-    ref.read(androidAudioFocusManagerProvider).abandonAudioFocus();
   }
 
   void resumeOnBluetoothConnect() {
@@ -3620,9 +3296,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     _playCountTimer?.cancel();
     _sleepTimer?.cancel();
     _fadeVolumeTimer?.cancel();
-    if (Platform.isAndroid) {
-      ref.read(androidAudioFocusManagerProvider).abandonAudioFocus();
-    }
     super.dispose();
   }
 }

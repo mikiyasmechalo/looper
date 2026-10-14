@@ -12,7 +12,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   isar_flutter_libs
   local_notifier
   mpv_audio_kit
-  permission_handler_windows
   screen_retriever_windows
   share_plus
   system_tray

@@ -75,16 +75,12 @@ class _PremiumPlayerBar extends ConsumerWidget {
 
         return Container(
           height: 80.s,
-          margin: Platform.isAndroid || Platform.isIOS
-              ? EdgeInsets.zero
-              : EdgeInsets.only(left: 48.s, right: 48.s, bottom: 32.sp, top: 0),
+          margin: EdgeInsets.only(left: 48.s, right: 48.s, bottom: 32.sp, top: 0),
           decoration: BoxDecoration(
             color: isDynamic
                 ? colorScheme.primary.withValues(alpha: 0.04)
                 : colorScheme.surfaceContainer,
-            borderRadius: Platform.isAndroid || Platform.isIOS
-                ? BorderRadius.zero
-                : BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(6),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -424,7 +420,6 @@ class _PremiumPlayerBar extends ConsumerWidget {
     bool isVeryNarrow,
     bool isTightActions,
   ) {
-    final bool isDesktop = !Platform.isAndroid && !Platform.isIOS;
     final bool isCompact = isTightActions || isVeryNarrow;
     final double buttonSize = isCompact ? 28.0 : 34.0;
     final double iconSize = isCompact ? 14.0 : 16.0;
@@ -503,12 +498,10 @@ class _PremiumPlayerBar extends ConsumerWidget {
                 .toggleItem(NavItem.queue),
           ),
         ),
-        if (isDesktop) ...[
-          SizedBox(width: spacing),
-          _FullscreenButton(size: buttonSize, iconSize: iconSize),
-          SizedBox(width: spacing),
-          _MiniPlayerMenuButton(size: buttonSize, iconSize: iconSize),
-        ],
+        SizedBox(width: spacing),
+        _FullscreenButton(size: buttonSize, iconSize: iconSize),
+        SizedBox(width: spacing),
+        _MiniPlayerMenuButton(size: buttonSize, iconSize: iconSize),
       ],
     );
   }
@@ -998,11 +991,9 @@ class _FullscreenButton extends ConsumerWidget {
         ),
         onPressed: () async {
           ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
-          if (!(Platform.isAndroid || Platform.isIOS)) {
-            final isMax = await windowManager.isMaximized();
-            if (!isMax) {
-              await windowManager.maximize();
-            }
+          final isMax = await windowManager.isMaximized();
+          if (!isMax) {
+            await windowManager.maximize();
           }
         },
       ),
