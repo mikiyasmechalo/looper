@@ -278,7 +278,7 @@ class PlaylistView extends ConsumerWidget {
                             sliver: SliverGrid(
                               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                                 maxCrossAxisExtent: 200,
-                                childAspectRatio: 0.85,
+                                childAspectRatio: 0.74,
                                 crossAxisSpacing: 20,
                                 mainAxisSpacing: 20,
                               ),
@@ -437,7 +437,8 @@ class _SmartPlaylistCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Artwork Container with Smart Badge
-                Expanded(
+                AspectRatio(
+                  aspectRatio: 1.0,
                   child: Stack(
                     children: [
                       Positioned.fill(
@@ -613,17 +614,17 @@ class _PlaylistCard extends ConsumerWidget {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Center(
-                    child: PlaylistArtwork(
-                      songs: songs,
-                      fallbackBackground: Colors.white10,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                AspectRatio(
+                  aspectRatio: 1.0,
+                  child: PlaylistArtwork(
+                    songs: songs,
+                    fallbackBackground: Colors.white10,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   playlist.name,
                   maxLines: 1,

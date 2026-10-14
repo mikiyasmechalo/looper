@@ -20,18 +20,24 @@ class AppBottomSheetContainer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) && !settings.disableBlur;
-    final isPureBlack = settings.darkTheme;
+    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) &&
+        !settings.disableBlur &&
+        !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (!settings.enableDynamicTheming && !settings.keepBackgroundGradient && settings.darkTheme);
 
     final sheetBg = isPureBlack
         ? Colors.black
-        : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
+        : (useBlur ? const Color(0xCC141416) : const Color(0xFF1E1E1E));
 
     Widget body = Container(
       height: height,
       decoration: BoxDecoration(
         color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: useBlur && !isPureBlack
+            ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+            : null,
       ),
       child: SafeArea(
         child: Column(

@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/stats/presentation/stats_provider.dart';
 import 'package:looper_player/features/stats/presentation/wrapped_provider.dart';
+import 'package:looper_player/ui/widgets/looper_dropdown.dart';
 
 class LooperWrappedView extends ConsumerStatefulWidget {
   const LooperWrappedView({super.key});
@@ -121,33 +122,19 @@ class _LooperWrappedViewState extends ConsumerState<LooperWrappedView> {
                       const Spacer(),
 
                       // Year Selector Dropdown
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<int>(
-                            value: wrappedState.selectedYear,
-                            dropdownColor: const Color(0xFF1E1E24),
-                            borderRadius: BorderRadius.circular(16),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                            icon: const Icon(LucideIcons.chevronDown, size: 16, color: Colors.white70),
-                            items: wrappedState.availableYears.map((y) {
-                              return DropdownMenuItem<int>(
-                                value: y,
-                                child: Text('$y'),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                ref.read(wrappedProvider.notifier).setYear(val);
-                              }
-                            },
-                          ),
-                        ),
+                      LooperDropdown<int>(
+                        value: wrappedState.selectedYear,
+                        items: wrappedState.availableYears.map((y) {
+                          return LooperDropdownItem<int>(
+                            value: y,
+                            label: Text('$y'),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            ref.read(wrappedProvider.notifier).setYear(val);
+                          }
+                        },
                       ),
                     ],
                   ),

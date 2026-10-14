@@ -10,6 +10,7 @@ import 'package:looper_player/features/settings/presentation/settings_notifier.d
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:looper_player/ui/widgets/premium_section.dart';
+import 'package:looper_player/ui/widgets/looper_dropdown.dart';
 import 'package:looper_player/ui/widgets/folder_picker_helper.dart';
 import 'package:looper_player/features/shortcuts/presentation/shortcuts_settings_view.dart';
 import 'package:looper_player/features/shortcuts/presentation/widgets/shortcuts_cheatsheet_dialog.dart';
@@ -355,6 +356,8 @@ class SettingsView extends ConsumerWidget {
         children: [
           if (category == SettingsCategory.appearance) ...[
             _buildAppearanceSection(context, ref, settings, l10n),
+            if (isDesktop)
+              _buildFullscreenPlayerSection(context, ref, settings, l10n),
             _buildBatterySaverSection(context, ref, settings, l10n),
             _buildSidebarSection(context, ref, settings, l10n),
             _buildLanguageSection(context, ref, settings, l10n),
@@ -367,8 +370,6 @@ class SettingsView extends ConsumerWidget {
             _buildDesktopSection(context, ref, settings, l10n),
             if (isDesktop)
               _buildDiscordRpcSection(context, ref, settings, l10n),
-            if (isDesktop)
-              _buildFullscreenPlayerSection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.scrobbling) ...[
             _buildScrobblingSection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.shortcuts) ...[
@@ -759,100 +760,7 @@ class SettingsView extends ConsumerWidget {
               ref.read(settingsProvider.notifier).updateEnableSmartPlaylists(v),
         ),
       ),
-      _SearchItem(
-        category: 'Library & Files',
-        title: 'Song View Style',
-        subtitle:
-            'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
-        widget: _PremiumDropdownRow<int>(
-          icon: LucideIcons.layoutList,
-          title: 'Song View Style',
-          subtitle:
-              'Choose visual layout for songs list (Normal, Compact, Text Only, Grid)',
-          value: settings.songViewStyleIndex.clamp(0, 3),
-          items: const [
-            DropdownMenuItem(value: 0, child: Text('Normal List')),
-            DropdownMenuItem(value: 1, child: Text('Compact List')),
-            DropdownMenuItem(value: 2, child: Text('Text Only')),
-            DropdownMenuItem(value: 3, child: Text('Grid Cards')),
-          ],
-          onChanged: (v) {
-            if (v != null) {
-              ref.read(settingsProvider.notifier).updateSongViewStyle(v);
-            }
-          },
-        ),
-      ),
-      _SearchItem(
-        category: 'Library & Files',
-        title: 'Album Card Style',
-        subtitle: 'Choose visual layout for album grid items',
-        widget: _PremiumDropdownRow<int>(
-          icon: LucideIcons.disc,
-          title: 'Album Card Style',
-          subtitle: 'Choose visual layout for album grid items',
-          value: settings.albumCardStyleIndex.clamp(0, 4),
-          items: const [
-            DropdownMenuItem(
-              value: 0,
-              child: Text('Normal (Rounded Cover & Info Below)'),
-            ),
-            DropdownMenuItem(
-              value: 1,
-              child: Text('Circle (Circular Avatar & Centered Info)'),
-            ),
-            DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(
-              value: 3,
-              child: Text('Image (Overlay Text on Dark Gradient)'),
-            ),
-            DropdownMenuItem(
-              value: 4,
-              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
-            ),
-          ],
-          onChanged: (v) {
-            if (v != null) {
-              ref.read(settingsProvider.notifier).updateAlbumCardStyle(v);
-            }
-          },
-        ),
-      ),
-      _SearchItem(
-        category: 'Library & Files',
-        title: 'Artist Card Style',
-        subtitle: 'Choose visual layout for artist grid items',
-        widget: _PremiumDropdownRow<int>(
-          icon: LucideIcons.mic2,
-          title: 'Artist Card Style',
-          subtitle: 'Choose visual layout for artist grid items',
-          value: settings.artistCardStyleIndex.clamp(0, 4),
-          items: const [
-            DropdownMenuItem(
-              value: 0,
-              child: Text('Normal (Rounded Cover & Info Below)'),
-            ),
-            DropdownMenuItem(
-              value: 1,
-              child: Text('Circle (Circular Avatar & Centered Info)'),
-            ),
-            DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(
-              value: 3,
-              child: Text('Image (Overlay Text on Dark Gradient)'),
-            ),
-            DropdownMenuItem(
-              value: 4,
-              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
-            ),
-          ],
-          onChanged: (v) {
-            if (v != null) {
-              ref.read(settingsProvider.notifier).updateArtistCardStyle(v);
-            }
-          },
-        ),
-      ),
+
       _SearchItem(
         category: 'Library & Files',
         title: l10n.internetMode,
@@ -1667,89 +1575,7 @@ class SettingsView extends ConsumerWidget {
           },
           isLast: false,
         ),
-        _PremiumDropdownRow<int>(
-          icon: LucideIcons.layoutList,
-          title: 'Song View Style',
-          subtitle: 'Choose visual layout for songs list',
-          value: settings.songViewStyleIndex.clamp(0, 3),
-          items: const [
-            DropdownMenuItem(value: 0, child: Text('Normal List')),
-            DropdownMenuItem(value: 1, child: Text('Compact List')),
-            DropdownMenuItem(value: 2, child: Text('Text Only')),
-            DropdownMenuItem(value: 3, child: Text('Grid Cards')),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateSongViewStyle(value);
-            }
-          },
-          isLast: false,
-        ),
-        _PremiumDropdownRow<int>(
-          icon: LucideIcons.disc,
-          title: 'Album Card Style',
-          subtitle: 'Choose visual layout for album grid items',
-          value: settings.albumCardStyleIndex.clamp(0, 4),
-          items: const [
-            DropdownMenuItem(
-              value: 0,
-              child: Text('Normal (Rounded Cover & Info Below)'),
-            ),
-            DropdownMenuItem(
-              value: 1,
-              child: Text('Circle (Circular Avatar & Centered Info)'),
-            ),
-            DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(
-              value: 3,
-              child: Text('Image (Overlay Text on Dark Gradient)'),
-            ),
-            DropdownMenuItem(
-              value: 4,
-              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
-            ),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateAlbumCardStyle(value);
-            }
-          },
-          isLast: false,
-        ),
-        _PremiumDropdownRow<int>(
-          icon: LucideIcons.mic2,
-          title: 'Artist Card Style',
-          subtitle: 'Choose visual layout for artist grid items',
-          value: settings.artistCardStyleIndex.clamp(0, 4),
-          items: const [
-            DropdownMenuItem(
-              value: 0,
-              child: Text('Normal (Rounded Cover & Info Below)'),
-            ),
-            DropdownMenuItem(
-              value: 1,
-              child: Text('Circle (Circular Avatar & Centered Info)'),
-            ),
-            DropdownMenuItem(value: 2, child: Text('Card')),
-            DropdownMenuItem(
-              value: 3,
-              child: Text('Image (Overlay Text on Dark Gradient)'),
-            ),
-            DropdownMenuItem(
-              value: 4,
-              child: Text('Gapless (Edge-to-Edge Full Bleed Grid)'),
-            ),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              HapticFeedback.lightImpact();
-              ref.read(settingsProvider.notifier).updateArtistCardStyle(value);
-            }
-          },
-          isLast: false,
-        ),
+
         _PremiumSwitchRow(
           icon: LucideIcons.globe,
           title: l10n.internetMode,
@@ -3055,41 +2881,10 @@ class _PremiumDropdownRow<T> extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Container(
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    width: 1,
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                alignment: Alignment.center,
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<T>(
-                    value: value,
-                    items: items,
-                    onChanged: onChanged,
-                    dropdownColor: const Color(0xFF222222),
-                    borderRadius: BorderRadius.circular(10),
-                    isDense: true,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    icon: const Padding(
-                      padding: EdgeInsets.only(left: 6),
-                      child: Icon(
-                        LucideIcons.chevronDown,
-                        color: Colors.white70,
-                        size: 14,
-                      ),
-                    ),
-                  ),
-                ),
+              LooperDropdown<T>.fromDropdownMenuItems(
+                value: value,
+                items: items,
+                onChanged: onChanged,
               ),
             ],
           ),

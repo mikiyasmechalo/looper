@@ -143,7 +143,7 @@ class AppSettings {
   bool audioFocusRestartOnGain = true;
   bool disableSquiggle = false;
   bool disableAnimatedDuration = false;
-  bool disableBlur = true;
+  bool disableBlur = false;
   bool enableInternet = true;
   bool downloadArtwork = false;
   bool keepBackgroundGradient = false;

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:looper_player/ui/widgets/app_bottom_sheet.dart';
@@ -447,7 +448,11 @@ class _AlbumCardState extends ConsumerState<_AlbumCard> {
     final cardStyle = CardStyle.values[ref
         .watch(settingsProvider.select((s) => s.albumCardStyleIndex))
         .clamp(0, CardStyle.values.length - 1)];
-    final isDynamic = ref.watch(settingsProvider).enableDynamicTheming;
+    final settings = ref.watch(settingsProvider);
+    final isDynamic = settings.enableDynamicTheming;
+    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) &&
+        !settings.disableBlur &&
+        !settings.isBatterySaverActive;
     final isCurrentAlbum = ref.watch(
       playbackProvider.select((s) => s.currentSong?.album == album.name),
     );
@@ -617,13 +622,28 @@ class _AlbumCardState extends ConsumerState<_AlbumCard> {
         break;
 
       case CardStyle.card:
-        cardContent = AnimatedContainer(
+        final cardBg = useBlur
+            ? (_isHovered
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.06))
+            : (_isHovered
+                ? const Color(0xFF282828)
+                : const Color(0xFF181818));
+        final cardBorder = useBlur
+            ? Border.all(
+                color: _isHovered
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.08),
+                width: 1,
+              )
+            : null;
+
+        Widget cardBody = AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            color: _isHovered
-                ? const Color(0xFF282828)
-                : const Color(0xFF181818),
+            color: cardBg,
+            border: cardBorder,
           ),
           padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
           child: Column(
@@ -660,6 +680,16 @@ class _AlbumCardState extends ConsumerState<_AlbumCard> {
             ],
           ),
         );
+
+        cardContent = useBlur
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: cardBody,
+                ),
+              )
+            : cardBody;
         break;
 
       case CardStyle.image:
@@ -1335,7 +1365,11 @@ class _ArtistCardState extends ConsumerState<_ArtistCard> {
     final cardStyle = CardStyle.values[ref
         .watch(settingsProvider.select((s) => s.artistCardStyleIndex))
         .clamp(0, CardStyle.values.length - 1)];
-    final isDynamic = ref.watch(settingsProvider).enableDynamicTheming;
+    final settings = ref.watch(settingsProvider);
+    final isDynamic = settings.enableDynamicTheming;
+    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) &&
+        !settings.disableBlur &&
+        !settings.isBatterySaverActive;
     final nav = ref.watch(appNavigationProvider);
     final isSelected =
         nav.activeItem == NavItem.collectionDetail &&
@@ -1491,13 +1525,28 @@ class _ArtistCardState extends ConsumerState<_ArtistCard> {
         break;
 
       case CardStyle.card:
-        cardContent = AnimatedContainer(
+        final cardBg = useBlur
+            ? (_isHovered
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.06))
+            : (_isHovered
+                ? const Color(0xFF282828)
+                : const Color(0xFF181818));
+        final cardBorder = useBlur
+            ? Border.all(
+                color: _isHovered
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.08),
+                width: 1,
+              )
+            : null;
+
+        Widget cardBody = AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            color: _isHovered
-                ? const Color(0xFF282828)
-                : const Color(0xFF181818),
+            color: cardBg,
+            border: cardBorder,
           ),
           padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
           child: Column(
@@ -1524,6 +1573,16 @@ class _ArtistCardState extends ConsumerState<_ArtistCard> {
             ],
           ),
         );
+
+        cardContent = useBlur
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: cardBody,
+                ),
+              )
+            : cardBody;
         break;
 
       case CardStyle.image:
@@ -1882,6 +1941,7 @@ class GenresGrid extends ConsumerWidget {
                             subtitle: l10n.genre,
                             art: firstWithArt.artPath,
                             songs: genreSongs,
+                            highlightItem: NavItem.genres,
                           );
                     },
                     borderRadius: BorderRadius.circular(24),

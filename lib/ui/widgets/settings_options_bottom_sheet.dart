@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/core/import_export_service.dart';
 import 'package:looper_player/core/logger_helper.dart';
+import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 
 void showSettingsOptionsBottomSheet({
   required BuildContext context,
@@ -18,7 +19,7 @@ void showSettingsOptionsBottomSheet({
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
+    barrierColor: Colors.black.withValues(alpha: 0.35),
     isScrollControlled: true,
     builder: (modalContext) => _SettingsOptionsSheetContent(
       parentContext: context,
@@ -36,18 +37,22 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
-    final isPureBlack = settings.darkTheme;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
     final accentColor = Color(settings.accentColor);
 
     final sheetBg = isPureBlack
         ? Colors.black
-        : (useBlur ? Colors.black.withValues(alpha: 0.6) : const Color(0xFF1E1E1E));
+        : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E));
 
     Widget sheetContent = Container(
       decoration: BoxDecoration(
         color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: useBlur && !isPureBlack
+            ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+            : (isPureBlack ? Border.all(color: Colors.white12, width: 1) : null),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -115,10 +120,11 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
               borderRadius: BorderRadius.circular(20),
               padding: EdgeInsets.zero,
               useExpanded: false,
+              backgroundColor: useBlur ? Colors.white.withValues(alpha: 0.05) : null,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _MenuTile(
+                  MenuOptionTile(
                     label: 'App Settings',
                     icon: LucideIcons.settings,
                     iconColor: accentColor,
@@ -135,7 +141,7 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
                     indent: 20,
                     endIndent: 20,
                   ),
-                  _MenuTile(
+                  MenuOptionTile(
                     label: 'Export Backup (JSON)',
                     icon: LucideIcons.upload,
                     iconColor: accentColor,
@@ -152,7 +158,7 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
                     indent: 20,
                     endIndent: 20,
                   ),
-                  _MenuTile(
+                  MenuOptionTile(
                     label: 'Import Backup (JSON)',
                     icon: LucideIcons.download,
                     iconColor: accentColor,
@@ -169,7 +175,7 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
                     indent: 20,
                     endIndent: 20,
                   ),
-                  _MenuTile(
+                  MenuOptionTile(
                     label: 'Export Diagnostics Logs',
                     icon: LucideIcons.fileText,
                     iconColor: accentColor,
@@ -186,10 +192,11 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
                     indent: 20,
                     endIndent: 20,
                   ),
-                  _MenuTile(
+                  MenuOptionTile(
                     label: 'Clear Diagnostics Logs',
                     icon: LucideIcons.trash2,
                     iconColor: const Color(0xFFFF5252),
+                    textColor: const Color(0xFFFF5252),
                     onTap: () async {
                       HapticFeedback.mediumImpact();
                       Navigator.pop(context);
@@ -217,7 +224,7 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: sheetContent,
           ),
         ),
@@ -225,55 +232,5 @@ class _SettingsOptionsSheetContent extends ConsumerWidget {
     }
 
     return sheetContent;
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color iconColor;
-  final VoidCallback onTap;
-
-  const _MenuTile({
-    required this.label,
-    required this.icon,
-    required this.iconColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: iconColor,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: AppFonts.jostStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            const Icon(
-              LucideIcons.chevronRight,
-              size: 16,
-              color: Colors.white30,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

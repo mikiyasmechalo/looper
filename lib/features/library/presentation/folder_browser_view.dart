@@ -9,6 +9,7 @@ import 'package:looper_player/features/library/presentation/library_notifier.dar
 import 'package:looper_player/features/library/presentation/songs_list.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/ui/widgets/standard_play_shuffle_bar.dart';
 
 class FolderItem {
   final String path;
@@ -142,6 +143,16 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
       queueName: 'Folder: ${folder.name}',
     );
     ref.read(playbackProvider.notifier).play(all.first);
+  }
+
+  void _shuffleFolder(FolderItem folder) {
+    final all = folder.allSongs;
+    if (all.isEmpty) return;
+    HapticFeedback.lightImpact();
+    ref.read(playbackProvider.notifier).playShuffled(
+      all,
+      queueName: 'Folder: ${folder.name}',
+    );
   }
 
   void _addFolderToQueue(FolderItem folder) {
@@ -567,32 +578,31 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
     return Column(
       children: [
         // Action Header
-        Padding(
+        StandardPlayShuffleBar(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Row(
-            children: [
-              FilledButton.icon(
-                onPressed: () => _playFolder(folder),
-                icon: const Icon(LucideIcons.play, size: 16),
-                label: const Text('Play All'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+          onPlayAll: () => _playFolder(folder),
+          onShuffle: () => _shuffleFolder(folder),
+          extraActions: [
+            StandardActionButton(
+              onTap: () => _addFolderToQueue(folder),
+              tooltip: 'Add to Queue',
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(LucideIcons.listPlus, size: 16, color: Colors.white),
+                  SizedBox(width: 6),
+                  Text(
+                    'Queue',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              OutlinedButton.icon(
-                onPressed: () => _addFolderToQueue(folder),
-                icon: const Icon(LucideIcons.listPlus, size: 16, color: Colors.white70),
-                label: const Text('Add to Queue', style: TextStyle(color: Colors.white70)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
 
         // Songs list

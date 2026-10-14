@@ -1,6 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/core/app_fonts.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 
 /// A desktop-friendly input dialog (rounded card, tinted field, accent focus)
@@ -50,27 +52,35 @@ class _AppInputDialogState extends ConsumerState<AppInputDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final settings = ref.watch(settingsProvider);
     final accent = Theme.of(context).colorScheme.primary;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
+    final dialogBg = isPureBlack
+        ? Colors.black
+        : (useBlur ? const Color(0x9918181B) : Theme.of(context).colorScheme.surfaceContainer);
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
-      child: Container(
-        width: 360,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
+    Widget dialogBody = Container(
+      width: 360,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: dialogBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: useBlur && !isPureBlack
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.08),
         ),
-        child: Column(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -143,7 +153,22 @@ class _AppInputDialogState extends ConsumerState<AppInputDialog> {
             ),
           ],
         ),
-      ),
+      );
+
+    if (useBlur && !isPureBlack) {
+      dialogBody = ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: dialogBody,
+        ),
+      );
+    }
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+      child: dialogBody,
     );
   }
 }

@@ -19,6 +19,7 @@ import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'package:looper_player/features/streaming/data/recommendations_service.dart';
+import 'package:looper_player/core/app_fonts.dart';
 import 'package:isar/isar.dart';
 
 class DashboardGenresData {
@@ -33,11 +34,22 @@ final dashboardGenresDataProvider = Provider.autoDispose<DashboardGenresData>((
   final songs = ref.watch(libraryProvider.select((l) => l.songs));
   final genresMap = <String, List<Song>>{};
   for (var song in songs) {
-    final genre = song.genre ?? 'Unknown';
-    genresMap.putIfAbsent(genre, () => []).add(song);
+    final genre = song.genre?.trim();
+    final effectiveGenre = (genre == null || genre.isEmpty) ? 'Unknown' : genre;
+    genresMap.putIfAbsent(effectiveGenre, () => []).add(song);
   }
-  final genres = genresMap.keys.toList()..sort();
-  return DashboardGenresData(sortedGenres: genres, genresMap: genresMap);
+  final genres = genresMap.keys.toList()
+    ..sort((a, b) {
+      final aPlayCount = genresMap[a]!.fold<int>(0, (sum, s) => sum + s.playCount);
+      final bPlayCount = genresMap[b]!.fold<int>(0, (sum, s) => sum + s.playCount);
+      final cmp = bPlayCount.compareTo(aPlayCount);
+      if (cmp != 0) return cmp;
+      return genresMap[b]!.length.compareTo(genresMap[a]!.length);
+    });
+  return DashboardGenresData(
+    sortedGenres: genres.take(10).toList(),
+    genresMap: genresMap,
+  );
 });
 
 /// Albums sorted by total play count (most played first) for the home screen's
@@ -197,7 +209,8 @@ class HomeDashboard extends ConsumerWidget {
               orderedChildren.add(
                 _buildDesktopHorizontalSection(
                   context,
-                  title: 'Genres',
+                  title: 'Top Genres',
+                  height: 140,
                   onViewAll: () => ref
                       .read(appNavigationProvider.notifier)
                       .setItem(NavItem.genres),
@@ -658,7 +671,7 @@ class HomeDashboard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: isNarrow ? 150 : 170,
+              height: isNarrow ? 166 : 186,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: featuredAlbums.length,
@@ -696,61 +709,64 @@ class HomeDashboard extends ConsumerWidget {
                                 );
                           },
                           borderRadius: BorderRadius.circular(16),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: OptimizedImage(
-                                  imagePath: album.artPath,
-                                  height: isNarrow ? 104 : 124,
-                                  width: isNarrow ? 104 : 124,
-                                  fit: BoxFit.cover,
-                                  placeholder: Container(
-                                    color: Colors.white.withValues(alpha: 0.05),
-                                    child: const Center(
-                                      child: Icon(
-                                        LucideIcons.disc,
-                                        size: 32,
-                                        color: Colors.white38,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: OptimizedImage(
+                                    imagePath: album.artPath,
+                                    height: isNarrow ? 104 : 124,
+                                    width: isNarrow ? 104 : 124,
+                                    fit: BoxFit.cover,
+                                    placeholder: Container(
+                                      color: Colors.white.withValues(alpha: 0.05),
+                                      child: const Center(
+                                        child: Icon(
+                                          LucideIcons.disc,
+                                          size: 32,
+                                          color: Colors.white38,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                child: Text(
-                                  album.name,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                                const SizedBox(height: 8),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                child: Text(
-                                  album.artist ?? 'Unknown',
-                                  style: const TextStyle(
-                                    color: Colors.white38,
-                                    fontSize: 11,
+                                  child: Text(
+                                    album.name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                            ],
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  child: Text(
+                                    album.artist ?? 'Unknown',
+                                    style: const TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 11,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -821,6 +837,7 @@ class HomeDashboard extends ConsumerWidget {
     required int itemCount,
     required bool isNarrow,
     required Widget Function(BuildContext, int) itemBuilder,
+    double height = 180,
   }) {
     if (itemCount == 0) return const SizedBox.shrink();
     return Column(
@@ -834,7 +851,7 @@ class HomeDashboard extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 180,
+          height: height,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -932,58 +949,150 @@ class HomeDashboard extends ConsumerWidget {
     List<Song> genreSongs,
     AppLocalizations l10n,
   ) {
+    final int hash = genre.hashCode;
+    final double hue = (hash.abs() % 360).toDouble();
+    final Color startColor = HSLColor.fromAHSL(
+      1.0,
+      hue,
+      0.70,
+      0.35,
+    ).toColor();
+    final Color endColor = HSLColor.fromAHSL(
+      1.0,
+      (hue + 45) % 360,
+      0.80,
+      0.18,
+    ).toColor();
+
+    final firstSongWithArt = genreSongs.firstWhere(
+      (s) => s.artPath != null,
+      orElse: () => genreSongs.first,
+    );
+
+    const double artSize = 85.0;
+
     return Container(
-      width: 140,
+      width: 220,
       margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [startColor, endColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Material(
         color: Colors.transparent,
         clipBehavior: Clip.hardEdge,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: InkWell(
           onTap: () {
-            ref
-                .read(appNavigationProvider.notifier)
-                .showCollection(
+            ref.read(appNavigationProvider.notifier).showCollection(
                   title: genre,
                   subtitle: l10n.genre,
+                  art: firstSongWithArt.artPath,
                   songs: genreSongs,
+                  highlightItem: NavItem.genres,
                 );
           },
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.04),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  LucideIcons.music,
-                  color: Colors.blueAccent,
-                  size: 28,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  genre,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              if (firstSongWithArt.artPath != null)
+                Positioned(
+                  bottom: -artSize * 0.2,
+                  right: -artSize * 0.2,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: Container(
+                      width: artSize,
+                      height: artSize,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            offset: const Offset(2, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: OptimizedImage(
+                          imagePath: firstSongWithArt.artPath,
+                          width: artSize,
+                          height: artSize,
+                          cacheWidth: 256,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+                )
+              else
+                Positioned(
+                  bottom: -artSize * 0.17,
+                  right: -artSize * 0.17,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: Container(
+                      width: artSize,
+                      height: artSize,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        LucideIcons.music,
+                        size: artSize * 0.47,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${genreSongs.length} ${l10n.songs}',
-                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+              Positioned(
+                left: 16,
+                top: 16,
+                bottom: 16,
+                right: artSize + 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      genre,
+                      style: AppFonts.jostStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '${genreSongs.length} ${l10n.songs}',
+                      style: AppFonts.jostStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

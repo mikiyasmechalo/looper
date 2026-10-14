@@ -31,16 +31,17 @@ Future<void> showPlaylistOptionsBottomSheet({
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
+    barrierColor: Colors.black.withValues(alpha: 0.35),
     isScrollControlled: true,
     builder: (context) {
       final settings = ref.watch(settingsProvider);
-      final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) && !settings.disableBlur;
-      final isPureBlack = settings.darkTheme;
+      final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+      final isPureBlack = settings.isBatterySaverActive ||
+          (settings.darkTheme && !useBlur);
 
       final sheetBg = isPureBlack
           ? Colors.black
-          : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
+          : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E));
 
       final options = <Widget>[
         MenuOptionTile(
@@ -122,6 +123,9 @@ Future<void> showPlaylistOptionsBottomSheet({
         decoration: BoxDecoration(
           color: sheetBg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: useBlur && !isPureBlack
+              ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+              : (isPureBlack ? Border.all(color: Colors.white12, width: 1) : null),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -198,6 +202,7 @@ Future<void> showPlaylistOptionsBottomSheet({
                     borderRadius: BorderRadius.circular(20),
                     padding: EdgeInsets.zero,
                     useExpanded: false,
+                    backgroundColor: useBlur ? Colors.white.withValues(alpha: 0.05) : null,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: List.generate(options.length * 2 - 1, (index) {
@@ -227,7 +232,7 @@ Future<void> showPlaylistOptionsBottomSheet({
           child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: sheetContent,
             ),
           ),

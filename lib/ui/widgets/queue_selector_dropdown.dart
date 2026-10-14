@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -22,12 +23,38 @@ class _QueueSelectorDropdownState extends ConsumerState<QueueSelectorDropdown> {
   Widget build(BuildContext context) {
     final activeQueueName = ref.watch(settingsProvider.select((s) => s.activeQueueName));
     final displayName = activeQueueName.isEmpty ? 'All Songs' : activeQueueName;
+    final settings = ref.watch(settingsProvider);
+    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) &&
+        !settings.disableBlur &&
+        !settings.isBatterySaverActive;
 
     return CompositedTransformTarget(
       link: _layerLink,
       child: OverlayPortal(
         controller: _overlayController,
         overlayChildBuilder: (context) {
+          Widget menuContent = Container(
+            width: 260,
+            decoration: BoxDecoration(
+              color: useBlur ? const Color(0xCC18181C) : const Color(0xFF222222),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: useBlur ? 0.14 : 0.1),
+              ),
+            ),
+            child: _QueueDropdownMenuContent(
+              displayName: displayName,
+              onSelect: (queue) {
+                if (queue.name == displayName) {
+                  _overlayController.hide();
+                  return;
+                }
+                _overlayController.hide();
+                ref.read(playbackProvider.notifier).switchToSavedQueue(queue);
+              },
+            ),
+          );
+
           return Stack(
             children: [
               GestureDetector(
@@ -42,28 +69,18 @@ class _QueueSelectorDropdownState extends ConsumerState<QueueSelectorDropdown> {
                 offset: const Offset(0, 4),
                 child: Material(
                   elevation: 8,
-                  color: const Color(0xFF222222),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   clipBehavior: Clip.hardEdge,
-                  child: Container(
-                    width: 260,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF222222),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                    child: _QueueDropdownMenuContent(
-                      displayName: displayName,
-                      onSelect: (queue) {
-                        if (queue.name == displayName) {
-                          _overlayController.hide();
-                          return;
-                        }
-                        _overlayController.hide();
-                        ref.read(playbackProvider.notifier).switchToSavedQueue(queue);
-                      },
-                    ),
-                  ),
+                  child: useBlur
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                            child: menuContent,
+                          ),
+                        )
+                      : menuContent,
                 ),
               ),
             ],

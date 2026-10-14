@@ -8,6 +8,9 @@ import 'package:isar/isar.dart';
 import 'package:looper_player/features/library/presentation/songs_list.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 
+import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
+import 'package:looper_player/ui/widgets/standard_play_shuffle_bar.dart';
+
 final favoritesProvider = StreamProvider<List<Song>>((ref) {
   return DbService.isar.songs
       .filter()
@@ -36,7 +39,20 @@ class FavoritesView extends ConsumerWidget {
     return favoritesAsync.when(
       data: (songs) => songs.isEmpty
           ? _buildEmpty(context, LucideIcons.heart, l10n.noFavoritesYet)
-          : SongsList(songs: songs),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                StandardPlayShuffleBar(
+                  onPlayAll: () => ref
+                      .read(playbackProvider.notifier)
+                      .setPlaylist(songs, queueName: l10n.favorites),
+                  onShuffle: () => ref
+                      .read(playbackProvider.notifier)
+                      .playShuffled(songs, queueName: l10n.favorites),
+                ),
+                Expanded(child: SongsList(songs: songs)),
+              ],
+            ),
       loading: () => const AppLoadingIndicator(),
       error: (e, s) => Center(child: Text('Error: $e')),
     );
@@ -67,7 +83,20 @@ class RecentlyPlayedView extends ConsumerWidget {
     return recentlyPlayedAsync.when(
       data: (songs) => songs.isEmpty
           ? _buildEmpty(context, LucideIcons.clock, l10n.noHistoryYet)
-          : SongsList(songs: songs),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                StandardPlayShuffleBar(
+                  onPlayAll: () => ref
+                      .read(playbackProvider.notifier)
+                      .setPlaylist(songs, queueName: l10n.recentlyPlayed),
+                  onShuffle: () => ref
+                      .read(playbackProvider.notifier)
+                      .playShuffled(songs, queueName: l10n.recentlyPlayed),
+                ),
+                Expanded(child: SongsList(songs: songs)),
+              ],
+            ),
       loading: () => const AppLoadingIndicator(),
       error: (e, s) => Center(child: Text('Error: $e')),
     );

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,11 @@ import 'lyrics_scale.dart';
 
 /// Desktop lyrics options and provider selector dialog.
 void showLyricsMenuDialog(BuildContext context, WidgetRef ref, Song song) {
+  final settings = ref.read(settingsProvider);
+  final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) &&
+      !settings.disableBlur &&
+      !settings.isBatterySaverActive;
+
   showDialog<void>(
     context: context,
     useRootNavigator: true,
@@ -31,7 +37,12 @@ void showLyricsMenuDialog(BuildContext context, WidgetRef ref, Song song) {
         constraints: const BoxConstraints(maxWidth: 500),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
-          child: _LyricsMenuDialogContent(song: song),
+          child: useBlur
+              ? BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: _LyricsMenuDialogContent(song: song),
+                )
+              : _LyricsMenuDialogContent(song: song),
         ),
       ),
     ),
@@ -96,11 +107,17 @@ class _LyricsMenuDialogContent extends ConsumerWidget {
         LyricsProviderInfo.of(id)?.label ?? id,
     ];
 
+    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) &&
+        !settings.disableBlur &&
+        !settings.isBatterySaverActive;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF161618),
+        color: useBlur ? const Color(0xCC161618) : const Color(0xFF161618),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: useBlur ? 0.14 : 0.1),
+        ),
       ),
       padding: const EdgeInsets.all(20),
       child: ConstrainedBox(

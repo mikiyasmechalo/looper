@@ -20,6 +20,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/ui/widgets/premium_progress_bar.dart';
+import 'package:looper_player/ui/widgets/animated_duration_counter.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/playback/presentation/audio_level_provider.dart';
@@ -1583,7 +1584,7 @@ class _TimeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      color: Colors.white.withValues(alpha: 0.4),
+      color: Colors.white.withValues(alpha: 0.6),
       fontSize: 12,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
@@ -1592,8 +1593,12 @@ class _TimeRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(_formatDuration(position), style: style),
-          Text(_formatDuration(duration), style: style),
+          AnimatedDurationCounter(duration: position, style: style),
+          AnimatedDurationCounter(
+            duration: duration,
+            style: style,
+            isRightAligned: true,
+          ),
         ],
       ),
     );

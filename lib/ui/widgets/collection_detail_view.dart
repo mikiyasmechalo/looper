@@ -11,6 +11,7 @@ import 'package:looper_player/ui/widgets/playlist_artwork.dart';
 import 'package:looper_player/ui/widgets/app_bottom_sheet.dart';
 import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
 import 'package:looper_player/ui/widgets/playlist_options_bottom_sheet.dart';
+import 'package:looper_player/ui/widgets/standard_play_shuffle_bar.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/library/presentation/songs_list.dart';
@@ -400,66 +401,28 @@ class CollectionDetailView extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            PremiumSection(
-              borderRadius: BorderRadius.circular(12),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              height: 44,
-              useExpanded: false,
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                ref.read(playbackProvider.notifier).setPlaylist(songsToRender, queueName: titleToRender);
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
-                  const SizedBox(width: 6),
-                  Text(
-                    AppLocalizations.of(context)!.playAll,
-                    style: AppFonts.jostStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            PremiumSection(
-              borderRadius: BorderRadius.circular(12),
+        StandardPlayShuffleBar(
+          padding: EdgeInsets.zero,
+          onPlayAll: () {
+            ref.read(playbackProvider.notifier).setPlaylist(songsToRender, queueName: titleToRender);
+          },
+          onShuffle: () {
+            ref
+                .read(playbackProvider.notifier)
+                .playShuffled(songsToRender, queueName: titleToRender);
+          },
+          extraActions: [
+            StandardActionButton(
               width: 44,
-              height: 44,
-              useExpanded: false,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                ref
-                    .read(playbackProvider.notifier)
-                    .playShuffled(songsToRender, queueName: titleToRender);
-              },
-              child: const Icon(LucideIcons.shuffle, size: 16, color: Colors.white),
-            ),
-            const SizedBox(width: 8),
-            PremiumSection(
-              borderRadius: BorderRadius.circular(12),
-              width: 44,
-              height: 44,
-              useExpanded: false,
               onTap: () {
                 HapticFeedback.lightImpact();
                 _showSortBottomSheet(context, ref);
               },
+              tooltip: 'Sort',
               child: const Icon(LucideIcons.arrowUpDown, size: 16, color: Colors.white),
             ),
-            const SizedBox(width: 8),
-            PremiumSection(
-              borderRadius: BorderRadius.circular(12),
+            StandardActionButton(
               width: 44,
-              height: 44,
-              useExpanded: false,
               onTap: () {
                 HapticFeedback.lightImpact();
                 if (reactivePlaylist != null) {
@@ -519,6 +482,7 @@ class CollectionDetailView extends ConsumerWidget {
                   );
                 }
               },
+              tooltip: 'More Options',
               child: const Icon(
                 LucideIcons.moreHorizontal,
                 size: 18,

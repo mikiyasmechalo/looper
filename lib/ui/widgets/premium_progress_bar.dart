@@ -7,6 +7,7 @@ import 'package:looper_player/core/ui_utils.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/ui/widgets/animated_duration_counter.dart';
 
 class ExpressiveSlider extends ConsumerStatefulWidget {
   final Duration position;
@@ -37,58 +38,15 @@ class ExpressiveSlider extends ConsumerStatefulWidget {
 class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
   double? _dragValue;
 
-  Widget _buildAnimatedDuration(String durationStr, bool isRightAligned) {
-    final settings = ref.watch(settingsProvider);
-    if (settings.disableAnimatedDuration) {
-      return Text(
-        durationStr,
-        style: AppFonts.jostStyle(
-          color: Colors.white70,
-          fontWeight: Platform.isLinux ? FontWeight.w300 : FontWeight.w600,
-          fontSize: 14,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      );
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: isRightAligned
-          ? MainAxisAlignment.end
-          : MainAxisAlignment.start,
-      children: durationStr.characters.map((char) {
-        return SizedBox(
-          width: char == ':' ? 5 : 9,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              final isIn = (child as Text).data == char;
-              return ClipRect(
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: Offset(0.0, isIn ? 0.5 : -0.5),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: FadeTransition(opacity: animation, child: child),
-                ),
-              );
-            },
-            child: Text(
-              char,
-              key: ValueKey(char),
-              style: AppFonts.jostStyle(
-                color: Colors.white70,
-                fontWeight: Platform.isLinux
-                    ? FontWeight.w300
-                    : FontWeight.w600,
-                fontSize: 12,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
-      }).toList(),
+  Widget _buildAnimatedDuration(Duration duration, bool isRightAligned) {
+    return AnimatedDurationCounter(
+      duration: duration,
+      isRightAligned: isRightAligned,
+      style: AppFonts.jostStyle(
+        color: Colors.white70,
+        fontWeight: Platform.isLinux ? FontWeight.w300 : FontWeight.w600,
+        fontSize: Platform.isLinux ? 14 : 12,
+      ),
     );
   }
 
@@ -184,19 +142,13 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (widget.showTimestamps) ...[
-            _buildAnimatedDuration(
-              UiUtils.formatDuration(displayPosition),
-              false,
-            ),
+            _buildAnimatedDuration(displayPosition, false),
             const SizedBox(width: 12),
           ],
           Expanded(child: sliderWidget),
           if (widget.showTimestamps) ...[
             const SizedBox(width: 12),
-            _buildAnimatedDuration(
-              UiUtils.formatDuration(widget.duration),
-              true,
-            ),
+            _buildAnimatedDuration(widget.duration, true),
           ],
         ],
       );
@@ -213,14 +165,8 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildAnimatedDuration(
-                  UiUtils.formatDuration(displayPosition),
-                  false,
-                ),
-                _buildAnimatedDuration(
-                  UiUtils.formatDuration(widget.duration),
-                  true,
-                ),
+                _buildAnimatedDuration(displayPosition, false),
+                _buildAnimatedDuration(widget.duration, true),
               ],
             ),
           ),

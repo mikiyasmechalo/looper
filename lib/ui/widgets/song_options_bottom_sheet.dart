@@ -44,7 +44,7 @@ void showSongOptionsBottomSheet({
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
+    barrierColor: Colors.black.withValues(alpha: 0.35),
     isScrollControlled: true,
     builder: (modalContext) => _SongOptionsSheetContent(
       song: song,
@@ -250,13 +250,14 @@ class _SongOptionsSheetContent extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
     final playbackState = ref.watch(playbackProvider);
-    final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
-    final isPureBlack = settings.darkTheme;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
     final accentColor = Color(settings.accentColor);
 
     final sheetBg = isPureBlack
         ? Colors.black
-        : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
+        : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E));
 
     final queue = playbackState.queue;
     final currentSongPath = playbackState.currentSong?.path;
@@ -272,6 +273,9 @@ class _SongOptionsSheetContent extends ConsumerWidget {
       decoration: BoxDecoration(
         color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: useBlur && !isPureBlack
+            ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+            : (isPureBlack ? Border.all(color: Colors.white12, width: 1) : null),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -557,6 +561,7 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(20),
                       padding: EdgeInsets.zero,
                       useExpanded: false,
+                      backgroundColor: useBlur ? Colors.white.withValues(alpha: 0.05) : null,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: List.generate(options.length * 2 - 1, (index) {
@@ -588,7 +593,7 @@ class _SongOptionsSheetContent extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: sheetContent,
           ),
         ),

@@ -19,6 +19,7 @@ import 'package:looper_player/ui/widgets/menu_option_tile.dart';
 import 'package:looper_player/ui/widgets/optimized_image.dart';
 import 'package:looper_player/ui/widgets/playlist_selector.dart';
 import 'package:looper_player/core/import_export_service.dart';
+import 'package:looper_player/ui/widgets/premium_section.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:looper_player/features/playlists/domain/smart_playlist.dart';
@@ -268,7 +269,7 @@ void showCollectionOptionsBottomSheet({
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
+    barrierColor: Colors.black.withValues(alpha: 0.35),
     isScrollControlled: true,
     builder: (_) => _CollectionOptionsSheetContent(
       title: title,
@@ -420,8 +421,9 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
-    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) && !settings.disableBlur;
-    final isPureBlack = settings.darkTheme;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
     final accentColor = Theme.of(context).colorScheme.primary;
 
     final int totalMs = songs.fold(0, (acc, s) => acc + (s.duration ?? 0));
@@ -430,12 +432,15 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
 
     final sheetBg = isPureBlack
         ? Colors.black
-        : (useBlur ? const Color(0xFF141416).withValues(alpha: 0.90) : const Color(0xFF1E1E1E));
+        : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E));
 
     Widget sheetContent = Container(
       decoration: BoxDecoration(
         color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: useBlur && !isPureBlack
+            ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+            : (isPureBlack ? Border.all(color: Colors.white12, width: 1) : null),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -513,191 +518,215 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                   horizontal: 8.0,
                   vertical: 8.0,
                 ),
-                child: Column(
-                  children: [
-                    MenuOptionTile(
-                      label: l10n.playAll,
-                      icon: LucideIcons.play,
-                      iconColor: accentColor,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        ref.read(playbackProvider.notifier).setPlaylist(songs, queueName: title);
-                        Navigator.pop(context);
-                      },
-                    ),
-                    MenuOptionTile(
-                      label: l10n.shuffleTitle,
-                      icon: LucideIcons.shuffle,
-                      iconColor: accentColor,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        final notifier =
-                            ref.read(playbackProvider.notifier);
-                        if (shuffleGroups != null &&
-                            shuffleGroups!.isNotEmpty) {
-                          notifier.playShuffledGrouped(shuffleGroups!, queueName: title);
-                        } else {
-                          notifier.playShuffled(songs, queueName: title);
-                        }
-                        Navigator.pop(context);
-                      },
-                    ),
-                    MenuOptionTile(
-                      label: l10n.playNext,
-                      icon: LucideIcons.playCircle,
-                      iconColor: accentColor,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        ref
-                            .read(playbackProvider.notifier)
-                            .addNextMany(songs);
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.willPlayNext),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                    ),
-                    MenuOptionTile(
-                      label: l10n.addToQueue,
-                      icon: LucideIcons.listPlus,
-                      iconColor: accentColor,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        ref
-                            .read(playbackProvider.notifier)
-                            .addToQueueMany(songs);
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.addedToQueue),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                    ),
-                    MenuOptionTile(
-                      label: l10n.addToPlaylists,
-                      icon: LucideIcons.listMusic,
-                      iconColor: accentColor,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                        _showPlaylistSelector(context, ref);
-                      },
-                    ),
-                    MenuOptionTile(
-                      label: 'Favorite All Songs',
-                      icon: LucideIcons.heart,
-                      iconColor: accentColor,
-                      onTap: () async {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                        for (final s in songs) {
-                          s.isFavorite = true;
-                        }
-                        await DbService.isar.writeTxn(() => DbService.isar.songs.putAll(songs));
-                        scaffoldMessengerKey.currentState?.clearSnackBars();
-                        scaffoldMessengerKey.currentState?.showSnackBar(
-                          SnackBar(
-                            content: Text('Favorited all ${songs.length} songs'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                    ),
-                    if (artPath != null || imageUrl != null)
+                child: Builder(
+                  builder: (context) {
+                    final options = <Widget>[
                       MenuOptionTile(
-                        label: 'Save Artwork to Pictures',
-                        icon: LucideIcons.download,
+                        label: l10n.playAll,
+                        icon: LucideIcons.play,
                         iconColor: accentColor,
-                        onTap: () async {
+                        onTap: () {
                           HapticFeedback.lightImpact();
+                          ref.read(playbackProvider.notifier).setPlaylist(songs, queueName: title);
                           Navigator.pop(context);
-                          await ArtworkSaveHelper.exportArtworkToPicturesFolder(
-                            context: context,
-                            sourceArtPath: artPath ?? imageUrl,
-                            defaultFileName: title,
+                        },
+                      ),
+                      MenuOptionTile(
+                        label: l10n.shuffleTitle,
+                        icon: LucideIcons.shuffle,
+                        iconColor: accentColor,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          final notifier =
+                              ref.read(playbackProvider.notifier);
+                          if (shuffleGroups != null &&
+                              shuffleGroups!.isNotEmpty) {
+                            notifier.playShuffledGrouped(shuffleGroups!, queueName: title);
+                          } else {
+                            notifier.playShuffled(songs, queueName: title);
+                          }
+                          Navigator.pop(context);
+                        },
+                      ),
+                      MenuOptionTile(
+                        label: l10n.playNext,
+                        icon: LucideIcons.playCircle,
+                        iconColor: accentColor,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(playbackProvider.notifier)
+                              .addNextMany(songs);
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.willPlayNext),
+                              behavior: SnackBarBehavior.floating,
+                            ),
                           );
                         },
                       ),
-                    if (album != null && album!.artist != null && album!.artist!.isNotEmpty)
                       MenuOptionTile(
-                        label: 'Go to Artist (${album!.artist})',
-                        icon: LucideIcons.user,
+                        label: l10n.addToQueue,
+                        icon: LucideIcons.listPlus,
+                        iconColor: accentColor,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(playbackProvider.notifier)
+                              .addToQueueMany(songs);
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(l10n.addedToQueue),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                      MenuOptionTile(
+                        label: l10n.addToPlaylists,
+                        icon: LucideIcons.listMusic,
+                        iconColor: accentColor,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                          _showPlaylistSelector(context, ref);
+                        },
+                      ),
+                      MenuOptionTile(
+                        label: 'Favorite All Songs',
+                        icon: LucideIcons.heart,
                         iconColor: accentColor,
                         onTap: () async {
                           HapticFeedback.lightImpact();
                           Navigator.pop(context);
-                          final artistSongs = await DbService.isar.songs
-                              .filter()
-                              .artistEqualTo(album!.artist!)
-                              .or()
-                              .albumArtistEqualTo(album!.artist!)
-                              .findAll();
-                          final artistRecord = await DbService.isar.artists
-                              .filter()
-                              .nameEqualTo(album!.artist!, caseSensitive: false)
-                              .findFirst();
-                          final artistArt = artistRecord?.artistImageUrl;
-                          final isLocal = artistArt != null && !artistArt.startsWith('http');
-                          final isNetwork = artistArt != null && artistArt.startsWith('http');
-                          ref.read(appNavigationProvider.notifier).showCollection(
-                                title: album!.artist!,
-                                subtitle: 'Artist',
-                                art: isLocal ? artistArt : artistRecord?.artPath,
-                                imageUrl: isNetwork ? artistArt : null,
-                                images: artistRecord?.artistImages,
-                                songs: artistSongs,
-                                highlightItem: NavItem.artists,
-                              );
+                          for (final s in songs) {
+                            s.isFavorite = true;
+                          }
+                          await DbService.isar.writeTxn(() => DbService.isar.songs.putAll(songs));
+                          scaffoldMessengerKey.currentState?.clearSnackBars();
+                          scaffoldMessengerKey.currentState?.showSnackBar(
+                            SnackBar(
+                              content: Text('Favorited all ${songs.length} songs'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
                         },
                       ),
-                    if (playlist != null)
-                      MenuOptionTile(
-                        label: 'Export Playlist',
-                        icon: LucideIcons.download,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.pop(context);
-                          ImportExportService.exportSinglePlaylist(context, playlist!, songs);
-                        },
+                      if (artPath != null || imageUrl != null)
+                        MenuOptionTile(
+                          label: 'Save Artwork to Pictures',
+                          icon: LucideIcons.download,
+                          iconColor: accentColor,
+                          onTap: () async {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                            await ArtworkSaveHelper.exportArtworkToPicturesFolder(
+                              context: context,
+                              sourceArtPath: artPath ?? imageUrl,
+                              defaultFileName: title,
+                            );
+                          },
+                        ),
+                      if (album != null && album!.artist != null && album!.artist!.isNotEmpty)
+                        MenuOptionTile(
+                          label: 'Go to Artist (${album!.artist})',
+                          icon: LucideIcons.user,
+                          iconColor: accentColor,
+                          onTap: () async {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                            final artistSongs = await DbService.isar.songs
+                                .filter()
+                                .artistEqualTo(album!.artist!)
+                                .or()
+                                .albumArtistEqualTo(album!.artist!)
+                                .findAll();
+                            final artistRecord = await DbService.isar.artists
+                                .filter()
+                                .nameEqualTo(album!.artist!, caseSensitive: false)
+                                .findFirst();
+                            final artistArt = artistRecord?.artistImageUrl;
+                            final isLocal = artistArt != null && !artistArt.startsWith('http');
+                            final isNetwork = artistArt != null && artistArt.startsWith('http');
+                            ref.read(appNavigationProvider.notifier).showCollection(
+                                  title: album!.artist!,
+                                  subtitle: 'Artist',
+                                  art: isLocal ? artistArt : artistRecord?.artPath,
+                                  imageUrl: isNetwork ? artistArt : null,
+                                  images: artistRecord?.artistImages,
+                                  songs: artistSongs,
+                                  highlightItem: NavItem.artists,
+                                );
+                          },
+                        ),
+                      if (playlist != null)
+                        MenuOptionTile(
+                          label: 'Export Playlist',
+                          icon: LucideIcons.download,
+                          iconColor: accentColor,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                            ImportExportService.exportSinglePlaylist(context, playlist!, songs);
+                          },
+                        ),
+                      if (imageActionLabel != null && onImageAction != null)
+                        MenuOptionTile(
+                          label: imageActionLabel!,
+                          icon: LucideIcons.imagePlus,
+                          iconColor: accentColor,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onImageAction!();
+                          },
+                        ),
+                      if (editActionLabel != null && onEditAction != null)
+                        MenuOptionTile(
+                          label: editActionLabel!,
+                          icon: LucideIcons.pencil,
+                          iconColor: accentColor,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onEditAction!();
+                          },
+                        ),
+                      if (deleteActionLabel != null && onDeleteAction != null)
+                        MenuOptionTile(
+                          label: deleteActionLabel!,
+                          icon: LucideIcons.trash2,
+                          iconColor: Colors.redAccent,
+                          textColor: Colors.redAccent,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onDeleteAction!();
+                          },
+                        ),
+                    ];
+
+                    return PremiumSection(
+                      borderRadius: BorderRadius.circular(20),
+                      padding: EdgeInsets.zero,
+                      useExpanded: false,
+                      backgroundColor: useBlur ? Colors.white.withValues(alpha: 0.05) : null,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(options.length * 2 - 1, (index) {
+                          if (index.isOdd) {
+                            return Divider(
+                              height: 1,
+                              thickness: 0.8,
+                              color: Colors.white.withValues(alpha: 0.04),
+                              indent: 20,
+                              endIndent: 20,
+                            );
+                          }
+                          return options[index ~/ 2];
+                        }),
                       ),
-                    if (imageActionLabel != null && onImageAction != null)
-                      MenuOptionTile(
-                        label: imageActionLabel!,
-                        icon: LucideIcons.imagePlus,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          onImageAction!();
-                        },
-                      ),
-                    if (editActionLabel != null && onEditAction != null)
-                      MenuOptionTile(
-                        label: editActionLabel!,
-                        icon: LucideIcons.pencil,
-                        iconColor: accentColor,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          onEditAction!();
-                        },
-                      ),
-                    if (deleteActionLabel != null && onDeleteAction != null)
-                      MenuOptionTile(
-                        label: deleteActionLabel!,
-                        icon: LucideIcons.trash2,
-                        iconColor: Colors.redAccent,
-                        textColor: Colors.redAccent,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          onDeleteAction!();
-                        },
-                      ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -712,7 +741,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: sheetContent,
           ),
         ),

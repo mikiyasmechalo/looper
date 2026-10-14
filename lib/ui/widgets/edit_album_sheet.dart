@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -164,21 +165,24 @@ class _EditAlbumSheetState extends ConsumerState<EditAlbumSheet> {
     final settings = ref.watch(settingsProvider);
     final accentColor = Color(settings.accentColor);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
 
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 600,
-          maxHeight: MediaQuery.of(context).size.height * 0.88,
-        ),
-        child: Container(
-          margin: EdgeInsets.only(bottom: bottomInset),
-          decoration: const BoxDecoration(
-            color: Color(0xFF161616),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Stack(
+    final sheetBg = isPureBlack
+        ? Colors.black
+        : (useBlur ? const Color(0x66161618) : const Color(0xFF161616));
+
+    Widget sheetContent = Container(
+      margin: EdgeInsets.only(bottom: bottomInset),
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: useBlur && !isPureBlack
+            ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+            : (isPureBlack ? Border.all(color: Colors.white12, width: 1) : null),
+      ),
+      child: Stack(
             children: [
               Column(
                 mainAxisSize: MainAxisSize.min,
@@ -543,9 +547,26 @@ class _EditAlbumSheetState extends ConsumerState<EditAlbumSheet> {
                     ),
                   ),
                 ),
-            ],
-          ),
+              ],
+            ),
+          );
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
         ),
+        child: useBlur && !isPureBlack
+            ? ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: sheetContent,
+                ),
+              )
+            : sheetContent,
       ),
     );
   }

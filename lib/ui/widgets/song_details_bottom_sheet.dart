@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:intl/intl.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/db_service.dart';
@@ -17,13 +19,23 @@ class SongDetailsBottomSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final settings = ref.watch(settingsProvider);
     final accent = Theme.of(context).colorScheme.primary;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
+    final sheetBg = isPureBlack
+        ? Colors.black
+        : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E));
 
-    return Container(
+    Widget content = Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: useBlur && !isPureBlack
+            ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+            : (isPureBlack ? Border.all(color: Colors.white12, width: 1) : null),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -103,7 +115,9 @@ class SongDetailsBottomSheet extends ConsumerWidget {
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                backgroundColor: useBlur
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Theme.of(context).colorScheme.surfaceContainer,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -118,6 +132,20 @@ class SongDetailsBottomSheet extends ConsumerWidget {
         ],
       ),
     );
+
+    if (useBlur && !isPureBlack) {
+      return RepaintBoundary(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: content,
+          ),
+        ),
+      );
+    }
+
+    return content;
   }
 
   Future<void> _openArtist(

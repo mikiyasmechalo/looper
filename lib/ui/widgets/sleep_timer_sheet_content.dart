@@ -63,14 +63,15 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
     final settings = ref.watch(settingsProvider);
     final playbackState = ref.watch(playbackProvider);
     final accentColor = Color(settings.accentColor);
-    final useBlur = settings.enableDynamicTheming && !settings.disableBlur;
-    final isPureBlack = settings.darkTheme;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
 
     final sheetBg = widget.isDialog
-        ? const Color(0xFF18181B)
+        ? (useBlur ? const Color(0x8818181B) : const Color(0xFF18181B))
         : (isPureBlack
             ? Colors.black
-            : (useBlur ? Colors.black.withValues(alpha: 0.6) : const Color(0xFF1E1E1E)));
+            : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E)));
 
     Widget sheetContent = Container(
       padding: EdgeInsets.fromLTRB(
@@ -84,14 +85,12 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
         borderRadius: widget.isDialog
             ? BorderRadius.circular(24)
             : const BorderRadius.vertical(top: Radius.circular(28)),
-        border: widget.isDialog
-            ? null
-            : Border.all(
-                color: isPureBlack
-                    ? Colors.white10
-                    : Colors.white.withValues(alpha: 0.08),
-                width: 1,
-              ),
+        border: Border.all(
+          color: isPureBlack
+              ? Colors.white10
+              : Colors.white.withValues(alpha: useBlur ? 0.12 : 0.08),
+          width: 1,
+        ),
       ),
       child: SafeArea(
         child: Column(
@@ -292,6 +291,7 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
               borderRadius: BorderRadius.circular(16),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               useExpanded: false,
+              backgroundColor: useBlur ? Colors.white.withValues(alpha: 0.05) : null,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -407,12 +407,15 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
       ),
     );
 
-    if (useBlur && !isPureBlack && !widget.isDialog) {
+    if (useBlur && !isPureBlack) {
+      final borderRad = widget.isDialog
+          ? BorderRadius.circular(24)
+          : const BorderRadius.vertical(top: Radius.circular(28));
       return RepaintBoundary(
         child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: borderRad,
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: sheetContent,
           ),
         ),

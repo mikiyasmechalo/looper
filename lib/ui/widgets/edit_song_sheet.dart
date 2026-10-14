@@ -231,11 +231,20 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final accentColor = Color(settings.accentColor);
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
+    final sheetBg = isPureBlack
+        ? Colors.black
+        : (useBlur ? const Color(0x66121216) : const Color(0xFF121212));
 
     Widget content = Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF121212),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: useBlur && !isPureBlack
+            ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1)
+            : (isPureBlack ? Border.all(color: Colors.white12, width: 1) : null),
       ),
       child: DraggableScrollableSheet(
         initialChildSize: 0.93,
@@ -603,12 +612,12 @@ class _EditSongSheetState extends ConsumerState<EditSongSheet> {
       ),
     );
 
-    // Blur wrapper when dynamic theming is on
-    if (settings.enableDynamicTheming && !settings.disableBlur) {
+    // Blur wrapper when blur is on
+    if (useBlur && !isPureBlack) {
       return ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: content,
         ),
       );

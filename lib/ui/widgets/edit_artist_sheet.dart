@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/core/app_fonts.dart';
@@ -124,33 +126,38 @@ class _EditArtistSheetState extends ConsumerState<EditArtistSheet> {
     final theme = Theme.of(context);
     final accent = theme.colorScheme.primary;
     final currentImage = _pickedImagePath ?? widget.artist.artistImageUrl ?? widget.artist.artPath;
+    final settings = ref.watch(settingsProvider);
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+    final isPureBlack = settings.isBatterySaverActive ||
+        (settings.darkTheme && !useBlur);
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: Container(
-          margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-            left: 16,
-            right: 16,
-            top: 24,
+    final sheetBg = isPureBlack
+        ? Colors.black
+        : (useBlur ? const Color(0x661E1E22) : const Color(0xFF1E1E1E));
+
+    Widget sheetContent = Container(
+      margin: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 16,
+        right: 16,
+        top: 24,
+      ),
+      decoration: BoxDecoration(
+        color: sheetBg,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: useBlur ? 0.14 : 0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
           ),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
+        ],
+      ),
+      child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Header
@@ -364,7 +371,20 @@ class _EditArtistSheetState extends ConsumerState<EditArtistSheet> {
               ),
             ],
           ),
-        ),
+        );
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: useBlur && !isPureBlack
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: sheetContent,
+                ),
+              )
+            : sheetContent,
       ),
     );
   }
