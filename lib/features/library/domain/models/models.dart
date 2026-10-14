@@ -154,6 +154,10 @@ class AppSettings {
   bool settingsV4 = false;
   bool settingsV5 = false;
   bool showPerformanceOptimizer = false;
+  bool autoBatterySaver = true;
+  int batterySaverThreshold = 20;
+  bool manualBatterySaver = false;
+  bool isBatterySaverActive = false;
   String? customBackgroundImagePath;
   double bgBrightness = 0.5;
   double bgOpacity = 0.3;

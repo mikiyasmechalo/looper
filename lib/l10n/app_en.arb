@@ -506,5 +506,41 @@
   "creditAmLyricsDesc": "Inspired our word-synced lyrics · by binimum (MPL-2.0)",
   "creditWordSyncedDesc": "Word-synced lyrics",
   "creditMorpheDesc": "Reference for the NetEase, KuGou, Musixmatch and Lyricify lookups · GPL-3.0",
-  "lyricsCopyrightNote": "Lyrics belong to their artists and rights holders. Looper only fetches them for personal display, and keeps them on your device."
+  "lyricsCopyrightNote": "Lyrics belong to their artists and rights holders. Looper only fetches them for personal display, and keeps them on your device.",
+  "batterySaver": "Battery Saver",
+  "batterySaverDesc": "Conserve battery by switching to pure black and disabling heavy visual effects",
+  "autoBatterySaver": "Auto Battery Saver",
+  "autoBatterySaverDesc": "Automatically turn on battery saver when battery falls below threshold",
+  "batterySaverThreshold": "Battery Saver Threshold",
+  "batterySaverThresholdDesc": "Automatically turn on battery saver when battery reaches this level",
+  "turnOnAt": "Turn on at {percent}%",
+  "@turnOnAt": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "manualBatterySaver": "Manual Battery Saver",
+  "manualBatterySaverDesc": "Keep battery saver always on regardless of battery level",
+  "batterySaverActive": "Battery Saver Active",
+  "batterySaverInactive": "Battery Saver Inactive",
+  "batterySaverCharging": "Charging ({percent}%)",
+  "@batterySaverCharging": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "batterySaverDischarging": "Discharging ({percent}%)",
+  "@batterySaverDischarging": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "batterySaverOptimizationsSummary": "Active optimizations: Pure OLED Black, dynamic theming off, blurs off, squiggly seekbar off, lyrics shaders off.",
+  "batteryUnavailable": "Battery info unavailable on this device"
 }

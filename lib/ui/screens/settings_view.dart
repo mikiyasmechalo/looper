@@ -355,6 +355,7 @@ class SettingsView extends ConsumerWidget {
         children: [
           if (category == SettingsCategory.appearance) ...[
             _buildAppearanceSection(context, ref, settings, l10n),
+            _buildBatterySaverSection(context, ref, settings, l10n),
             _buildSidebarSection(context, ref, settings, l10n),
             _buildLanguageSection(context, ref, settings, l10n),
             _buildTypographySection(context, ref, settings, l10n),
@@ -502,6 +503,59 @@ class SettingsView extends ConsumerWidget {
     return [
       _SearchItem(
         category: 'Appearance',
+        title: l10n.autoBatterySaver,
+        subtitle: l10n.autoBatterySaverDesc,
+        widget: _PremiumSwitchRow(
+          icon: LucideIcons.zap,
+          title: l10n.autoBatterySaver,
+          subtitle: l10n.autoBatterySaverDesc,
+          value: settings.autoBatterySaver,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateAutoBatterySaver(value);
+          },
+          isLast: true,
+        ),
+      ),
+      _SearchItem(
+        category: 'Appearance',
+        title: l10n.batterySaverThreshold,
+        subtitle: l10n.batterySaverThresholdDesc,
+        widget: _PremiumSliderRow(
+          icon: LucideIcons.gauge,
+          title: l10n.batterySaverThreshold,
+          subtitle: l10n.turnOnAt(settings.batterySaverThreshold),
+          value: settings.batterySaverThreshold.toDouble().clamp(5.0, 50.0),
+          min: 5.0,
+          max: 50.0,
+          divisions: 9,
+          suffix: '%',
+          onChanged: (val) {
+            ref
+                .read(settingsProvider.notifier)
+                .updateBatterySaverThreshold(val.round());
+          },
+          isLast: true,
+        ),
+      ),
+      _SearchItem(
+        category: 'Appearance',
+        title: l10n.manualBatterySaver,
+        subtitle: l10n.manualBatterySaverDesc,
+        widget: _PremiumSwitchRow(
+          icon: LucideIcons.power,
+          title: l10n.manualBatterySaver,
+          subtitle: l10n.manualBatterySaverDesc,
+          value: settings.manualBatterySaver,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateManualBatterySaver(value);
+          },
+          isLast: true,
+        ),
+      ),
+      _SearchItem(
+        category: 'Appearance',
         title: l10n.dynamicTheming,
         subtitle: l10n.adaptColorsArtwork,
         widget: _PremiumSwitchRow(
@@ -554,19 +608,20 @@ class SettingsView extends ConsumerWidget {
                 ref.read(settingsProvider.notifier).updateAccentColor(c),
           ),
         ),
-      _SearchItem(
-        category: 'Appearance',
-        title: l10n.pureBlackOled,
-        subtitle: l10n.pureBlackOledDesc,
-        widget: _PremiumSwitchRow(
-          icon: LucideIcons.moon,
+      if (!settings.enableDynamicTheming)
+        _SearchItem(
+          category: 'Appearance',
           title: l10n.pureBlackOled,
           subtitle: l10n.pureBlackOledDesc,
-          value: settings.darkTheme,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateDarkTheme(v),
+          widget: _PremiumSwitchRow(
+            icon: LucideIcons.moon,
+            title: l10n.pureBlackOled,
+            subtitle: l10n.pureBlackOledDesc,
+            value: settings.darkTheme,
+            onChanged: (v) =>
+                ref.read(settingsProvider.notifier).updateDarkTheme(v),
+          ),
         ),
-      ),
       _SearchItem(
         category: 'Appearance',
         title: l10n.dynamicLyricsBg,
@@ -1065,18 +1120,18 @@ class SettingsView extends ConsumerWidget {
               },
               isLast: false,
             ),
+          _PremiumSwitchRow(
+            icon: LucideIcons.moon,
+            title: l10n.pureBlackOled,
+            subtitle: l10n.pureBlackOledDesc,
+            value: settings.darkTheme,
+            onChanged: (value) {
+              HapticFeedback.lightImpact();
+              ref.read(settingsProvider.notifier).updateDarkTheme(value);
+            },
+            isLast: false,
+          ),
         ],
-        _PremiumSwitchRow(
-          icon: LucideIcons.moon,
-          title: l10n.pureBlackOled,
-          subtitle: l10n.pureBlackOledDesc,
-          value: settings.darkTheme,
-          onChanged: (value) {
-            HapticFeedback.lightImpact();
-            ref.read(settingsProvider.notifier).updateDarkTheme(value);
-          },
-          isLast: false,
-        ),
         _PremiumSwitchRow(
           icon: LucideIcons.music,
           title: l10n.dynamicLyricsBg,
@@ -1175,6 +1230,59 @@ class SettingsView extends ConsumerWidget {
           onChanged: (value) {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateStopOnTaskRemoved(value);
+          },
+          isLast: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBatterySaverSection(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+    AppLocalizations l10n,
+  ) {
+    final persisted = ref.watch(settingsProvider.notifier).persistedSettings;
+    return _Section(
+      title: l10n.batterySaver,
+      children: [
+        _PremiumSwitchRow(
+          icon: LucideIcons.zap,
+          title: l10n.autoBatterySaver,
+          subtitle: l10n.autoBatterySaverDesc,
+          value: persisted.autoBatterySaver,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateAutoBatterySaver(value);
+          },
+          isLast: false,
+        ),
+        if (persisted.autoBatterySaver)
+          _PremiumSliderRow(
+            icon: LucideIcons.gauge,
+            title: l10n.batterySaverThreshold,
+            subtitle: l10n.turnOnAt(persisted.batterySaverThreshold),
+            value: persisted.batterySaverThreshold.toDouble().clamp(5.0, 50.0),
+            min: 5.0,
+            max: 50.0,
+            divisions: 9,
+            suffix: '%',
+            onChanged: (val) {
+              ref
+                  .read(settingsProvider.notifier)
+                  .updateBatterySaverThreshold(val.round());
+            },
+            isLast: false,
+          ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.power,
+          title: l10n.manualBatterySaver,
+          subtitle: l10n.manualBatterySaverDesc,
+          value: persisted.manualBatterySaver,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateManualBatterySaver(value);
           },
           isLast: true,
         ),

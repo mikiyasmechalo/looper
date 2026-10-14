@@ -91,6 +91,9 @@ class PureBlackOledTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    if (settings.enableDynamicTheming) {
+      return const SizedBox.shrink();
+    }
     final l10n = AppLocalizations.of(context)!;
     return SwitchListTile(
       secondary: const Icon(LucideIcons.moon, color: Colors.white70),

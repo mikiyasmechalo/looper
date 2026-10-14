@@ -287,6 +287,28 @@ class LibraryScanner {
                   .findFirst();
               if (existingSong != null) {
                 song.id = existingSong.id;
+                song.isFavorite = existingSong.isFavorite;
+                song.playCount = existingSong.playCount;
+                song.lastPlayed = existingSong.lastPlayed;
+                song.lyrics = existingSong.lyrics ?? song.lyrics;
+                song.lyricsOffsetMs = existingSong.lyricsOffsetMs ?? song.lyricsOffsetMs;
+                song.hasCustomEqualizer = existingSong.hasCustomEqualizer;
+                song.equalizerGains = existingSong.equalizerGains;
+              } else {
+                // Check if we have preserved PlaybackHistoryEntry records for this song
+                final historyEntries = await DbService.isar.playbackHistoryEntrys
+                    .filter()
+                    .songPathEqualTo(song.path)
+                    .or()
+                    .titleEqualTo(song.title, caseSensitive: false)
+                    .and()
+                    .artistEqualTo(song.artist ?? '', caseSensitive: false)
+                    .sortByTimestampDesc()
+                    .findAll();
+                if (historyEntries.isNotEmpty) {
+                  song.playCount = historyEntries.length;
+                  song.lastPlayed = historyEntries.first.timestamp;
+                }
               }
               await DbService.isar.songs.put(song);
 

@@ -10,6 +10,7 @@ import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/features/settings/presentation/settings_view.dart';
+import 'package:looper_player/features/settings/presentation/widgets/battery_saver_tiles.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/ui/screens/android/widgets/premium_music_bar.dart';
 import 'package:looper_player/ui/screens/welcome_screen.dart';
@@ -628,6 +629,14 @@ class _AndroidMainScreenState extends ConsumerState<AndroidMainScreen> with Widg
                 ),
               ),
             ],
+            if (!nav.isPlayerExpanded)
+              Positioned(
+                right: 16,
+                bottom: nav.activeItem != NavItem.settings
+                    ? (song != null ? 150 : 80)
+                    : 24,
+                child: const BatterySaverFloatingBadge(),
+              ),
           ],
         ),
       ),

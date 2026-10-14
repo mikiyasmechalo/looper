@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/core/logger_helper.dart';
 import 'package:looper_player/core/memory_service.dart';
@@ -80,8 +81,7 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     _ref.listen<List<String>>(
       settingsProvider.select((s) => s.libraryFolders),
       (previous, next) async {
-        if (previous != null && previous != next) {
-
+        if (previous != null && !listEquals(previous, next) && next.isNotEmpty) {
           await syncSongsWithFolders(next);
           _loadLibrary(); // Force-reload lists immediately
         }
@@ -638,6 +638,10 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
   }
 
   Future<void> syncSongsWithFolders(List<String> activeFolders) async {
+    // Safety guard: NEVER wipe the library if activeFolders is empty or uninitialized
+    if (activeFolders.isEmpty) {
+      return;
+    }
     await DbService.isar.writeTxn(() async {
       // Find all songs in the DB
       final allSongs = await DbService.isar.songs.where().findAll();

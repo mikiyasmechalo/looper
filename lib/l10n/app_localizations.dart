@@ -2617,6 +2617,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lyrics belong to their artists and rights holders. Looper only fetches them for personal display, and keeps them on your device.'**
   String get lyricsCopyrightNote;
+
+  /// No description provided for @batterySaver.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery Saver'**
+  String get batterySaver;
+
+  /// No description provided for @batterySaverDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Conserve battery by switching to pure black and disabling heavy visual effects'**
+  String get batterySaverDesc;
+
+  /// No description provided for @autoBatterySaver.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Battery Saver'**
+  String get autoBatterySaver;
+
+  /// No description provided for @autoBatterySaverDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically turn on battery saver when battery falls below threshold'**
+  String get autoBatterySaverDesc;
+
+  /// No description provided for @batterySaverThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery Saver Threshold'**
+  String get batterySaverThreshold;
+
+  /// No description provided for @batterySaverThresholdDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically turn on battery saver when battery reaches this level'**
+  String get batterySaverThresholdDesc;
+
+  /// No description provided for @turnOnAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on at {percent}%'**
+  String turnOnAt(int percent);
+
+  /// No description provided for @manualBatterySaver.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Battery Saver'**
+  String get manualBatterySaver;
+
+  /// No description provided for @manualBatterySaverDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep battery saver always on regardless of battery level'**
+  String get manualBatterySaverDesc;
+
+  /// No description provided for @batterySaverActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery Saver Active'**
+  String get batterySaverActive;
+
+  /// No description provided for @batterySaverInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery Saver Inactive'**
+  String get batterySaverInactive;
+
+  /// No description provided for @batterySaverCharging.
+  ///
+  /// In en, this message translates to:
+  /// **'Charging ({percent}%)'**
+  String batterySaverCharging(int percent);
+
+  /// No description provided for @batterySaverDischarging.
+  ///
+  /// In en, this message translates to:
+  /// **'Discharging ({percent}%)'**
+  String batterySaverDischarging(int percent);
+
+  /// No description provided for @batterySaverOptimizationsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Active optimizations: Pure OLED Black, dynamic theming off, blurs off, squiggly seekbar off, lyrics shaders off.'**
+  String get batterySaverOptimizationsSummary;
+
+  /// No description provided for @batteryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery info unavailable on this device'**
+  String get batteryUnavailable;
 }
 
 class _AppLocalizationsDelegate

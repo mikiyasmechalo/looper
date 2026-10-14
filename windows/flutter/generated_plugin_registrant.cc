@@ -7,6 +7,7 @@
 #include "generated_plugin_registrant.h"
 
 #include <audiotags/audiotags_plugin_c_api.h>
+#include <battery_plus/battery_plus_windows_plugin.h>
 #include <desktop_drop/desktop_drop_plugin.h>
 #include <dynamic_color/dynamic_color_plugin_c_api.h>
 #include <ffmpeg_kit_flutter_new_full/f_fmpeg_kit_flutter_plugin.h>
@@ -24,6 +25,8 @@
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   AudiotagsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("AudiotagsPluginCApi"));
+  BatteryPlusWindowsPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("BatteryPlusWindowsPlugin"));
   DesktopDropPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DesktopDropPlugin"));
   DynamicColorPluginCApiRegisterWithRegistrar(

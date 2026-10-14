@@ -33,6 +33,7 @@ import 'package:looper_player/features/playback/presentation/playback_notifier.d
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'package:looper_player/features/library/presentation/queue_view.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/features/settings/presentation/widgets/battery_saver_tiles.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
@@ -498,6 +499,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
+            // Floating Battery Saver Badge (Main window only, hidden in expanded player)
+            if (!nav.isPlayerExpanded)
+              Positioned(
+                right: 20,
+                bottom: !lyricsOnly ? 92 : 24,
+                child: const BatterySaverFloatingBadge(),
+              ),
+
             // Expanded Player View
             if (nav.isPlayerExpanded)
               Positioned.fill(

@@ -1391,4 +1391,60 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get lyricsCopyrightNote =>
       'I testi appartengono ai rispettivi artisti e titolari dei diritti. Looper li recupera solo per la visualizzazione personale e li conserva sul tuo dispositivo.';
+
+  @override
+  String get batterySaver => 'Battery Saver';
+
+  @override
+  String get batterySaverDesc =>
+      'Conserve battery by switching to pure black and disabling heavy visual effects';
+
+  @override
+  String get autoBatterySaver => 'Auto Battery Saver';
+
+  @override
+  String get autoBatterySaverDesc =>
+      'Automatically turn on battery saver when battery falls below threshold';
+
+  @override
+  String get batterySaverThreshold => 'Battery Saver Threshold';
+
+  @override
+  String get batterySaverThresholdDesc =>
+      'Automatically turn on battery saver when battery reaches this level';
+
+  @override
+  String turnOnAt(int percent) {
+    return 'Turn on at $percent%';
+  }
+
+  @override
+  String get manualBatterySaver => 'Manual Battery Saver';
+
+  @override
+  String get manualBatterySaverDesc =>
+      'Keep battery saver always on regardless of battery level';
+
+  @override
+  String get batterySaverActive => 'Battery Saver Active';
+
+  @override
+  String get batterySaverInactive => 'Battery Saver Inactive';
+
+  @override
+  String batterySaverCharging(int percent) {
+    return 'Charging ($percent%)';
+  }
+
+  @override
+  String batterySaverDischarging(int percent) {
+    return 'Discharging ($percent%)';
+  }
+
+  @override
+  String get batterySaverOptimizationsSummary =>
+      'Active optimizations: Pure OLED Black, dynamic theming off, blurs off, squiggly seekbar off, lyrics shaders off.';
+
+  @override
+  String get batteryUnavailable => 'Battery info unavailable on this device';
 }

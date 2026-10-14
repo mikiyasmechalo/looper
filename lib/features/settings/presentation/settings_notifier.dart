@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/battery_service.dart';
 import '../../../core/db_service.dart';
 import '../../library/domain/models/models.dart';
 
@@ -16,6 +18,12 @@ final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
   late Future<void> initialization;
+  AppSettings _persistedSettings = AppSettings();
+  bool _batterySaverActive = false;
+  StreamSubscription<BatteryInfo>? _batterySubscription;
+
+  bool get isBatterySaverActive => _batterySaverActive;
+  AppSettings get persistedSettings => _persistedSettings;
 
   SettingsNotifier() : super(AppSettings()) {
     initialization = _loadSettings();
@@ -187,12 +195,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.globalEqualizerGains = _createDefaultGains();
         needsSave = true;
       }
+      if (settings.batterySaverThreshold <= 0 || settings.batterySaverThreshold > 50) {
+        settings.batterySaverThreshold = 20;
+        needsSave = true;
+      }
       if (needsSave) {
         await DbService.isar.writeTxn(() async {
           await DbService.isar.appSettings.put(settings);
         });
       }
-      state = settings;
+      _persistedSettings = settings;
     } else {
       // Initialize default settings
       // Default to off on Android, but enabled on Linux
@@ -226,6 +238,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         ..dynamicLyrics = false
         ..blurredArtworkForLyrics = true
         ..showPerformanceOptimizer = false
+        ..autoBatterySaver = true
+        ..batterySaverThreshold = 20
+        ..manualBatterySaver = false
+        ..isBatterySaverActive = false
         ..equalizerEnabled = false
         ..enableAudioCache = true
         ..audioCacheSizeMB = 200
@@ -236,8 +252,19 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       await DbService.isar.writeTxn(() async {
         await DbService.isar.appSettings.put(defaultSettings);
       });
-      state = defaultSettings;
+      _persistedSettings = defaultSettings;
     }
+
+    state = _persistedSettings;
+
+    BatteryService.instance.initialize().then((info) {
+      _evaluateBatterySaver(info);
+    });
+    _batterySubscription ??=
+        BatteryService.instance.onBatteryInfoChanged.listen((info) {
+      _evaluateBatterySaver(info);
+    });
+    _evaluateBatterySaver();
 
     _updateActiveFont();
 
@@ -287,7 +314,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _save(newState);
   }
 
-  AppSettings _clone(AppSettings s) {
+  AppSettings _clone([AppSettings? input]) {
+    final s = (input == null || identical(input, state))
+        ? _persistedSettings
+        : input;
     return AppSettings()
       ..id = s.id
       ..libraryFolders = List.from(s.libraryFolders)
@@ -382,6 +412,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..musicDarkness = s.musicDarkness
       ..lyricsDarkness = s.lyricsDarkness
       ..showPerformanceOptimizer = s.showPerformanceOptimizer
+      ..autoBatterySaver = s.autoBatterySaver
+      ..batterySaverThreshold = s.batterySaverThreshold
+      ..manualBatterySaver = s.manualBatterySaver
+      ..isBatterySaverActive = s.isBatterySaverActive
       ..useNewFont = s.useNewFont
       ..customFontFamily = s.customFontFamily
       ..customFontWeight = s.customFontWeight
@@ -516,34 +550,22 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateAlbumCardStyle(int style) async {
     final newState = _clone(state)..albumCardStyleIndex = style;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateArtistCardStyle(int style) async {
     final newState = _clone(state)..artistCardStyleIndex = style;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateSongViewStyle(int style) async {
     final newState = _clone(state)..songViewStyleIndex = style;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateEnableSmartPlaylists(bool value) async {
     final newState = _clone(state)..enableSmartPlaylists = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> toggleSmartPlaylists() async {
@@ -552,10 +574,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateEnableWindowsFileAssociations(bool value) async {
     final newState = _clone(state)..enableWindowsFileAssociations = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
     if (Platform.isWindows) {
       if (value) {
         await WindowsFileAssociationService.register();
@@ -567,19 +586,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateEnableDiscordRpc(bool value) async {
     final newState = _clone(state)..enableDiscordRpc = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
     await DiscordRpcService.instance.setEnabled(value);
   }
 
   Future<void> updateEnableLastFmScrobbling(bool value) async {
     final newState = _clone(state)..enableLastFmScrobbling = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateLastFmCredentials({
@@ -593,50 +606,32 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     if (sessionKey != null) newState.lastFmSessionKey = sessionKey;
     if (apiKey != null) newState.lastFmApiKey = apiKey;
     if (secret != null) newState.lastFmSecret = secret;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateEnableListenBrainzScrobbling(bool value) async {
     final newState = _clone(state)..enableListenBrainzScrobbling = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateListenBrainzUserToken(String token) async {
     final newState = _clone(state)..listenBrainzUserToken = token;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateScrobbleThresholdPercent(int value) async {
     final newState = _clone(state)..scrobbleThresholdPercent = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateLyricsProvider(String value) async {
     final newState = _clone(state)..lyricsProvider = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateLyricsProviderOrder(List<String> order) async {
     final newState = _clone(state)..lyricsProviderOrder = List.from(order);
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> setLyricsProviderEnabled(String id, bool enabled) async {
@@ -645,82 +640,52 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         ...state.lyricsProvidersOff.where((p) => p != id),
         if (!enabled) id,
       ];
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAutoLyricsFallback(bool value) async {
     final newState = _clone(state)..autoLyricsFallback = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateLyricsSyncStyle(String value) async {
     final newState = _clone(state)..lyricsSyncStyle = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateLyricsFontScale(double value) async {
     final newState = _clone(state)..lyricsFontScale = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateActiveLyricsIntensity(double value) async {
     final newState = _clone(state)..activeLyricsIntensity = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateActiveLyricsSoftColor(bool value) async {
     final newState = _clone(state)..activeLyricsSoftColor = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAmbientColorBackground(bool value) async {
     final newState = _clone(state)..ambientColorBackground = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateBlurredArtworkForLyrics(bool value) async {
     final newState = _clone(state)..blurredArtworkForLyrics = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateShowQualityBadge(bool value) async {
     final newState = _clone(state)..showQualityBadge = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateShowPerformanceOptimizer(bool value) async {
     final newState = _clone(state)..showPerformanceOptimizer = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateEnablePlayerGradient(bool value) async {
@@ -729,224 +694,140 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     if (!value) {
       newState.keepBackgroundGradient = false;
     }
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateEnableSlideGesture(bool value) async {
     final newState = _clone(state)..enableSlideGesture = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateStopOnTaskRemoved(bool value) async {
     final newState = _clone(state)..stopOnTaskRemoved = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
   Future<void> updateFadePlayPauseStop(bool value) async {
     final newState = _clone(state)..fadePlayPauseStop = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updatePlayPauseStopFadeLength(int value) async {
     final newState = _clone(state)..playPauseStopFadeLength = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
   Future<void> updateResumeAfterCall(bool value) async {
     final newState = _clone(state)..resumeAfterCall = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updatePauseOnDuck(bool value) async {
     final newState = _clone(state)..pauseOnDuck = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateResumeOnBluetoothConnect(bool value) async {
     final newState = _clone(state)..resumeOnBluetoothConnect = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateResumeOnStart(bool value) async {
     final newState = _clone(state)..resumeOnStart = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updatePersistQueue(bool value) async {
     final newState = _clone(state)..persistQueue = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateMinimizeToTray(bool value) async {
     final newState = _clone(state)..minimizeToTray = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateNowPlayingFullscreen(bool value) async {
     final newState = _clone(state)..nowPlayingFullscreen = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateSeekBarStyle(int value) async {
     final newState = _clone(state)..seekBarStyleIndex = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateUniformLyricsFontSize(bool value) async {
     final newState = _clone(state)..uniformLyricsFontSize = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateFullscreenVisualizerEnabled(bool value) async {
     final newState = _clone(state)..fullscreenVisualizerEnabled = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateShowFullscreenABLooper(bool value) async {
     final newState = _clone(state)..showFullscreenABLooper = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateShowFullscreenSleepTimer(bool value) async {
     final newState = _clone(state)..showFullscreenSleepTimer = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateGaplessPlayback(bool value) async {
     final newState = _clone(state)..gaplessPlayback = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateCrossfadeDuration(int seconds) async {
     final newState = _clone(state)..crossfadeDuration = seconds;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateCrossfadeMode(int mode) async {
     final newState = _clone(state)..crossfadeMode = mode;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAutoTrimSilence(bool value) async {
     final newState = _clone(state)..autoTrimSilence = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateEnableGlobalHotkeys(bool value) async {
     final newState = _clone(state)..enableGlobalHotkeys = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateEnableTaskbarControls(bool value) async {
     final newState = _clone(state)..enableTaskbarControls = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateShowPlayedSongsInQueue(bool value) async {
     final newState = _clone(state)..showPlayedSongsInQueue = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateCustomShortcutsJson(String value) async {
     final newState = _clone(state)..customShortcutsJson = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateDefaultMiniPlayerType(int value) async {
     final newState = _clone(state)..defaultMiniPlayerType = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updatePermanentAudioFocusChange(bool value) async {
     final newState = _clone(state)..permanentAudioFocusChange = value;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateDownloadArtwork(bool enabled) async {
     final newState = _clone(state)..downloadArtwork = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
 
     if (enabled && newState.enableInternet) {
       // Trigger full async scan to download all missing artworks
@@ -998,74 +879,47 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateDisableSquiggle(bool disabled) async {
     final newState = _clone(state)..disableSquiggle = disabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateDisableAnimatedDuration(bool disabled) async {
     final newState = _clone(state)..disableAnimatedDuration = disabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateDisableBlur(bool disabled) async {
     final newState = _clone(state)..disableBlur = disabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateEnableInternet(bool enabled) async {
     final newState = _clone(state)..enableInternet = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAudioFocus(bool enabled) async {
     final newState = _clone(state)..audioFocus = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAudioFocusRequestOnPlay(bool enabled) async {
     final newState = _clone(state)..audioFocusRequestOnPlay = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAudioFocusReleaseOnPause(bool enabled) async {
     final newState = _clone(state)..audioFocusReleaseOnPause = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAudioFocusStopOnOtherSession(bool enabled) async {
     final newState = _clone(state)..audioFocusStopOnOtherSession = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAudioFocusRestartOnGain(bool enabled) async {
     final newState = _clone(state)..audioFocusRestartOnGain = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateDynamicTheming(bool enabled) async {
@@ -1082,42 +936,27 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         newState.accentColor = 0xFF41C25E;
       }
     }
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateDarkTheme(bool enabled) async {
     final newState = _clone(state)..darkTheme = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateDynamicLyrics(bool enabled) async {
     final newState = _clone(state)..dynamicLyrics = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateAccentColor(int color) async {
     final newState = _clone(state)..accentColor = color;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateSaveDynamicColor(bool enabled) async {
     final newState = _clone(state)..saveDynamicColor = enabled;
-    await DbService.isar.writeTxn(() async {
-      await DbService.isar.appSettings.put(newState);
-    });
-    state = newState;
+    await _save(newState);
   }
 
   Future<void> updateLastPlayedSong(int? songId) async {
@@ -1425,10 +1264,79 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     state = newState;
   }
 
+  Future<void> updateAutoBatterySaver(bool value) async {
+    final newState = _clone(state)..autoBatterySaver = value;
+    await _save(newState);
+    _evaluateBatterySaver();
+  }
+
+  Future<void> updateBatterySaverThreshold(int value) async {
+    final clamped = value.clamp(5, 50);
+    final newState = _clone(state)..batterySaverThreshold = clamped;
+    await _save(newState);
+    _evaluateBatterySaver();
+  }
+
+  Future<void> updateManualBatterySaver(bool value) async {
+    final newState = _clone(state)..manualBatterySaver = value;
+    await _save(newState);
+    _evaluateBatterySaver();
+  }
+
+  void _evaluateBatterySaver([BatteryInfo? info]) {
+    final battery = info ?? BatteryService.instance.currentInfo;
+    final isManual = _persistedSettings.manualBatterySaver;
+    final isAuto = _persistedSettings.autoBatterySaver &&
+        battery.isAvailable &&
+        !battery.isCharging &&
+        battery.level <= _persistedSettings.batterySaverThreshold;
+
+    final shouldBeActive = isManual || isAuto;
+    if (_batterySaverActive != shouldBeActive ||
+        state.isBatterySaverActive != shouldBeActive) {
+      _batterySaverActive = shouldBeActive;
+      state = _persistedSettings;
+    }
+  }
+
+  AppSettings _applyBatterySaverOverrides(AppSettings source) {
+    return _clone(source)
+      ..isBatterySaverActive = true
+      ..enableDynamicTheming = false
+      ..darkTheme = true
+      ..disableBlur = true
+      ..disableSquiggle = true
+      ..dynamicLyrics = false
+      ..blurredArtworkForLyrics = false
+      ..disableAnimatedDuration = true
+      ..keepBackgroundGradient = false
+      ..enablePlayerGradient = false
+      ..fullscreenVisualizerEnabled = false
+      ..ambientColorBackground = false
+      ..dynamicColorActiveLyrics = false
+      ..dynamicAccentColor = false;
+  }
+
+  @override
+  set state(AppSettings value) {
+    if (_batterySaverActive) {
+      super.state = _applyBatterySaverOverrides(value);
+    } else {
+      super.state = value;
+    }
+  }
+
   Future<void> _save(AppSettings settings) async {
+    _persistedSettings = settings;
     state = settings;
     await DbService.isar.writeTxn(() async {
       await DbService.isar.appSettings.put(settings);
     });
+  }
+
+  @override
+  void dispose() {
+    _batterySubscription?.cancel();
+    super.dispose();
   }
 }

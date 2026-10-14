@@ -18,6 +18,7 @@ import 'package:looper_player/ui/widgets/app_bottom_sheet.dart';
 
 import 'widgets/settings_widgets.dart';
 import 'widgets/theme_settings_tiles.dart';
+import 'widgets/battery_saver_tiles.dart';
 import 'widgets/dashboard_settings_tiles.dart';
 import 'widgets/playback_settings_tiles.dart';
 import 'widgets/audio_playback_settings_tiles.dart';
@@ -667,6 +668,30 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     return [
       // Theme
       SettingsSearchItem(
+        title: l10n.batterySaver,
+        subtitle: l10n.batterySaverDesc,
+        category: l10n.theme,
+        widget: const BatterySaverSection(),
+      ),
+      SettingsSearchItem(
+        title: l10n.autoBatterySaver,
+        subtitle: l10n.autoBatterySaverDesc,
+        category: l10n.theme,
+        widget: const AutoBatterySaverTile(),
+      ),
+      SettingsSearchItem(
+        title: l10n.batterySaverThreshold,
+        subtitle: l10n.batterySaverThresholdDesc,
+        category: l10n.theme,
+        widget: const BatterySaverThresholdTile(),
+      ),
+      SettingsSearchItem(
+        title: l10n.manualBatterySaver,
+        subtitle: l10n.manualBatterySaverDesc,
+        category: l10n.theme,
+        widget: const ManualBatterySaverTile(),
+      ),
+      SettingsSearchItem(
         title: l10n.dynamicTheming,
         subtitle: l10n.adaptColorsArtwork,
         category: l10n.theme,
@@ -1038,6 +1063,8 @@ class SettingsCategoryScreen extends ConsumerWidget {
     List<Widget> children = [];
     if (categoryId == 'theme') {
       children = [
+        const BatterySaverSection(),
+        const Divider(height: 24, thickness: 1, color: Colors.white12),
         const DynamicThemingTile(),
         if (settings.enableDynamicTheming) ...[
           const Divider(height: 1, indent: 72, color: Colors.white10),
