@@ -828,15 +828,28 @@ class SettingsView extends ConsumerWidget {
           ),
         _SearchItem(
           category: 'Desktop & Window',
-          title: l10n.minimizeToTray,
-          subtitle: l10n.minimizeToTrayDesc,
+          title: 'Minimize to Tray',
+          subtitle: 'Keep running in the system tray when the window is minimized',
           widget: _PremiumSwitchRow(
             icon: LucideIcons.panelTop,
-            title: l10n.minimizeToTray,
-            subtitle: l10n.minimizeToTrayDesc,
+            title: 'Minimize to Tray',
+            subtitle: 'Keep running in the system tray when the window is minimized',
             value: settings.minimizeToTray,
             onChanged: (v) =>
                 ref.read(settingsProvider.notifier).updateMinimizeToTray(v),
+          ),
+        ),
+        _SearchItem(
+          category: 'Desktop & Window',
+          title: 'Close to Tray',
+          subtitle: 'Keep running in the system tray when the window is closed',
+          widget: _PremiumSwitchRow(
+            icon: LucideIcons.xSquare,
+            title: 'Close to Tray',
+            subtitle: 'Keep running in the system tray when the window is closed',
+            value: settings.closeToTray,
+            onChanged: (v) =>
+                ref.read(settingsProvider.notifier).updateCloseToTray(v),
           ),
         ),
         _SearchItem(
@@ -887,6 +900,20 @@ class SettingsView extends ConsumerWidget {
             ),
           ),
       ],
+      _SearchItem(
+        category: 'Fullscreen Player',
+        title: 'Disable Artwork Breathing Effect',
+        subtitle: 'Keep the album artwork static during playback',
+        widget: _PremiumSwitchRow(
+          icon: LucideIcons.disc,
+          title: 'Disable Artwork Breathing Effect',
+          subtitle: 'Keep the album artwork static during playback',
+          value: settings.disableFullscreenBreathingEffect,
+          onChanged: (v) => ref
+              .read(settingsProvider.notifier)
+              .updateDisableFullscreenBreathingEffect(v),
+        ),
+      ),
       _SearchItem(
         category: 'Scrobbling',
         title: 'Last.fm Scrobbling',
@@ -1642,12 +1669,23 @@ class SettingsView extends ConsumerWidget {
           ),
         _PremiumSwitchRow(
           icon: LucideIcons.panelTop,
-          title: l10n.minimizeToTray,
-          subtitle: l10n.minimizeToTrayDesc,
+          title: 'Minimize to Tray',
+          subtitle: 'Keep running in the system tray when the window is minimized',
           value: settings.minimizeToTray,
           onChanged: (value) {
             HapticFeedback.lightImpact();
             ref.read(settingsProvider.notifier).updateMinimizeToTray(value);
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.xSquare,
+          title: 'Close to Tray',
+          subtitle: 'Keep running in the system tray when the window is closed',
+          value: settings.closeToTray,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref.read(settingsProvider.notifier).updateCloseToTray(value);
           },
           isLast: false,
         ),
@@ -1789,6 +1827,19 @@ class SettingsView extends ConsumerWidget {
             ref
                 .read(settingsProvider.notifier)
                 .updateShowFullscreenSleepTimer(value);
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.disc,
+          title: 'Disable Artwork Breathing Effect',
+          subtitle: 'Keep the album artwork static during playback',
+          value: settings.disableFullscreenBreathingEffect,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref
+                .read(settingsProvider.notifier)
+                .updateDisableFullscreenBreathingEffect(value);
           },
           isLast: false,
         ),

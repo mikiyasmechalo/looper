@@ -245,8 +245,9 @@ class AppSettings {
   int streamingQuality = 1; // 0: Low (128k), 1: High (256k)
   bool cacheOnlineStreams = true;
 
-  // Desktop: keep running in the system tray when the window is closed.
+  // Desktop: system tray behaviors.
   bool minimizeToTray = false;
+  bool closeToTray = false;
   bool showTrayOnlyWhenMinimized = true;
 
   // Sidebar navigation visibility settings
@@ -294,6 +295,9 @@ class AppSettings {
 
   // Desktop Fullscreen: show Sleep Timer button in player toolbar.
   bool showFullscreenSleepTimer = false;
+
+  // Desktop Fullscreen: disable pulsing animation on album art.
+  bool disableFullscreenBreathingEffect = false;
 
   // Playback: True Gapless Playback
   bool gaplessPlayback = true;

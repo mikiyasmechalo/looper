@@ -367,12 +367,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..stopOnTaskRemoved = s.stopOnTaskRemoved
       ..persistQueue = s.persistQueue
       ..minimizeToTray = s.minimizeToTray
+      ..closeToTray = s.closeToTray
       ..nowPlayingFullscreen = s.nowPlayingFullscreen
       ..seekBarStyleIndex = s.seekBarStyleIndex
       ..uniformLyricsFontSize = s.uniformLyricsFontSize
       ..fullscreenVisualizerEnabled = s.fullscreenVisualizerEnabled
       ..showFullscreenABLooper = s.showFullscreenABLooper
       ..showFullscreenSleepTimer = s.showFullscreenSleepTimer
+      ..disableFullscreenBreathingEffect = s.disableFullscreenBreathingEffect
       ..gaplessPlayback = s.gaplessPlayback
       ..crossfadeDuration = s.crossfadeDuration
       ..crossfadeMode = s.crossfadeMode
@@ -716,6 +718,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _save(newState);
   }
 
+  Future<void> updateCloseToTray(bool value) async {
+    final newState = _clone(state)..closeToTray = value;
+    await _save(newState);
+  }
+
   Future<void> updateNowPlayingFullscreen(bool value) async {
     final newState = _clone(state)..nowPlayingFullscreen = value;
     await _save(newState);
@@ -743,6 +750,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateShowFullscreenSleepTimer(bool value) async {
     final newState = _clone(state)..showFullscreenSleepTimer = value;
+    await _save(newState);
+  }
+
+  Future<void> updateDisableFullscreenBreathingEffect(bool value) async {
+    final newState = _clone(state)..disableFullscreenBreathingEffect = value;
     await _save(newState);
   }
 

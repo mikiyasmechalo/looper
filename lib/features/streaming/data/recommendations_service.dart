@@ -63,10 +63,16 @@ class RecommendationsService {
           final song = source[depth];
           if (seen.add(song.path)) {
             result.add(song);
+            if (result.length >= count) {
+              break;
+            }
           }
         }
       }
       depth++;
+    }
+    if (result.length > count) {
+      return result.sublist(0, count);
     }
     return result;
   }

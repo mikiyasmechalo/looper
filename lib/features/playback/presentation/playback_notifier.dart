@@ -433,6 +433,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
               isRestoredSession: false,
             );
             ref.read(lyricsProvider.notifier).fetchForSong(songToPlay);
+            _maybePrefetchNextLyrics();
             ref.read(equalizerProvider.notifier).onSongChanged(songToPlay);
             
             final settings = ref.read(settingsProvider);
@@ -579,7 +580,12 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
   }
 
-  void setPlaylist(List<Song> songs, {int initialIndex = 0, String? queueName}) {
+  void setPlaylist(
+    List<Song> songs, {
+    int initialIndex = 0,
+    String? queueName,
+    bool disableShuffle = false,
+  }) {
     if (queueName != null && queueName != _activeQueueName) {
       if (_activeQueueName.isNotEmpty && _playlist.isNotEmpty) {
         _persistNamedQueue(
@@ -592,6 +598,11 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       }
       _activeQueueName = queueName;
       ref.read(settingsProvider.notifier).updateActiveQueueName(queueName);
+    }
+
+    if (disableShuffle && state.isShuffle) {
+      state = state.copyWith(isShuffle: false);
+      ref.read(settingsProvider.notifier).updateShuffle(false);
     }
 
     // Extract manual queue songs before replacing the playlist
@@ -876,6 +887,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       isRestoredSession: initialPosition != null,
     );
     ref.read(lyricsProvider.notifier).fetchForSong(song);
+    _maybePrefetchNextLyrics();
     ref.read(equalizerProvider.notifier).onSongChanged(song);
     
     // Apply equalizer settings for the song
@@ -1035,21 +1047,38 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     Future.delayed(const Duration(seconds: 2), MemoryService.trimWorkingSet);
   }
 
-  /// Schedules the lastPlayed/playCount stamp ~10s after a play starts, so
-  /// quick skips (short previews) don't churn Recently Played or inflate
-  /// Most Played. Cancelled by pause/skip/stop/new play; only fires if the
+  void _maybePrefetchNextLyrics() {
+    try {
+      final next = getNextSong(updateIndex: false);
+      if (next != null && next.id != state.currentSong?.id) {
+        ref.read(lyricsProvider.notifier).prefetchNext(next);
+      }
+    } catch (_) {}
+  }
+
+  /// Schedules the lastPlayed/playCount stamp after a scrobble threshold percentage of the
+  /// song has elapsed (capped between 10s and 240s), so quick skips don't churn Recently Played
+  /// or inflate Most Played. Cancelled by pause/skip/stop/new play; only fires if the
   /// same song is still the current song and still playing.
   void _armPlayCount(Song song) {
     _playCountTimer?.cancel();
     _playCountedPath = null;
 
     final settings = ref.read(settingsProvider);
-    ScrobblerService.instance.updateNowPlaying(
-      song: song,
-      settings: settings,
-    );
+    if (settings.enableLastFmScrobbling || settings.enableListenBrainzScrobbling) {
+      ScrobblerService.instance.updateNowPlaying(
+        song: song,
+        settings: settings,
+      );
+    }
 
-    _playCountTimer = Timer(const Duration(seconds: 10), () {
+    final durationMs = song.duration ?? 0;
+    final thresholdPercent = (settings.scrobbleThresholdPercent).clamp(10, 100);
+    final thresholdSeconds = durationMs > 0
+        ? ((durationMs / 1000) * (thresholdPercent / 100)).clamp(10.0, 240.0).round()
+        : 10;
+
+    _playCountTimer = Timer(Duration(seconds: thresholdSeconds), () {
       _commitPlayCount(song);
     });
   }
@@ -1063,29 +1092,60 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
     final settings = ref.read(settingsProvider);
     final now = DateTime.now();
+    final listenedMs = state.position.inMilliseconds > 0
+        ? state.position.inMilliseconds
+        : 10000;
 
-    ScrobblerService.instance.scrobble(
-      song: song,
-      settings: settings,
-      playTimestamp: now,
-      listenedMs: state.position.inMilliseconds > 0 ? state.position.inMilliseconds : 10000,
-    );
+    // 1. External scrobbling (only if enabled)
+    if (settings.enableLastFmScrobbling || settings.enableListenBrainzScrobbling) {
+      ScrobblerService.instance.scrobble(
+        song: song,
+        settings: settings,
+        playTimestamp: now,
+        listenedMs: listenedMs,
+      );
+    }
 
-    DbService.isar.writeTxn(() async {
-      final dbSong = (song.isOnlineStream && song.youtubeId != null && song.youtubeId!.isNotEmpty)
-          ? await DbService.isar.songs
-              .filter()
-              .youtubeIdEqualTo(song.youtubeId)
-              .findFirst()
-          : await DbService.isar.songs
-              .filter()
-              .pathEqualTo(song.path)
-              .findFirst();
-      if (dbSong == null) return;
-      dbSong.lastPlayed = now;
-      dbSong.playCount++;
-      await DbService.isar.songs.put(dbSong);
-    });
+    // 2. Local playback history entry & playCount increment
+    try {
+      final title = song.title.trim();
+      final artist = song.artist?.trim() ?? 'Unknown Artist';
+      final album = song.album?.trim();
+      final genre = song.genre?.trim();
+      final durationMs = song.duration ?? listenedMs;
+
+      final entry = PlaybackHistoryEntry()
+        ..timestamp = now
+        ..songPath = song.path
+        ..title = title
+        ..artist = artist
+        ..album = album
+        ..genre = genre
+        ..durationMs = durationMs
+        ..listenedMs = listenedMs
+        ..artPath = song.artPath;
+
+      DbService.isar.writeTxn(() async {
+        await DbService.isar.playbackHistoryEntrys.put(entry);
+        final dbSong = (song.isOnlineStream && song.youtubeId != null && song.youtubeId!.isNotEmpty)
+            ? await DbService.isar.songs
+                .filter()
+                .youtubeIdEqualTo(song.youtubeId)
+                .findFirst()
+            : await DbService.isar.songs
+                .filter()
+                .pathEqualTo(song.path)
+                .findFirst();
+        if (dbSong != null) {
+          dbSong.lastPlayed = now;
+          dbSong.playCount++;
+          await DbService.isar.songs.put(dbSong);
+        }
+      });
+      LoggerHelper.write('PlaybackHistory: Recorded local history entry for "$title" by $artist');
+    } catch (e, s) {
+      LoggerHelper.write('PlaybackHistory: Error recording history entry', e, s);
+    }
   }
 
   /// Removes all existing occurrences of [songPath] from [_playlist] (except

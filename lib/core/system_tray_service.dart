@@ -29,15 +29,12 @@ class SystemTrayService {
       await windowManager.setPreventClose(true);
       windowManager.addListener(_TrayWindowListener(this));
 
-      // Always initialize tray first so Windows hooks are active
-      await _createTray();
-
       final settings = await DbService.isar.appSettings.get(0);
       final showOnlyWhenMinimized = settings?.showTrayOnlyWhenMinimized ?? true;
+      final isVisible = await windowManager.isVisible();
 
-      final isMinimized = await windowManager.isMinimized();
-      if (showOnlyWhenMinimized && !isMinimized) {
-        await _destroyTray();
+      if (!showOnlyWhenMinimized || !isVisible) {
+        await _createTray();
       }
     } catch (e, s) {
       _initialized = false;
@@ -139,7 +136,17 @@ class SystemTrayService {
         return;
       }
 
-      final isHidden = isMinimizedOrHidden ?? await windowManager.isMinimized();
+      // When showOnlyWhenMinimized is true, we ONLY show the tray icon if the
+      // window is actually closed to tray or minimized to tray (not visible).
+      // If the window is open / visible on desktop, NEVER show the tray icon.
+      final bool isHidden;
+      if (isMinimizedOrHidden != null) {
+        isHidden = isMinimizedOrHidden;
+      } else {
+        final isVis = await windowManager.isVisible();
+        isHidden = !isVis;
+      }
+
       if (isHidden) {
         await _createTray();
       } else {
@@ -173,15 +180,15 @@ class SystemTrayService {
       return;
     }
 
-    bool minimizeToTraySetting = false;
+    bool closeToTraySetting = false;
     try {
       final settings = await DbService.isar.appSettings.get(0);
-      minimizeToTraySetting = settings?.minimizeToTray ?? false;
+      closeToTraySetting = settings?.closeToTray ?? false;
     } catch (e, s) {
       LoggerHelper.write('Failed to read settings on window close', e, s);
     }
 
-    if (minimizeToTraySetting) {
+    if (closeToTraySetting) {
       await minimizeToTray();
     } else {
       await _quit();
@@ -200,12 +207,39 @@ class _TrayWindowListener extends WindowListener {
   }
 
   @override
-  void onWindowMinimize() {
-    _service.syncTrayVisibility(isMinimizedOrHidden: true);
+  Future<void> onWindowMinimize() async {
+    bool minimizeToTraySetting = false;
+    try {
+      final settings = await DbService.isar.appSettings.get(0);
+      minimizeToTraySetting = settings?.minimizeToTray ?? false;
+    } catch (_) {}
+
+    if (minimizeToTraySetting) {
+      await _service.minimizeToTray();
+    } else {
+      // Normal minimize to taskbar: window is on taskbar, NOT minimized to tray.
+      // So if showOnlyWhenMinimized is enabled, destroy/do not show the tray icon.
+      await _service.syncTrayVisibility();
+    }
   }
 
   @override
   void onWindowRestore() {
+    _service.syncTrayVisibility(isMinimizedOrHidden: false);
+  }
+
+  @override
+  void onWindowFocus() {
+    _service.syncTrayVisibility(isMinimizedOrHidden: false);
+  }
+
+  @override
+  void onWindowMaximize() {
+    _service.syncTrayVisibility(isMinimizedOrHidden: false);
+  }
+
+  @override
+  void onWindowUnmaximize() {
     _service.syncTrayVisibility(isMinimizedOrHidden: false);
   }
 }

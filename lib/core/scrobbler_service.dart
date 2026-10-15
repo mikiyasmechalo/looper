@@ -74,31 +74,8 @@ class ScrobblerService {
     final title = song.title.trim();
     final artist = song.artist?.trim() ?? 'Unknown Artist';
     final album = song.album?.trim();
-    final genre = song.genre?.trim();
-    final durationMs = song.duration ?? listenedMs;
 
     if (title.isEmpty) return;
-
-    // 1. Save to local database playback history
-    try {
-      final entry = PlaybackHistoryEntry()
-        ..timestamp = playTimestamp
-        ..songPath = song.path
-        ..title = title
-        ..artist = artist
-        ..album = album
-        ..genre = genre
-        ..durationMs = durationMs
-        ..listenedMs = listenedMs
-        ..artPath = song.artPath;
-
-      await DbService.isar.writeTxn(() async {
-        await DbService.isar.playbackHistoryEntrys.put(entry);
-      });
-      LoggerHelper.write('ScrobblerService: Recorded playback history entry for "$title" by $artist');
-    } catch (e) {
-      LoggerHelper.write('ScrobblerService: Error recording history entry: $e');
-    }
 
     final timestampSec = (playTimestamp.millisecondsSinceEpoch / 1000).round();
 

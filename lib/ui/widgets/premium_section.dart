@@ -86,9 +86,7 @@ class PremiumSection extends ConsumerWidget {
                 : ((useBlur || forceBlur)
                     ? (isTransitioning 
                         ? Colors.black.withValues(alpha: 0.12)
-                        : (disableBlur && !keepSurfaceOnDisableBlur 
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Theme.of(context).colorScheme.surfaceContainer))
+                        : Theme.of(context).colorScheme.surfaceContainer)
                     : Theme.of(context).colorScheme.surfaceContainer)),
             borderRadius: borderRadius,
             border: Border(

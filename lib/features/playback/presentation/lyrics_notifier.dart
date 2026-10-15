@@ -60,10 +60,29 @@ class LyricsNotifier extends StateNotifier<LyricsState> {
   Song? _shownSong;
   String? _shownLrc;
 
+  int _prefetchGeneration = 0;
+
   LyricsNotifier(this.ref) : super(LyricsState());
 
   void fetchForSong(Song song, {bool force = false}) {
+    _prefetchGeneration++;
     _fetchLyrics(song, force: force);
+  }
+
+  /// Prefetches and caches lyrics for the next in-line song in the background.
+  /// Uses a generation counter to cap concurrency strictly to 1 task and ensure
+  /// rapid skipping cancels obsolete prefetch operations without stalling the active track.
+  Future<void> prefetchNext(Song nextSong) async {
+    if (state.songId == nextSong.id) return;
+    final generation = ++_prefetchGeneration;
+
+    try {
+      final lrc = await LyricsFetcher.fetchLyrics(nextSong);
+      if (generation != _prefetchGeneration) return;
+      if (lrc != null && LyricsFetcher.canUpgrade(lrc)) {
+        await LyricsFetcher.upgrade(nextSong, lrc);
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchLyrics(Song song, {bool force = false}) async {

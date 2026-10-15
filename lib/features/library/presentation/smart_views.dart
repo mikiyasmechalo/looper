@@ -45,7 +45,7 @@ class FavoritesView extends ConsumerWidget {
                 StandardPlayShuffleBar(
                   onPlayAll: () => ref
                       .read(playbackProvider.notifier)
-                      .setPlaylist(songs, queueName: l10n.favorites),
+                      .setPlaylist(songs, queueName: l10n.favorites, disableShuffle: true),
                   onShuffle: () => ref
                       .read(playbackProvider.notifier)
                       .playShuffled(songs, queueName: l10n.favorites),
@@ -89,7 +89,7 @@ class RecentlyPlayedView extends ConsumerWidget {
                 StandardPlayShuffleBar(
                   onPlayAll: () => ref
                       .read(playbackProvider.notifier)
-                      .setPlaylist(songs, queueName: l10n.recentlyPlayed),
+                      .setPlaylist(songs, queueName: l10n.recentlyPlayed, disableShuffle: true),
                   onShuffle: () => ref
                       .read(playbackProvider.notifier)
                       .playShuffled(songs, queueName: l10n.recentlyPlayed),

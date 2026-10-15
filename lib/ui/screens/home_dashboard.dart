@@ -101,18 +101,22 @@ final homeQuickPicksMixProvider = Provider<List<Song>>((ref) {
     fingerprint = (fingerprint * 31 + s.path.hashCode) & 0x7fffffff;
   }
 
-  final targetCount = math.min(_quickPicksCount, allSongs.length);
+  final uniqueSongCount = allSongs.map((s) => s.path).toSet().length;
+  final targetCount = math.min(_quickPicksCount, uniqueSongCount);
   // Rebuild if the library changed OR the cached list no longer matches the
   // requested count (e.g. a stale cache left over from a hot-reloaded build).
   if (_cachedQuickPicks == null ||
       _cachedQuickPicks!.length != targetCount ||
       fingerprint != _quickPicksFingerprint) {
     _quickPicksFingerprint = fingerprint;
-    _cachedQuickPicks = RecommendationsService.buildQuickPicksQueue(
+    final queue = RecommendationsService.buildQuickPicksQueue(
       allSongs,
       count: _quickPicksCount,
       random: math.Random(_quickPicksSessionSeed),
     );
+    _cachedQuickPicks = queue.length > _quickPicksCount
+        ? queue.sublist(0, _quickPicksCount)
+        : queue;
   }
   return _cachedQuickPicks!;
 });
@@ -357,6 +361,10 @@ class HomeDashboard extends ConsumerWidget {
 
     if (songs.isEmpty) return const SizedBox.shrink();
 
+    final displaySongs = songs.length > _quickPicksCount
+        ? songs.sublist(0, _quickPicksCount)
+        : songs;
+
     int crossAxisCount = 4;
     if (isNarrow) {
       crossAxisCount = 2;
@@ -392,9 +400,9 @@ class HomeDashboard extends ConsumerWidget {
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
-          itemCount: songs.length,
+          itemCount: displaySongs.length,
           itemBuilder: (context, index) {
-            final song = songs[index];
+            final song = displaySongs[index];
             final isCurrent = ref.watch(
               playbackProvider.select((s) => s.currentSong?.path == song.path),
             );

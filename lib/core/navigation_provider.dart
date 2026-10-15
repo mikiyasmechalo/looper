@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 
 enum NavItem {
@@ -242,6 +244,13 @@ class NavigationNotifier extends StateNotifier<NavigationState> {
   }
 
   void setPlayerExpansion(bool expanded) {
+    if (!expanded && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      windowManager.isFullScreen().then((isFs) {
+        if (isFs) {
+          windowManager.setFullScreen(false);
+        }
+      }).catchError((_) {});
+    }
     state = state.copyWith(isPlayerExpanded: expanded);
   }
 }

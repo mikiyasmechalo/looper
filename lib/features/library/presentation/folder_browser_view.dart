@@ -141,6 +141,7 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
     ref.read(playbackProvider.notifier).setPlaylist(
       all,
       queueName: 'Folder: ${folder.name}',
+      disableShuffle: true,
     );
     ref.read(playbackProvider.notifier).play(all.first);
   }

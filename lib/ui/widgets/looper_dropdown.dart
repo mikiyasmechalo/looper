@@ -37,6 +37,7 @@ class LooperDropdown<T> extends ConsumerStatefulWidget {
   final String? placeholder;
   final EdgeInsetsGeometry padding;
   final Alignment menuAlignment;
+  final Widget Function(BuildContext context, bool isOpen)? customTrigger;
 
   const LooperDropdown({
     super.key,
@@ -48,6 +49,7 @@ class LooperDropdown<T> extends ConsumerStatefulWidget {
     this.placeholder,
     this.padding = const EdgeInsets.symmetric(horizontal: 12),
     this.menuAlignment = Alignment.bottomRight,
+    this.customTrigger,
   });
 
   factory LooperDropdown.fromDropdownMenuItems({
@@ -133,8 +135,12 @@ class _LooperDropdownState<T> extends ConsumerState<LooperDropdown<T>>
   }
 
   void _select(T value) {
+    if (_overlayController.isShowing) {
+      _overlayController.hide();
+      _animationController.reset();
+      setState(() {});
+    }
     widget.onChanged?.call(value);
-    _close();
   }
 
   @override
@@ -180,59 +186,65 @@ class _LooperDropdownState<T> extends ConsumerState<LooperDropdown<T>>
 
     Widget buttonContent = CompositedTransformTarget(
       link: _layerLink,
-      child: MouseRegion(
-        cursor: widget.onChanged != null
-            ? SystemMouseCursors.click
-            : SystemMouseCursors.basic,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: GestureDetector(
-          onTap: widget.onChanged != null ? _toggle : null,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            height: widget.height,
-            width: widget.width,
-            padding: widget.padding,
-            decoration: buttonDecoration,
-            child: Row(
-              mainAxisSize: widget.width == null ? MainAxisSize.min : MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: selectedItem != null
-                      ? DefaultTextStyle(
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          child: selectedItem.label,
-                        )
-                      : Text(
-                          widget.placeholder ?? '',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 13,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+      child: widget.customTrigger != null
+          ? GestureDetector(
+              onTap: widget.onChanged != null ? _toggle : null,
+              behavior: HitTestBehavior.opaque,
+              child: widget.customTrigger!(context, isShowing),
+            )
+          : MouseRegion(
+              cursor: widget.onChanged != null
+                  ? SystemMouseCursors.click
+                  : SystemMouseCursors.basic,
+              onEnter: (_) => setState(() => _isHovered = true),
+              onExit: (_) => setState(() => _isHovered = false),
+              child: GestureDetector(
+                onTap: widget.onChanged != null ? _toggle : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  height: widget.height,
+                  width: widget.width,
+                  padding: widget.padding,
+                  decoration: buttonDecoration,
+                  child: Row(
+                    mainAxisSize: widget.width == null ? MainAxisSize.min : MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: selectedItem != null
+                            ? DefaultTextStyle(
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                child: selectedItem.label,
+                              )
+                            : Text(
+                                widget.placeholder ?? '',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 13,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                      ),
+                      const SizedBox(width: 8),
+                      AnimatedRotation(
+                        turns: isShowing ? 0.5 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        child: Icon(
+                          LucideIcons.chevronDown,
+                          color: isShowing ? accentColor : Colors.white70,
+                          size: 14,
                         ),
-                ),
-                const SizedBox(width: 8),
-                AnimatedRotation(
-                  turns: isShowing ? 0.5 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  child: Icon(
-                    LucideIcons.chevronDown,
-                    color: isShowing ? accentColor : Colors.white70,
-                    size: 14,
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
 
     return OverlayPortal(

@@ -358,7 +358,7 @@ class _AlbumsGridState extends ConsumerState<AlbumsGrid> {
                     final double aspectRatio = switch (albumCardStyle) {
                       CardStyle.normal => 0.74,
                       CardStyle.circle => 0.81,
-                      CardStyle.card => 0.78,
+                      CardStyle.card => 0.74,
                       CardStyle.image => 1.0,
                       CardStyle.imageGapless => 1.0,
                     };
@@ -645,7 +645,7 @@ class _AlbumCardState extends ConsumerState<_AlbumCard> {
             color: cardBg,
             border: cardBorder,
           ),
-          padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
+          padding: const EdgeInsets.fromLTRB(7, 7, 7, 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -656,7 +656,7 @@ class _AlbumCardState extends ConsumerState<_AlbumCard> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               Text(
                 album.name,
                 style: AppFonts.jostStyle(

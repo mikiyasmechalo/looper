@@ -527,7 +527,11 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                         iconColor: accentColor,
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          ref.read(playbackProvider.notifier).setPlaylist(songs, queueName: title);
+                          ref.read(playbackProvider.notifier).setPlaylist(
+                                songs,
+                                queueName: title,
+                                disableShuffle: true,
+                              );
                           Navigator.pop(context);
                         },
                       ),
@@ -709,7 +713,9 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(20),
                       padding: EdgeInsets.zero,
                       useExpanded: false,
-                      backgroundColor: useBlur ? Colors.white.withValues(alpha: 0.05) : null,
+                      backgroundColor: useBlur
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : (isPureBlack ? const Color(0xFF161618) : const Color(0xFF28282C)),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: List.generate(options.length * 2 - 1, (index) {
@@ -717,7 +723,9 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                             return Divider(
                               height: 1,
                               thickness: 0.8,
-                              color: Colors.white.withValues(alpha: 0.04),
+                              color: useBlur
+                                  ? Colors.white.withValues(alpha: 0.04)
+                                  : Colors.white.withValues(alpha: 0.06),
                               indent: 20,
                               endIndent: 20,
                             );

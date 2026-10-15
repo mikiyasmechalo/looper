@@ -404,7 +404,11 @@ class CollectionDetailView extends ConsumerWidget {
         StandardPlayShuffleBar(
           padding: EdgeInsets.zero,
           onPlayAll: () {
-            ref.read(playbackProvider.notifier).setPlaylist(songsToRender, queueName: titleToRender);
+            ref.read(playbackProvider.notifier).setPlaylist(
+                  songsToRender,
+                  queueName: titleToRender,
+                  disableShuffle: true,
+                );
           },
           onShuffle: () {
             ref

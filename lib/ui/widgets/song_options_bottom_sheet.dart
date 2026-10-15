@@ -561,7 +561,9 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(20),
                       padding: EdgeInsets.zero,
                       useExpanded: false,
-                      backgroundColor: useBlur ? Colors.white.withValues(alpha: 0.05) : null,
+                      backgroundColor: useBlur
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : (isPureBlack ? const Color(0xFF161618) : const Color(0xFF28282C)),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: List.generate(options.length * 2 - 1, (index) {
@@ -569,7 +571,9 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                             return Divider(
                               height: 1,
                               thickness: 0.8,
-                              color: Colors.white.withValues(alpha: 0.04),
+                              color: useBlur
+                                  ? Colors.white.withValues(alpha: 0.04)
+                                  : Colors.white.withValues(alpha: 0.06),
                               indent: 20,
                               endIndent: 20,
                             );
