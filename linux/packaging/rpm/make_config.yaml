@@ -1,15 +1,15 @@
 display_name: Looper Player
 name: looper_player
 version: 1.0.0
-release: 1
+release: beta.1
 summary: A modern, high-fidelity music player for Linux.
 description: A modern, high-fidelity music player for Linux.
-license: MIT
+license: GPL-3.0
 group: Applications/Multimedia
-url: https://github.com/nilshaaa/looper_player
-vendor: nilshaaa
-packager: nilshaaa
-packagerEmail: nilshaaa@example.com
+url: https://github.com/mikiyasmechalo/looper
+vendor: Mikiyas Mechalo
+packager: Mikiyas Mechalo
+packagerEmail: mikeme@example.com
 icon: assets/logo_linux.png
 categories:
   - AudioVideo
@@ -18,5 +18,4 @@ categories:
   - Player
 requires:
   - gtk3
-  - vlc-libs
   - mpv-libs

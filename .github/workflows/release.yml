@@ -1,15 +1,65 @@
-name: Secure Build and Unified Linux CI Release Pipeline
+name: Multi-Platform Release Pipeline (Windows & Linux)
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  build-windows:
+    name: Build & Package Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows Desktop Support
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      - name: Build Windows Application (Release)
+        run: flutter build windows --release
+
+      - name: Ensure Inno Setup is Installed
+        run: choco install innosetup -y --no-progress
+
+      - name: Package Windows Artifacts (Portable ZIP & Inno Setup Installer)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          
+          # 1. Package Portable ZIP
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "dist\looper-windows-x64-portable.zip" -Force
+          Write-Host "Created Portable ZIP: dist\looper-windows-x64-portable.zip"
+          
+          # 2. Compile Inno Setup Installer (.exe)
+          iscc windows\installer\looper_setup.iss
+          Write-Host "Created Inno Setup Installer: dist\Looper-Setup-x64.exe"
+          
+          Get-ChildItem -Path dist | Format-Table Name, Length
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages
+          path: |
+            dist/*.zip
+            dist/*.exe
+
   build-linux:
+    name: Build & Package Linux (x86_64)
     runs-on: ubuntu-latest
     env:
       APPIMAGE_EXTRACT_AND_RUN: 1
@@ -24,7 +74,7 @@ jobs:
             clang cmake ninja-build pkg-config \
             libgtk-3-dev libblkid-dev liblzma-dev \
             libgcrypt20-dev libmpv-dev libnotify-dev \
-            rpm
+            libfuse2 rpm
 
       - name: Install appimagetool for AppImage Packaging
         run: |
@@ -69,39 +119,75 @@ jobs:
           path: build/linux-release-assets/*
 
   publish-release:
-    needs: [build-linux]
+    name: Publish GitHub Release
+    if: always() && !cancelled() && (needs.build-windows.result == 'success' || needs.build-linux.result == 'success')
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Download Windows Artifacts
+        if: needs.build-windows.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-packages
+          path: release-binaries
+
       - name: Download Linux Artifacts
+        if: needs.build-linux.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: linux-packages
           path: release-binaries
 
-      - name: List Downloaded Binaries
+      - name: List All Downloaded Binaries
         run: ls -lh release-binaries
 
-      - name: Generate Premium Release
+      - name: Publish GitHub Release with Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG_NAME="${{ github.ref_name }}"
           
-          # Create automated premium release notes using GitHub CLI
+          # Default fallback tag if triggered manually via workflow_dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [[ ! "$TAG_NAME" =~ ^v[0-9] ]]; then
+            TAG_NAME="v1.0.0-beta.1"
+          fi
+          
+          PRERELEASE_FLAG=""
+          if [[ "$TAG_NAME" =~ "beta" ]] || [[ "$TAG_NAME" =~ "alpha" ]] || [[ "$TAG_NAME" =~ "rc" ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          
           gh release create "$TAG_NAME" \
             release-binaries/* \
+            $PRERELEASE_FLAG \
             --title "Looper Player $TAG_NAME" \
             --notes "### 🚀 Welcome to Looper Player $TAG_NAME!
-            
-            We are excited to present **Looper Player $TAG_NAME**—the ultimate offline-first, high-fidelity local desktop music player!
-            
-            This release features complete Linux packages (Debian, RedHat, AppImage, and portable Archive formats) built directly through our automated CI/CD pipelines.
-            
-            #### 💻 Platforms Supported
-            - **Linux**: High-compatibility Native packages for Debian/Ubuntu (\`.deb\`), RedHat/Fedora (\`.rpm\`), platform-agnostic standalone (\`.AppImage\`), and portable (\`.tar.gz\`) archives.
-            
-            ---
-            *Looper Player is 100% offline-first, private, and telemetry-free. Enjoy your local high-fidelity audio with beautifully synchronized interactive lyrics.*"
+
+          We are thrilled to introduce **Looper Player $TAG_NAME**—a high-fidelity, local-first cyber-glassmorphic music player engineered for desktop!
+
+          #### 📦 Available Downloads
+
+          **Windows (x64)**:
+          - \`Looper-Setup-x64.exe\`: Windows Setup Wizard (installs per-user, sets audio file associations, and creates shortcuts).
+          - \`looper-windows-x64-portable.zip\`: Standalone portable archive (extract and run immediately).
+
+          **Linux (x86_64)**:
+          - \`*.AppImage\`: Universal standalone executable for modern Linux distributions.
+          - \`*.deb\`: Native package for Debian, Ubuntu, Linux Mint, and Pop!_OS.
+          - \`*.rpm\`: Native package for Fedora, RHEL, and openSUSE.
+          - \`*.tar.gz\`: Portable Linux archive.
+
+          #### ✨ Highlights in this Release
+          - **Dynamic Syllable & Karaoke Lyrics**: Word-level illuminated lyrics synchronized to playback with tap-to-seek and per-song offset calibration.
+          - **Looper Analyze**: In-depth listening statistics, top songs, top artists, 30-day play trends, streaks, and genre breakdowns.
+          - **Dual Floating Mini-Players**: Standard floating deck & compact corner player with real-time DSP spectrum visualizers.
+          - **Expressive Seekbar**: Organic squiggly wave seekbar with pause gating, plus an optional flat progress bar for minimalists.
+          - **Auto Battery Saver**: Intelligent power-saving mode triggered on low laptop battery with OLED pure black override.
+          - **18-Band Graphical EQ**: Interactive drag-to-shape equalization curve.
+          - **100% Offline & Private**: Pure local playback with zero telemetry and sub-millisecond library scanning.
+
+          ---
+          *Requires \`libmpv\` on Linux (\`sudo apt install libmpv2\` or \`sudo dnf install mpv-libs\`).*"

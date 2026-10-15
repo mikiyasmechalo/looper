@@ -1,29 +1,26 @@
 <p align="center">
-  <img src="assets/main_logo.svg" width="240" height="96" />
+  <img src="assets/main_logo.svg" width="240" height="96" alt="Looper Player Logo" />
 </p>
 
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=30&pause=1200&color=B4BEFE&center=true&vCenter=true&width=900&lines=Experience+Music+in+Cyber-Glass+Aesthetics;High-Fidelity+Playback%2C+made+easy" />
+  <img src="https://readme-typing-svg.herokuapp.com?font=Lexend+Giga&size=30&pause=1200&color=B4BEFE&center=true&vCenter=true&width=900&lines=Experience+Music+in+Cyber-Glass+Aesthetics;High-Fidelity+Playback%2C+100%25+Offline" alt="Looper Tagline" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blueviolet?style=for-the-badge&logo=linux&logoColor=white" />
-  <img src="https://img.shields.io/badge/UI--UX-Glassmorphism%20%2F%20Neo--Blur-FF007F?style=for-the-badge&logo=figma&logoColor=white" />
-  <img src="https://img.shields.io/badge/Built%20With-Flutter%20%26%20Dart-02569B?style=for-the-badge&logo=flutter&logoColor=white" />
-  <img src="https://img.shields.io/github/v/release/SthrNilshaaa/looper?style=for-the-badge&logo=GitHub&color=%23000000&cacheBust=1"/>
-  <img src="https://img.shields.io/github/downloads/SthrNilshaaa/looper/total?style=for-the-badge&logo=GitHub&color=%23000000&cacheBust=1"/>
-  <img src="https://img.shields.io/github/stars/SthrNilshaaa/looper?style=for-the-badge&logo=GitHub&color=%23000000&cacheBust=1"/>
-  <img src="https://img.shields.io/github/forks/SthrNilshaaa/looper?style=for-the-badge&logo=GitHub&color=%23000000&cacheBust=1"/>
-  <img src="https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge" />
+  <a href="https://github.com/mikiyasmechalo/looper/releases"><img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blueviolet?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" /></a>
+  <img src="https://img.shields.io/badge/UI--UX-Glassmorphism%20%2F%20Neo--Blur-FF007F?style=for-the-badge&logo=figma&logoColor=white" alt="UI" />
+  <img src="https://img.shields.io/badge/Built%20With-Flutter%20%26%20Dart-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
+  <a href="https://github.com/mikiyasmechalo/looper/releases"><img src="https://img.shields.io/github/v/release/mikiyasmechalo/looper?include_prereleases&style=for-the-badge&logo=GitHub&color=000000" alt="Release" /></a>
+  <img src="https://img.shields.io/badge/License-GPL--3.0-green?style=for-the-badge" alt="License" />
 </p>
 
 ---
 
 ## 🔮 Experience Music in Cyber-Glass Aesthetics
 
-**Looper Player** is a state-of-the-art, high-fidelity local music player engineered for **Desktop** (**Windows** and **Linux**). It redefines local music playback by wrapping a high-performance audio engine in a futuristic **Glassmorphic** interface that adapts instantly to the album art of whatever you are listening to.
+**Looper Player** is a modern, high-fidelity local music player engineered exclusively for **Desktop** (**Windows** and **Linux**). It merges a high-performance audio engine with a fluid **Glassmorphic** interface that morphs dynamically with the album artwork of whatever you are listening to.
 
-Designed with an **offline-first, private-by-default** philosophy, Looper Player keeps your library, lyrics, playback statistics, and custom configurations safely on your local device—completely independent of external telemetry or subscription models.
+Built with an **offline-first, private-by-default** foundation, Looper Player keeps your music library, synchronized lyrics, listening habits, and equalization curves strictly on your local machine—completely free of telemetries, trackers, or subscription walls.
 
 ---
 
@@ -34,60 +31,98 @@ Designed with an **offline-first, private-by-default** philosophy, Looper Player
 │                        LOOPER PLAYER FEATURES                          │
 ├────────────────────────────────────────┬───────────────────────────────┤
 │🔮 GLASSMORPHIC CYBER-UI               │ ⚡ ULTRA-PERFORMANT ENGINE     │
-│  Full real-time blur and glowing      │   Sub-millisecond local scans, │
-│  gradients that match album art.      │   indexing libraries of 50k+.  │
+│  Real-time blur, glow effects, and    │   Sub-millisecond scans, lean  │
+│  instant album-art adaptive themes.   │   CPU/RAM, 50,000+ tracks safe.│
 ├────────────────────────────────────────┼───────────────────────────────┤
-│🎤 SYNCHRONIZED LRC LYRICS             │ 💻 DESKTOP-NATIVE DESIGN       │
-│  Real-time fluid line animations      │   MPRIS, Discord RPC, Tray,    │
-│  and interactive lyrics search.       │   and floating mini-players.   │
+│🎤 SYLLABLE & KARAOKE-GLOW LYRICS      │ 📊 LOOPER ANALYZE STATS        │
+│  Word-by-word glowing illumination,   │   Interactive listening trends,│
+│  tap-to-seek, and per-song offsets.   │   top artists, & streak stats. │
 ├────────────────────────────────────────┼───────────────────────────────┤
-│🔒 100% PRIVATE & OFFLINE              │ 🎵 CUSTOMIZABLE AUDIO CONTROL  │
-│  Zero trackers. Zero telemetry.       │   Gapless playback and 18-band │
-│  All data stays local.                │   graphical equalizer curve.   │
+│🪟 DUAL FLOATING MINI-PLAYERS          │ 🔋 AUTO BATTERY SAVER          │
+│  Standard floating card and pinned    │   Dynamic discharge threshold, │
+│  corner player with live visualizers. │   OLED Pure Black, & gating.   │
+├────────────────────────────────────────┼───────────────────────────────┤
+│🔒 100% PRIVATE & OFFLINE              │ 🎵 18-BAND GRAPHICAL EQ        │
+│  Zero telemetry. Zero network calls.  │   Custom drag-to-shape curve   │
+│  Pure local playback fidelity.        │   and zero-snapping precision. │
 └────────────────────────────────────────┴───────────────────────────────┘
 ```
 
-- **Dynamic Theme & Neo-Blur Aesthetics**: The entire interface—buttons, borders, text accents, and ambient background blurs—morphs dynamically to blend beautifully with the album art of the active song, featuring smooth crossfade transitions.
-- **Advanced Lyrics Engine**: Synchronized scrolling LRC lyrics with dynamic, tactile line-by-line animations, interactive tap-to-seek playback integration, font scaling, and display keep-awake modes.
-- **Interactive 18-Band Graphical Equalizer**: Drag-to-shape 18-band custom equalizer curve with decibel grid lines, decibel ranges (+/- 20 dB), frequency bands (65Hz to 20kHz), zero-snapping logic, and real-time FFI filter adjustments.
-- **Play/Pause Loop State Machine**: Non-blocking control structure that updates UI button states instantly while processing volume fades and native player changes sequentially in the background.
-- **Playback Persistence & Queue Restore**: Automatically saves and restores the last active playlist queue, currently loaded song, and precise seek position (down to the millisecond) when restarting the app.
-- **Resilient Offline File Operations**: Full audio engine state release and file-lock management when renaming or deleting tracks on local storage, backed by immediate, colorful alerts through custom glassmorphic SnackBars.
-- **Fully Responsive Desktop Layout**: Responsive navigation rail, desktop title bar, standard and corner mini-player modes, and keyboard shortcut integrations.
+- **Dynamic Theme & Neo-Blur Aesthetics**: The entire interface—navigation rails, seekbars, text glows, and backdrop blurs—adapts dynamically to the dominant palette of the active album art, with seamless crossfades.
+- **Syllable & Karaoke-Glow Lyrics**: Rich, word-level synchronized lyrics illumination, line-by-line smooth scrolling, tap-to-seek skipping, multi-provider local/embedded fallback, and a dedicated per-song calibration tool.
+- **Looper Analyze (Listening Trends & Stats)**: A dedicated analytics dashboard tracking total listening time, 30-day play trends, top artists, top tracks, listening streaks, and genre breakdowns.
+- **Dual Floating Mini-Player Modes**:
+  - **Standard Mini Player**: Floating window with album artwork, title, artist, seekbar, and real-time audio visualizer.
+  - **Corner Mini Player**: Pinned, ultra-compact desktop widget featuring a live corner audio frequency visualizer.
+- **Hardware-Accelerated DSP Spectrum Visualizer**: 48-band real-time audio frequency visualizer reacting directly to live audio output in both the full player deck and mini-players, halting automatically when paused to conserve CPU.
+- **Smart Local Quick-Picks & Discovery**: An offline recommendation system that dynamically curates mixes from your local library based on your play frequency, skip history, and favorites.
+- **Auto Battery Saver Mode**: Intelligently monitors laptop battery levels and charging states, activating power-saving overrides (OLED pure black, animation freeze, blur suspension) below a configurable threshold.
+- **Expressive Seekbar (Squiggly Wave & Flat Progress Bar)**: Organic fluid wave that animates in sync with playback and pauses cleanly when idle, paired with an optional "Flat Progress Bar" mode for zero-animation minimalists.
+- **Interactive 18-Band Graphical Equalizer**: Drag-to-shape custom equalizer curve with decibel grid lines, +/- 20 dB range, frequency bands from 65 Hz to 20 kHz, zero-snapping logic, and real-time audio filter updates.
+- **Configurable Sleep Timer**: Set a countdown timer or song-count cutoff with gentle volume fade-out before playback stops.
+- **Desktop Window Customization & System Tray**: Borderless true fullscreen, desktop titlebar integration, system tray minimization, and global desktop hotkeys.
 - **Sub-Second Search & Local Library Scans**: Instant global scanning and indexing of 50k+ local libraries, with micro-latency search matching song titles, artists, albums, and even specific lyric phrases.
-- **Native Desktop Integration**: Native media keys, MPRIS controls on Linux, Discord Rich Presence, system tray integration, and customizable mini player modes.
 
 ---
 
 ## 📸 Gallery
 
-### 💻 Desktop Screenshots
-
-<details open>
-<summary><b>📐 Click to Toggle Screenshots</b></summary>
-<br/>
+### 💻 Desktop Showcase
 
 <p align="center">
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-31-38.png" width="49%" alt="Main Dashboard" />
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-40-26.png" width="49%" alt="Player View" />
-</p>
-<p align="center">
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-31-46.png" width="32%" />
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-32-19.png" width="32%" />
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-32-45.png" width="32%" />
-</p>
-<p align="center">
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-33-14.png" width="32%" />
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-33-28.png" width="32%" />
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-34-16.png" width="32%" />
-</p>
-<p align="center">
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-35-40.png" width="32%" />
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-36-46.png" width="32%" />
-  <img src="assets/SS_looper/Screenshot From 2026-05-09 11-37-16.png" width="32%" />
+  <b>Home Dashboard & Smart Quick Picks</b><br/>
+  <img src="assets/SS_looper/home_dashboard.png" width="95%" alt="Home Dashboard & Quick Picks" />
 </p>
 
-</details>
+<p align="center">
+  <b>Synchronized Karaoke-Glow Lyrics Engine</b><br/>
+  <img src="assets/SS_looper/karaoke_lyrics_glow.png" width="48%" alt="Karaoke Glow Lyrics" />
+  <img src="assets/SS_looper/karaoke_lyrics_full.png" width="48%" alt="Karaoke Full Lyrics" />
+</p>
+
+<p align="center">
+  <b>Desktop Expanded Player with Real-Time Spectrum Visualizer</b><br/>
+  <img src="assets/SS_looper/expanded_player_visualizer.png" width="95%" alt="Expanded Player with Visualizer" />
+</p>
+
+<p align="center">
+  <b>Dual Floating Mini-Players (Standard & Corner Modes)</b><br/>
+  <img src="assets/SS_looper/mini_player_standard.png" width="40%" alt="Standard Mini Player" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/SS_looper/mini_player_corner.png" width="45%" alt="Corner Mini Player" />
+</p>
+
+<p align="center">
+  <b>Looper Analyze (Listening Trends & Stats)</b><br/>
+  <img src="assets/SS_looper/looper_analyze_stats.png" width="95%" alt="Looper Analyze Stats" />
+</p>
+
+<p align="center">
+  <b>Global Instant Search with In-Song Lyrics Matching</b><br/>
+  <img src="assets/SS_looper/search_lyrics.png" width="95%" alt="Global Search with Lyrics" />
+</p>
+
+<p align="center">
+  <b>Library Albums & Artists Views (Adaptive Theming)</b><br/>
+  <img src="assets/SS_looper/albums_grid.png" width="48%" alt="Albums Grid" />
+  <img src="assets/SS_looper/artists_grid.png" width="48%" alt="Artists Grid" />
+</p>
+
+<p align="center">
+  <img src="assets/SS_looper/albums_playing_wave.png" width="48%" alt="Albums Playing Wave" />
+  <img src="assets/SS_looper/albums_color_theme.png" width="48%" alt="Albums Color Theme" />
+</p>
+
+<p align="center">
+  <b>OLED Pure Black Mode & Flat Progress Bar</b><br/>
+  <img src="assets/SS_looper/oled_pure_black.png" width="48%" alt="OLED Pure Black Mode" />
+  <img src="assets/SS_looper/album_detail_flat.png" width="48%" alt="Album Detail Flat Bar" />
+</p>
+
+<p align="center">
+  <b>Settings & Customization Suite</b><br/>
+  <img src="assets/SS_looper/settings_appearance.png" width="95%" alt="Settings Appearance" />
+</p>
 
 ---
 
@@ -97,13 +132,13 @@ Designed with an **offline-first, private-by-default** philosophy, Looper Player
         ┌────────────────────────────────────────────────────────┐
         │                  LOOPER ARCHITECTURE                   │
         ├────────────────────────────────────────────────────────┤
-        │  UI Framework      │  Flutter & Dart (Neo-Material 3)  │
+        │  UI Framework      │  Flutter & Dart (Desktop Native)  │
         ├────────────────────┼───────────────────────────────────┤
-        │  Database          │  Isar DB (High-Speed Local DB)    │
+        │  Database Engine   │  Isar DB (Zero-Allocation Local)  │
         ├────────────────────┼───────────────────────────────────┤
-        │  Playback Engine   │  Media Kit (libmpv C-bindings)    │
+        │  Audio Backend     │  libmpv C-bindings (mpv_audio_kit)│
         ├────────────────────┼───────────────────────────────────┤
-        │  State Manager     │  Riverpod (Immutable Observables) │
+        │  State Management  │  Riverpod (Scoped Observables)    │
         └────────────────────┴───────────────────────────────────┘
 ```
 
@@ -111,62 +146,112 @@ Designed with an **offline-first, private-by-default** philosophy, Looper Player
 
 ## 📦 Installation & Setup
 
-Download the production build for your platform from our [Releases](https://github.com/SthrNilshaaa/looper/releases) page.
+Download the production build for your platform from the [GitHub Releases](https://github.com/mikiyasmechalo/looper/releases) page.
 
-### 💻 Linux Packages
+### 🪟 Windows (x64)
 
-We provide packages for all major Linux distributions:
+We offer two formats for Windows:
+
+1. **Setup Wizard (`Looper-Setup-x64.exe`)** *(Recommended)*:
+   - Double-click to run the setup wizard.
+   - Installs directly to user programs (`%LOCALAPPDATA%\Programs\Looper`) without requiring Administrator privileges.
+   - Automatically adds Desktop & Start Menu shortcuts.
+   - Registers audio file associations (`.mp3`, `.flac`, `.wav`, `.m4a`, `.ogg`, `.opus`, `.aac`).
+   - Clean, standard uninstaller in Windows Settings / Installed Apps.
+
+2. **Portable Archive (`looper-windows-x64-portable.zip`)**:
+   - Extract anywhere (USB drive, Desktop, Program folder).
+   - Double-click `looper_player.exe` to run immediately with zero installation.
+
+---
+
+### 🐧 Linux Packages (x86_64)
+
+We provide native packages across all major Linux distributions:
+
+#### 🚀 AppImage (Universal Standalone)
+Works across modern Linux distributions out of the box with zero installation:
+```bash
+chmod +x looper-player.AppImage
+./looper-player.AppImage
+```
 
 #### 📂 Debian / Ubuntu / Mint (`.deb`)
 ```bash
 sudo apt install ./looper-player.deb
 ```
 
-#### 📂 Fedora / RHEL / CentOS (`.rpm`)
+#### 📂 Fedora / RHEL / openSUSE (`.rpm`)
 ```bash
-# Fedora
+# Fedora / RHEL
 sudo dnf install ./looper-player.rpm
+
 # openSUSE
 sudo zypper install ./looper-player.rpm
 ```
 
-#### 🚀 AppImage (Universal standalone)
-No installation required. Works on almost any modern Linux distribution out of the box:
-```bash
-chmod +x looper-player.AppImage
-./looper-player.AppImage
-```
-
-#### 📂 Portable Archive (`.tar.gz`)
-Great for "extract-and-run" setups or custom user directories:
+#### 📦 Portable Archive (`.tar.gz`)
+Extract and run in your user environment:
 ```bash
 tar -xzvf looper-player-linux.tar.gz
 cd universal
 ./run.sh
 ```
 
+> [!TIP]
+> **Linux Prerequisites**: Looper Player relies on `libmpv` for high-fidelity playback. If not already installed on your system:
+> - **Ubuntu / Debian / Mint**: `sudo apt install libmpv2` (or `libmpv1`)
+> - **Fedora**: `sudo dnf install mpv-libs`
+> - **Arch Linux**: `sudo pacman -S mpv`
+
+---
+
+## 🏗️ Building From Source
+
+1. **Prerequisites**:
+   - [Flutter SDK](https://flutter.dev/docs/get-started/install) (3.24+ recommended)
+   - C++ Build Tools:
+     - **Windows**: Visual Studio Build Tools (C++ Desktop Development)
+     - **Linux**: `clang`, `cmake`, `ninja-build`, `pkg-config`, `libgtk-3-dev`, `libmpv-dev`, `libnotify-dev`
+
+2. **Clone and run**:
+   ```bash
+   git clone https://github.com/mikiyasmechalo/looper.git
+   cd looper
+   flutter pub get
+   ```
+
+3. **Run in development**:
+   ```bash
+   # Windows
+   flutter run -d windows
+
+   # Linux
+   flutter run -d linux
+   ```
+
+4. **Build release binaries**:
+   ```bash
+   # Windows
+   flutter build windows --release
+
+   # Linux
+   flutter build linux --release
+   ```
+
 ---
 
 ## 👥 Contributors & Open Source
 
-A massive thank you to the brilliant creators behind Looper Player and the open-source libraries that make it possible:
+A massive thank you to the creators and open-source communities that make Looper Player possible:
 
-### Core Project Team
-* **Nilesh Suthar** — *Lead Architect & Lead Developer*
-* **Karan Suthar** — *Creative UI/UX & Interaction Designer*
+### Project Maintainers
+* **Mikiyas Mechalo** — *Lead Maintainer & Desktop Architecture* ([GitHub](https://github.com/mikiyasmechalo) • [Telegram](https://t.me/mikeme2))
+* **Nilesh Suthar** — *Original Creator & Architect* ([GitHub](https://github.com/SthrNilshaaa) • [Telegram](https://t.me/neelshy))
+* **Karan Suthar** — *Original UI/UX & Interaction Design* ([GitHub](https://github.com/sthrkaran) • [Telegram](https://t.me/karanwhy))
 
 ---
 
 ## 📄 License
 
-This project is licensed under the GPL-3.0 License.
-
----
-
-## 📬 Contact & Channels
-
-Connect with the developers for feature requests, bug reports, or discussion:
-
-**Nilesh Suthar**
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/SthrNilshaaa)
-[![Telegram](https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/neelshy)
+This project is open source and licensed under the [GPL-3.0 License](LICENSE).

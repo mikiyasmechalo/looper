@@ -11,6 +11,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class UpdateService {
   static const repoUrl = 'https://api.github.com/repos/mikiyasmechalo/looper/releases/latest';
+  static const releasesListUrl = 'https://api.github.com/repos/mikiyasmechalo/looper/releases';
   static const fallbackRepoUrl = 'https://api.github.com/repos/SthrNilshaaa/looper/releases/latest';
   static const fallbackHtmlUrl = 'https://github.com/mikiyasmechalo/looper/releases';
 
@@ -35,6 +36,15 @@ class UpdateService {
         onTimeout: () => http.Response('', 408),
       );
 
+      // If /releases/latest returns 404 (common when releases are tagged as pre-release / beta),
+      // query the releases list directly.
+      if (response.statusCode != 200) {
+        response = await http.get(Uri.parse(releasesListUrl)).timeout(
+          const Duration(seconds: 8),
+          onTimeout: () => http.Response('', 408),
+        );
+      }
+
       // If user repo doesn't have releases yet, check original upstream releases as fallback
       if (response.statusCode != 200) {
         response = await http.get(Uri.parse(fallbackRepoUrl)).timeout(
@@ -44,7 +54,10 @@ class UpdateService {
       }
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final dynamic rawData = json.decode(response.body);
+        final Map<String, dynamic> data = rawData is List && rawData.isNotEmpty
+            ? rawData[0] as Map<String, dynamic>
+            : (rawData is Map<String, dynamic> ? rawData : <String, dynamic>{});
         final String tagName = data['tag_name'] ?? '';
         final String htmlUrl = data['html_url'] ?? fallbackHtmlUrl;
 

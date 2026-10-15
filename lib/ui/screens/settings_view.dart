@@ -25,6 +25,16 @@ import 'package:looper_player/features/library/presentation/library_cleanup_view
 import 'package:looper_player/core/update_service.dart';
 import 'package:looper_player/ui/screens/equalizer_screen.dart';
 import 'package:looper_player/core/utils/lyrics_credits.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+final appVersionProvider = FutureProvider<String>((ref) async {
+  try {
+    final info = await PackageInfo.fromPlatform();
+    return info.version.isNotEmpty ? 'v${info.version}' : 'v1.0.0-beta.1';
+  } catch (_) {
+    return 'v1.0.0-beta.1';
+  }
+});
 
 enum SettingsCategory {
   appearance,
@@ -2018,13 +2028,16 @@ class SettingsView extends ConsumerWidget {
     AppSettings settings,
     AppLocalizations l10n,
   ) {
+    final versionStr = ref.watch(appVersionProvider).valueOrNull ?? 'v1.0.0-beta.1';
+    final displayVersion = versionStr.startsWith('v') ? versionStr.substring(1) : versionStr;
+
     return _Section(
       title: l10n.aboutApp,
       children: [
         _PremiumActionRow(
           icon: LucideIcons.info,
           title: l10n.appTitle,
-          subtitle: 'Version 2.2.0',
+          subtitle: 'Version $displayVersion',
           onTap: () async {
             final url = Uri.parse('https://github.com/mikiyasmechalo/looper');
             if (await canLaunchUrl(url)) {
@@ -2034,9 +2047,9 @@ class SettingsView extends ConsumerWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'v2.2.0',
-                style: TextStyle(color: Colors.white38, fontSize: 13),
+              Text(
+                versionStr,
+                style: const TextStyle(color: Colors.white38, fontSize: 13),
               ),
               const SizedBox(width: 8),
               IconButton(

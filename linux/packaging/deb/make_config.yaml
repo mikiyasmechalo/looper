@@ -3,11 +3,11 @@ package_name: looper-player
 executable_name: looper_player
 display_name: Looper Player
 generic_name: Music Player
-version: 1.0.0
+version: 1.0.0-beta.1
 architecture: amd64
 maintainer:
-  name: nilshaaa
-  email: nilshaaa@example.com
+  name: Mikiyas Mechalo
+  email: mikeme@example.com
 installed_size: 25000
 description: A modern, high-fidelity music player for Linux.
 section: utils
@@ -20,5 +20,4 @@ categories:
   - Player
 depends:
   - libgtk-3-0
-  - libvlc5
-  - libmpv2
+  - libmpv2 | libmpv1
