@@ -29,10 +29,3 @@ releases:
         build_args:
           --release:
 
-      - name: linux-archive
-        package:
-          platform: linux
-          target: archive
-        build_args:
-          --release:
-

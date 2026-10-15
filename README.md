@@ -20,7 +20,7 @@
 
 **Looper Player** is a modern, high-fidelity local music player engineered exclusively for **Desktop** (**Windows** and **Linux**). It merges a high-performance audio engine with a fluid **Glassmorphic** interface that morphs dynamically with the album artwork of whatever you are listening to.
 
-Built with an **offline-first, private-by-default** foundation, Looper Player keeps your music library, synchronized lyrics, listening habits, and equalization curves strictly on your local machine—completely free of telemetries, trackers, or subscription walls.
+Built with an **offline-first, private-by-default** foundation, Looper Player keeps your music library, synchronized lyrics, listening habits, and equalization curves strictly on your local machine, completely free of telemetries, trackers, or subscription walls.
 
 ---
 
@@ -31,7 +31,7 @@ Built with an **offline-first, private-by-default** foundation, Looper Player ke
 │                        LOOPER PLAYER FEATURES                          │
 ├────────────────────────────────────────┬───────────────────────────────┤
 │🔮 GLASSMORPHIC CYBER-UI               │ ⚡ ULTRA-PERFORMANT ENGINE     │
-│  Real-time blur, glow effects, and    │   Sub-millisecond scans, lean  │
+│  Real-time blur, glow effects, and    │   Relatively fast scans, lean  │
 │  instant album-art adaptive themes.   │   CPU/RAM, 50,000+ tracks safe.│
 ├────────────────────────────────────────┼───────────────────────────────┤
 │🎤 SYLLABLE & KARAOKE-GLOW LYRICS      │ 📊 LOOPER ANALYZE STATS        │
@@ -43,12 +43,16 @@ Built with an **offline-first, private-by-default** foundation, Looper Player ke
 │  corner player with live visualizers. │   OLED Pure Black, & gating.   │
 ├────────────────────────────────────────┼───────────────────────────────┤
 │🔒 100% PRIVATE & OFFLINE              │ 🎵 18-BAND GRAPHICAL EQ        │
-│  Zero telemetry. Zero network calls.  │   Custom drag-to-shape curve   │
-│  Pure local playback fidelity.        │   and zero-snapping precision. │
+│  Zero telemetry. Pure local playback  │   Custom drag-to-shape curve   │
+│   fidelity with gapless support.      │   and zero-snapping precision. │
+├────────────────────────────────────────┼───────────────────────────────┤
+│🎧 LAST.FM & SCROBBLING                │ 🎨 FULLY CUSTOMIZABLE UI       │
+│  Real-time scrobble & Now Playing sync│   Multiple seekbars, layouts,  │
+│  with offline queueing support.       │   and appearance settings.     │
 └────────────────────────────────────────┴───────────────────────────────┘
 ```
 
-- **Dynamic Theme & Neo-Blur Aesthetics**: The entire interface—navigation rails, seekbars, text glows, and backdrop blurs—adapts dynamically to the dominant palette of the active album art, with seamless crossfades.
+- **Dynamic Theme & Neo-Blur Aesthetics**: The entire interface-navigation rails, seekbars, text glows, and backdrop blurs adapts dynamically to the dominant palette of the active album art, with seamless crossfades.
 - **Syllable & Karaoke-Glow Lyrics**: Rich, word-level synchronized lyrics illumination, line-by-line smooth scrolling, tap-to-seek skipping, multi-provider local/embedded fallback, and a dedicated per-song calibration tool.
 - **Looper Analyze (Listening Trends & Stats)**: A dedicated analytics dashboard tracking total listening time, 30-day play trends, top artists, top tracks, listening streaks, and genre breakdowns.
 - **Dual Floating Mini-Player Modes**:
@@ -56,12 +60,14 @@ Built with an **offline-first, private-by-default** foundation, Looper Player ke
   - **Corner Mini Player**: Pinned, ultra-compact desktop widget featuring a live corner audio frequency visualizer.
 - **Hardware-Accelerated DSP Spectrum Visualizer**: 48-band real-time audio frequency visualizer reacting directly to live audio output in both the full player deck and mini-players, halting automatically when paused to conserve CPU.
 - **Smart Local Quick-Picks & Discovery**: An offline recommendation system that dynamically curates mixes from your local library based on your play frequency, skip history, and favorites.
+- **Last.fm & ListenBrainz Scrobbling**: Connect your Last.fm or ListenBrainz account for real-time background scrobbling and 'Now Playing' updates, with offline playback tracking.
 - **Auto Battery Saver Mode**: Intelligently monitors laptop battery levels and charging states, activating power-saving overrides (OLED pure black, animation freeze, blur suspension) below a configurable threshold.
 - **Expressive Seekbar (Squiggly Wave & Flat Progress Bar)**: Organic fluid wave that animates in sync with playback and pauses cleanly when idle, paired with an optional "Flat Progress Bar" mode for zero-animation minimalists.
 - **Interactive 18-Band Graphical Equalizer**: Drag-to-shape custom equalizer curve with decibel grid lines, +/- 20 dB range, frequency bands from 65 Hz to 20 kHz, zero-snapping logic, and real-time audio filter updates.
 - **Configurable Sleep Timer**: Set a countdown timer or song-count cutoff with gentle volume fade-out before playback stops.
 - **Desktop Window Customization & System Tray**: Borderless true fullscreen, desktop titlebar integration, system tray minimization, and global desktop hotkeys.
 - **Sub-Second Search & Local Library Scans**: Instant global scanning and indexing of 50k+ local libraries, with micro-latency search matching song titles, artists, albums, and even specific lyric phrases.
+- **Customizable UI**: Every part of the ui is customizable to make it yours, how you like it.
 
 ---
 
@@ -71,57 +77,43 @@ Built with an **offline-first, private-by-default** foundation, Looper Player ke
 
 <p align="center">
   <b>Home Dashboard & Smart Quick Picks</b><br/>
-  <img src="assets/SS_looper/home_dashboard.png" width="95%" alt="Home Dashboard & Quick Picks" />
+  <img src="assets/SS_looper/home_dashboard.png" width="98%" alt="Home Dashboard & Quick Picks" />
 </p>
 
 <p align="center">
-  <b>Synchronized Karaoke-Glow Lyrics Engine</b><br/>
-  <img src="assets/SS_looper/karaoke_lyrics_glow.png" width="48%" alt="Karaoke Glow Lyrics" />
-  <img src="assets/SS_looper/karaoke_lyrics_full.png" width="48%" alt="Karaoke Full Lyrics" />
+  <b>Expanded Player Styles & Real-Time Spectrum Visualizer</b><br/>
+  <img src="assets/SS_looper/expanded_player.png" width="32%" alt="Expanded Player" />
+  <img src="assets/SS_looper/expanded_player_1.png" width="32%" alt="Expanded Player Alternative" />
+  <img src="assets/SS_looper/expanded_player_visualizer.png" width="32%" alt="Expanded Player Visualizer" />
 </p>
 
 <p align="center">
-  <b>Desktop Expanded Player with Real-Time Spectrum Visualizer</b><br/>
-  <img src="assets/SS_looper/expanded_player_visualizer.png" width="95%" alt="Expanded Player with Visualizer" />
+  <b>Karaoke Lyrics • In-Song Search • Listening Analytics</b><br/>
+  <img src="assets/SS_looper/karaoke_lyrics_full.png" width="32%" alt="Karaoke Full Lyrics" />
+  <img src="assets/SS_looper/search_lyrics.png" width="32%" alt="Search with Lyrics" />
+  <img src="assets/SS_looper/looper_analyze_stats.png" width="32%" alt="Looper Analyze Stats" />
 </p>
 
 <p align="center">
-  <b>Dual Floating Mini-Players (Standard & Corner Modes)</b><br/>
-  <img src="assets/SS_looper/mini_player_standard.png" width="40%" alt="Standard Mini Player" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/SS_looper/mini_player_corner.png" width="45%" alt="Corner Mini Player" />
+  <b>Dual Floating Mini-Player Widgets (Standard & Corner Modes)</b><br/>
+  <img src="assets/SS_looper/mini_player_standard.png" width="46%" alt="Standard Mini Player" />
+  &nbsp;&nbsp;
+  <img src="assets/SS_looper/mini_player_corner.png" width="49%" alt="Corner Mini Player" />
 </p>
 
 <p align="center">
-  <b>Looper Analyze (Listening Trends & Stats)</b><br/>
-  <img src="assets/SS_looper/looper_analyze_stats.png" width="95%" alt="Looper Analyze Stats" />
+  <b>Different Looks & Library Views</b><br/>
+  <img src="assets/SS_looper/albums_grid.png" width="24%" alt="Albums Grid" />
+  <img src="assets/SS_looper/albums_grid_dense.png" width="24%" alt="Albums Dense Grid" />
+  <img src="assets/SS_looper/albums_color_theme.png" width="24%" alt="Albums Color Theming" />
+  <img src="assets/SS_looper/artists_grid.png" width="24%" alt="Artists Grid" />
 </p>
 
 <p align="center">
-  <b>Global Instant Search with In-Song Lyrics Matching</b><br/>
-  <img src="assets/SS_looper/search_lyrics.png" width="95%" alt="Global Search with Lyrics" />
-</p>
-
-<p align="center">
-  <b>Library Albums & Artists Views (Adaptive Theming)</b><br/>
-  <img src="assets/SS_looper/albums_grid.png" width="48%" alt="Albums Grid" />
-  <img src="assets/SS_looper/artists_grid.png" width="48%" alt="Artists Grid" />
-</p>
-
-<p align="center">
-  <img src="assets/SS_looper/albums_playing_wave.png" width="48%" alt="Albums Playing Wave" />
-  <img src="assets/SS_looper/albums_color_theme.png" width="48%" alt="Albums Color Theme" />
-</p>
-
-<p align="center">
-  <b>OLED Pure Black Mode & Flat Progress Bar</b><br/>
-  <img src="assets/SS_looper/oled_pure_black.png" width="48%" alt="OLED Pure Black Mode" />
-  <img src="assets/SS_looper/album_detail_flat.png" width="48%" alt="Album Detail Flat Bar" />
-</p>
-
-<p align="center">
-  <b>Settings & Customization Suite</b><br/>
-  <img src="assets/SS_looper/settings_appearance.png" width="95%" alt="Settings Appearance" />
+  <img src="assets/SS_looper/album_detail_flat.png" width="24%" alt="Album Detail Flat Bar" />
+  <img src="assets/SS_looper/album_detail_wave.png" width="24%" alt="Album Detail Waveform" />
+  <img src="assets/SS_looper/oled_pure_black.png" width="24%" alt="OLED Pure Black" />
+  <img src="assets/SS_looper/settings_appearance.png" width="24%" alt="Settings Appearance" />
 </p>
 
 ---
@@ -246,14 +238,9 @@ cd universal
 A massive thank you to the creators and open-source communities that make Looper Player possible:
 
 ### Project Maintainers
-* **Mikiyas Mechalo** — *Lead Maintainer & Desktop Architecture* ([GitHub](https://github.com/mikiyasmechalo) • [Telegram](https://t.me/mikeme2))
+* **Mikiyas Mechalo** — *Lead Maintainer Of This Fork* ([GitHub](https://github.com/mikiyasmechalo) • [Telegram](https://t.me/mikeme2))
 * **Nilesh Suthar** — *Original Creator & Architect* ([GitHub](https://github.com/SthrNilshaaa) • [Telegram](https://t.me/neelshy))
 * **Karan Suthar** — *Original UI/UX & Interaction Design* ([GitHub](https://github.com/sthrkaran) • [Telegram](https://t.me/karanwhy))
-
-## 💬 Community & Support
-
-Join the Looper community for support, feedback, and discussion:
-* **Telegram Discussion Group**: [t.me/looperPlayer](https://t.me/looperPlayer)
 
 ---
 

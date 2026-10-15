@@ -13,6 +13,8 @@ jobs:
   build-windows:
     name: Build & Package Windows (x64)
     runs-on: windows-latest
+    env:
+      CL: "/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,8 +31,100 @@ jobs:
       - name: Install Project Dependencies
         run: flutter pub get
 
+      - name: Pre-extract native plugin binaries and patch CMakeLists
+        shell: pwsh
+        run: |
+          $pubCache = if ($env:PUB_CACHE) { $env:PUB_CACHE } else { "$env:LOCALAPPDATA\Pub\Cache" }
+          Write-Host "Pub cache located at: $pubCache"
+
+          # 1. Audiotags
+          $audiotagsDir = Get-ChildItem -Directory -Path "$pubCache\hosted\pub.dev" -Filter "audiotags*" | Select-Object -First 1
+          if ($audiotagsDir) {
+            $winDir = Join-Path $audiotagsDir.FullName "windows"
+            $dllPath = Join-Path $winDir "audiotags.dll"
+            if (-not (Test-Path $dllPath)) {
+              Write-Host "Pre-extracting audiotags native library to $winDir..."
+              $tarGz = Join-Path $winDir "windows.tar.gz"
+              curl.exe -sSfL -o $tarGz "https://github.com/erikas-taroza/audiotags/releases/download/v1.4.2/windows.tar.gz"
+              tar -xzf $tarGz -C $winDir
+              if (-not (Test-Path $dllPath)) {
+                Write-Error "Failed to extract audiotags.dll"
+                exit 1
+              }
+              Write-Host "Extracted audiotags.dll successfully."
+            }
+            $cMakeLists = Join-Path $winDir "CMakeLists.txt"
+            if (Test-Path $cMakeLists) {
+              $content = Get-Content -Raw $cMakeLists
+              $content = $content -replace 'if\(NOT EXISTS \$\{LibPath\}\)', 'if(FALSE)'
+              $content = $content -replace 'if\(NOT EXISTS "\$\{CMAKE_CURRENT_SOURCE_DIR\}/audiotags\.dll"\)', 'if(FALSE)'
+              Set-Content -Path $cMakeLists -Value $content
+              Write-Host "Neutralized audiotags CMakeLists.txt successfully."
+            }
+          }
+
+          # 2. FFmpegKit
+          $ffmpegDir = Get-ChildItem -Directory -Path "$pubCache\hosted\pub.dev" -Filter "ffmpeg_kit_flutter_new_full*" | Select-Object -First 1
+          if ($ffmpegDir) {
+            $prebuiltDir = Join-Path $ffmpegDir.FullName "windows\ffmpeg-kit"
+            $marker = Join-Path $prebuiltDir "bin\.ffmpegkit_variant"
+            if (-not (Test-Path $marker)) {
+              Write-Host "Pre-extracting FFmpegKit native library to $prebuiltDir..."
+              New-Item -ItemType Directory -Force -Path $prebuiltDir | Out-Null
+              $zipUrl = "https://github.com/sk3llo/ffmpeg_kit_flutter/releases/download/8.0.0-full/ffmpeg-kit-windows-x86_64-full-8.0.0.zip"
+              $zipPath = Join-Path $prebuiltDir "ffmpeg-kit.zip"
+              curl.exe -sSfL -o $zipPath $zipUrl
+              tar -xf $zipPath -C $prebuiltDir
+              Remove-Item -Force $zipPath
+              New-Item -ItemType Directory -Force -Path (Join-Path $prebuiltDir "bin") | Out-Null
+              Set-Content -Path $marker -Value "8.0.0-full"
+              Write-Host "Extracted FFmpegKit successfully."
+            }
+          }
+
+          # 3. Metadata God
+          $metaDir = Get-ChildItem -Directory -Path "$pubCache\hosted\pub.dev" -Filter "metadata_god*" | Select-Object -First 1
+          if ($metaDir) {
+            $winDir = Join-Path $metaDir.FullName "windows"
+            $dllPath = Join-Path $winDir "v0.5.2\windows-x64\metadata_god.dll"
+            if (-not (Test-Path $dllPath)) {
+              Write-Host "Pre-extracting metadata_god native library..."
+              $libRoot = Join-Path $winDir "v0.5.2"
+              New-Item -ItemType Directory -Force -Path $libRoot | Out-Null
+              $tarGz = Join-Path $winDir "v0.5.2.tar.gz"
+              curl.exe -sSfL -o $tarGz "https://github.com/KRTirtho/metadata_god/releases/download/v0.5.2/other.tar.gz"
+              tar -xzf $tarGz -C $libRoot
+              if (-not (Test-Path $dllPath)) {
+                Write-Error "Failed to extract metadata_god.dll to $dllPath"
+                exit 1
+              }
+              Write-Host "Extracted metadata_god.dll successfully."
+            }
+            $cMakeLists = Join-Path $winDir "CMakeLists.txt"
+            if (Test-Path $cMakeLists) {
+              $content = Get-Content -Raw $cMakeLists
+              $content = $content -replace 'if\(NOT EXISTS \$\{ArchivePath\}\)', 'if(FALSE)'
+              $content = $content -replace 'if\(NOT EXISTS \$\{DllPath\}\)', 'if(FALSE)'
+              Set-Content -Path $cMakeLists -Value $content
+              Write-Host "Neutralized metadata_god CMakeLists.txt successfully."
+            }
+          }
+
+          # 4. Neutralize any remaining cmake -E tar calls across all plugin CMakeLists.txt
+          Get-ChildItem -Recurse -Path "$pubCache\hosted\pub.dev" -Filter "CMakeLists.txt" | ForEach-Object {
+            $c = Get-Content -Raw $_.FullName
+            if ($c -match '\$\{CMAKE_COMMAND\}\s+-E\s+tar') {
+              Write-Host "Neutralizing tar command in $($_.FullName)"
+              $c = $c -replace '\$\{CMAKE_COMMAND\}\s+-E\s+tar', '${CMAKE_COMMAND} -E echo'
+              Set-Content -Path $_.FullName -Value $c
+            }
+          }
+
       - name: Build Windows Application (Release)
-        run: flutter build windows --release
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "build\native_assets\windows" | Out-Null
+          flutter build windows --release
 
       - name: Ensure Inno Setup is Installed
         run: choco install innosetup -y --no-progress
@@ -74,7 +168,15 @@ jobs:
             clang cmake ninja-build pkg-config \
             libgtk-3-dev libblkid-dev liblzma-dev \
             libgcrypt20-dev libmpv-dev libnotify-dev \
+            libkeybinder-3.0-dev libayatana-appindicator3-dev \
             libfuse2 rpm
+
+      - name: Install rpmbuild wrapper for spec version sanitization
+        run: |
+          sudo mv /usr/bin/rpmbuild /usr/bin/rpmbuild.real
+          sudo cp .github/scripts/rpmbuild_wrapper.py /usr/bin/rpmbuild
+          sudo chmod +x /usr/bin/rpmbuild
+          sudo ln -sf /usr/bin/rpmbuild /usr/local/bin/rpmbuild
 
       - name: Install appimagetool for AppImage Packaging
         run: |
@@ -99,17 +201,16 @@ jobs:
       - name: Install Project Dependencies
         run: flutter pub get
 
-      - name: Package Linux Distributors (DEB, RPM, AppImage, Archive)
+      - name: Package Linux Distributors (DEB, RPM, AppImage)
         run: |
-          flutter_distributor release --name dev --package linux-deb
-          flutter_distributor release --name dev --package linux-rpm
-          flutter_distributor release --name dev --package linux-appimage
-          flutter_distributor release --name dev --package linux-archive
+          flutter_distributor release --name dev --skip-clean
 
       - name: Organize Linux Distribution Artifacts
         run: |
           mkdir -p build/linux-release-assets
-          find dist/ -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" -o -name "*.tar.gz" \) -exec cp {} build/linux-release-assets/ \;
+          find dist/ -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.AppImage" \) -exec cp {} build/linux-release-assets/ \;
+          # Package portable Linux tarball (.tar.gz) from bundle
+          tar -czf build/linux-release-assets/looper-player-1.0.0-beta.1-linux-x64.tar.gz -C build/linux/x64/release/bundle .
           ls -la build/linux-release-assets/
 
       - name: Upload Linux Artifacts
@@ -133,6 +234,7 @@ jobs:
         with:
           name: windows-packages
           path: release-binaries
+          merge-multiple: true
 
       - name: Download Linux Artifacts
         if: needs.build-linux.result == 'success'
@@ -140,6 +242,7 @@ jobs:
         with:
           name: linux-packages
           path: release-binaries
+          merge-multiple: true
 
       - name: List All Downloaded Binaries
         run: ls -lh release-binaries
@@ -160,34 +263,27 @@ jobs:
             PRERELEASE_FLAG="--prerelease"
           fi
           
-          gh release create "$TAG_NAME" \
-            release-binaries/* \
-            $PRERELEASE_FLAG \
-            --title "Looper Player $TAG_NAME" \
-            --notes "### 🚀 Welcome to Looper Player $TAG_NAME!
-
-          We are thrilled to introduce **Looper Player $TAG_NAME**—a high-fidelity, local-first cyber-glassmorphic music player engineered for desktop!
-
-          #### 📦 Available Downloads
-
-          **Windows (x64)**:
-          - \`Looper-Setup-x64.exe\`: Windows Setup Wizard (installs per-user, sets audio file associations, and creates shortcuts).
-          - \`looper-windows-x64-portable.zip\`: Standalone portable archive (extract and run immediately).
-
-          **Linux (x86_64)**:
-          - \`*.AppImage\`: Universal standalone executable for modern Linux distributions.
-          - \`*.deb\`: Native package for Debian, Ubuntu, Linux Mint, and Pop!_OS.
-          - \`*.rpm\`: Native package for Fedora, RHEL, and openSUSE.
-          - \`*.tar.gz\`: Portable Linux archive.
-
-          #### ✨ Highlights in this Release
-          - **Dynamic Syllable & Karaoke Lyrics**: Word-level illuminated lyrics synchronized to playback with tap-to-seek and per-song offset calibration.
-          - **Looper Analyze**: In-depth listening statistics, top songs, top artists, 30-day play trends, streaks, and genre breakdowns.
-          - **Dual Floating Mini-Players**: Standard floating deck & compact corner player with real-time DSP spectrum visualizers.
-          - **Expressive Seekbar**: Organic squiggly wave seekbar with pause gating, plus an optional flat progress bar for minimalists.
-          - **Auto Battery Saver**: Intelligent power-saving mode triggered on low laptop battery with OLED pure black override.
-          - **18-Band Graphical EQ**: Interactive drag-to-shape equalization curve.
-          - **100% Offline & Private**: Pure local playback with zero telemetry and sub-millisecond library scanning.
-
-          ---
-          *Requires \`libmpv\` on Linux (\`sudo apt install libmpv2\` or \`sudo dnf install mpv-libs\`).*"
+          ASSETS=()
+          while IFS= read -r file; do
+            ASSETS+=("$file")
+          done < <(find release-binaries -type f)
+          
+          echo "Found ${#ASSETS[@]} release assets to upload:"
+          printf ' - %s\n' "${ASSETS[@]}"
+          
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists, uploading assets..."
+            gh release upload "$TAG_NAME" "${ASSETS[@]}" --clobber
+          else
+            echo "Creating new release $TAG_NAME..."
+            gh release create "$TAG_NAME" \
+              "${ASSETS[@]}" \
+              $PRERELEASE_FLAG \
+              --title "Looper $TAG_NAME — Desktop Evolution & Glassmorphic UI" \
+              --notes-file RELEASE_NOTES.txt || \
+            gh release create "$TAG_NAME" \
+              "${ASSETS[@]}" \
+              $PRERELEASE_FLAG \
+              --title "Looper $TAG_NAME — Desktop Evolution & Glassmorphic UI" \
+              --notes "Looper Player $TAG_NAME Desktop Release"
+          fi

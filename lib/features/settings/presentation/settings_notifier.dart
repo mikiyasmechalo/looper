@@ -186,6 +186,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.settingsV5 = true;
         needsSave = true;
       }
+      if (!settings.settingsV6) {
+        settings.enableDynamicTheming = true;
+        settings.disableBlur = false;
+        settings.settingsV6 = true;
+        needsSave = true;
+      }
       if (!settings.autoLyricsFallbackMigrated) {
         settings.autoLyricsFallback = true;
         settings.autoLyricsFallbackMigrated = true;
@@ -209,6 +215,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       // Initialize default settings
       final defaultSettings = AppSettings()
         ..enableDynamicTheming = true
+        ..disableBlur = false
         ..bgBrightness = 0.5
         ..bgOpacity = 0.3
         ..showHomeArtists = true
@@ -232,6 +239,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         ..settingsV3 = true
         ..settingsV4 = true
         ..settingsV5 = true
+        ..settingsV6 = true
         ..enableTaskbarControls = true
         ..enableUpdateNotifications = true
         ..dynamicLyrics = false
@@ -351,6 +359,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..settingsV3 = s.settingsV3
       ..settingsV4 = s.settingsV4
       ..settingsV5 = s.settingsV5
+      ..settingsV6 = s.settingsV6
       ..blurredArtworkForLyrics = s.blurredArtworkForLyrics
       ..customBackgroundImagePath = s.customBackgroundImagePath
       ..bgBrightness = s.bgBrightness

@@ -746,7 +746,8 @@ class _ResponsiveContent extends StatelessWidget {
               fit: StackFit.expand,
               clipBehavior: Clip.hardEdge,
               children: [
-                ?currentChild,
+                // ignore: use_null_aware_elements
+                if (currentChild != null) currentChild,
               ],
             );
           },

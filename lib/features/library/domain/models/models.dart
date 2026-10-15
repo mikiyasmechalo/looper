@@ -130,7 +130,7 @@ class AppSettings {
   bool shuffle = false;
   int repeatMode = 0; // 0: off, 1: one, 2: all
   String language = 'en';
-  bool enableDynamicTheming = false;
+  bool enableDynamicTheming = true;
   bool darkTheme = true;
   bool saveDynamicColor = true;
   bool dynamicLyrics = false;
@@ -153,6 +153,7 @@ class AppSettings {
   bool settingsV3 = false;
   bool settingsV4 = false;
   bool settingsV5 = false;
+  bool settingsV6 = false;
   bool showPerformanceOptimizer = false;
   bool autoBatterySaver = true;
   int batterySaverThreshold = 20;
