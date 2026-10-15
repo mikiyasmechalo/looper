@@ -127,7 +127,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // Check for application updates on GitHub
       UpdateService.checkForUpdates(ref: ref, context: context);
 
-      // Release transient startup memory and start background periodic sweep
+      // Release transient startup memory early and start background periodic sweep
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        MemoryService.trimWorkingSet();
+      });
       Future.delayed(const Duration(seconds: 4), () {
         MemoryService.trimWorkingSet();
         MemoryService.startPeriodicTrimming();

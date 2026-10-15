@@ -1201,12 +1201,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     state = newState;
   }
 
-  Future<void> updateStreamingQuality(int quality) async {
-    final newState = _clone(state)..streamingQuality = quality;
-    await _save(newState);
-    state = newState;
-  }
-
   Future<void> updateEnableUpdateNotifications(bool value) async {
     final newState = _clone(state)..enableUpdateNotifications = value;
     await _save(newState);

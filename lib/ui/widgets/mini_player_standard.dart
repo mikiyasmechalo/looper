@@ -446,8 +446,9 @@ class _StandardMiniPlayerState extends ConsumerState<StandardMiniPlayer>
 
   @override
   Widget build(BuildContext context) {
-    final playbackState = ref.watch(playbackProvider);
-    final song = playbackState.currentSong;
+    final song = ref.watch(playbackProvider.select((s) => s.currentSong));
+    final volume = ref.watch(playbackProvider.select((s) => s.volume));
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
 
     final theme = Theme.of(context);
     final accent = theme.colorScheme.primary;
@@ -506,7 +507,7 @@ class _StandardMiniPlayerState extends ConsumerState<StandardMiniPlayer>
                               color: Colors.white.withValues(alpha: 0.12),
                               child: FractionallySizedBox(
                                 alignment: Alignment.centerLeft,
-                                widthFactor: (playbackState.volume).clamp(
+                                widthFactor: (volume).clamp(
                                   0.0,
                                   1.0,
                                 ),
@@ -622,7 +623,7 @@ class _StandardMiniPlayerState extends ConsumerState<StandardMiniPlayer>
                           // Layer 0: real-spectrum visualizer, fills the whole controls area
                           if (_visualizerEnabled)
                             _VisualizerWidget(
-                              isPlaying: playbackState.isPlaying,
+                              isPlaying: isPlaying,
                               accent: accent,
                             ),
 
@@ -976,9 +977,11 @@ class _ProgressBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(playbackProvider);
-    final ms = state.position.inMilliseconds.toDouble();
-    final total = state.duration.inMilliseconds.toDouble();
+    final position = ref.watch(playbackProvider.select((s) => s.position));
+    final duration = ref.watch(playbackProvider.select((s) => s.duration));
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
+    final ms = position.inMilliseconds.toDouble();
+    final total = duration.inMilliseconds.toDouble();
     final pct = total > 0 ? (ms / total).clamp(0.0, 1.0) : 0.0;
 
     final useExpressive = ref
@@ -1015,9 +1018,9 @@ class _ProgressBar extends ConsumerWidget {
             height: 24, // consistent tap area
             alignment: Alignment.center,
             child: ExpressiveSlider(
-              position: state.position,
-              duration: state.duration,
-              isPlaying: state.isPlaying,
+              position: position,
+              duration: duration,
+              isPlaying: isPlaying,
               showTimestamps: false,
               onSeek: (pos) => ref.read(playbackProvider.notifier).seek(pos),
               onSeekStart: () =>
@@ -1943,7 +1946,20 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_onTick)..start();
+    _ticker = createTicker(_onTick);
+    if (widget.isPlaying) {
+      _ticker.start();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _VisualizerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      if (widget.isPlaying) {
+        if (!_ticker.isActive) _ticker.start();
+      }
+    }
   }
 
   void _onTick(Duration elapsed) {
@@ -2010,6 +2026,16 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
       }
     }
 
+    if (!widget.isPlaying) {
+      final allSettled = _smoothed.every((v) => v < 0.005);
+      if (allSettled) {
+        _smoothed.fillRange(0, _barCount, 0.0);
+        if (changed) setState(() {});
+        if (_ticker.isActive) _ticker.stop();
+        return;
+      }
+    }
+
     if (changed) setState(() {});
   }
 
@@ -2021,8 +2047,8 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
 
   @override
   Widget build(BuildContext context) {
-    // Subscribe so spectrumProvider stays alive while visible
-    ref.watch(spectrumProvider);
+    // Keep spectrumProvider active while visible without rebuilding widget on every FFT frame
+    ref.listen<List<double>>(spectrumProvider, (previous, next) {});
 
     return AnimatedOpacity(
       opacity: widget.isPlaying ? 1.0 : 0.0,

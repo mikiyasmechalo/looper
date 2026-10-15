@@ -18,7 +18,7 @@ import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/db_service.dart';
 import 'package:looper_player/ui/widgets/collection_options_bottom_sheet.dart';
 import 'package:looper_player/ui/widgets/song_options_bottom_sheet.dart';
-import 'package:looper_player/features/streaming/data/recommendations_service.dart';
+import 'package:looper_player/features/library/data/recommendations_service.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:isar/isar.dart';
 

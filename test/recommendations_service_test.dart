@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
-import 'package:looper_player/features/streaming/data/recommendations_service.dart';
+import 'package:looper_player/features/library/data/recommendations_service.dart';
 
 Song createTestSong({
   required int id,

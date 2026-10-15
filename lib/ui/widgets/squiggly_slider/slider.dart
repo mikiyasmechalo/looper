@@ -124,26 +124,51 @@ class _SquigglySliderState extends State<SquigglySlider>
     with SingleTickerProviderStateMixin {
   late AnimationController phaseController;
 
+  bool get _shouldAnimate =>
+      widget.squiggleSpeed != 0 && widget.squiggleAmplitude > 0.001;
+
   @override
   void initState() {
     super.initState();
-    if (widget.squiggleSpeed == 0) {
-      phaseController = AnimationController(
-        vsync: this,
-      );
-      phaseController.value = 0.5;
+    final durationMs = widget.squiggleSpeed != 0
+        ? (1000.0 / widget.squiggleSpeed.abs()).round()
+        : 1000;
+    phaseController = AnimationController(
+      duration: Duration(milliseconds: durationMs),
+      vsync: this,
+    )..addListener(() {
+        if (mounted) setState(() {});
+      });
+
+    if (_shouldAnimate) {
+      phaseController.repeat(min: 0, max: 1);
     } else {
-      phaseController = AnimationController(
-        duration: Duration(
-            milliseconds: (1000.0 / widget.squiggleSpeed.abs()).round()),
-        vsync: this,
-      )
-        ..repeat(min: 0, max: 1)
-        ..addListener(() {
-          setState(() {
-            // The state that has changed here is the animation object’s value.
-          });
-        });
+      phaseController.value = 0.5;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SquigglySlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.squiggleSpeed != oldWidget.squiggleSpeed &&
+        widget.squiggleSpeed != 0) {
+      phaseController.duration = Duration(
+        milliseconds: (1000.0 / widget.squiggleSpeed.abs()).round(),
+      );
+    }
+    final wasAnimating =
+        oldWidget.squiggleSpeed != 0 && oldWidget.squiggleAmplitude > 0.001;
+    final shouldAnimate = _shouldAnimate;
+    if (wasAnimating != shouldAnimate) {
+      if (shouldAnimate) {
+        if (!phaseController.isAnimating) {
+          phaseController.repeat(min: 0, max: 1);
+        }
+      } else {
+        if (phaseController.isAnimating) {
+          phaseController.stop();
+        }
+      }
     }
   }
 

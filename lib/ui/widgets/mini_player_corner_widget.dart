@@ -340,8 +340,9 @@ class _CornerWidgetPlayerState extends ConsumerState<CornerWidgetPlayer>
   @override
   Widget build(BuildContext context) {
     final isExpanded = _expandedView != _ExpandedView.none;
-    final playbackState = ref.watch(playbackProvider);
-    final song = playbackState.currentSong;
+    final song = ref.watch(playbackProvider.select((s) => s.currentSong));
+    final volume = ref.watch(playbackProvider.select((s) => s.volume));
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
     final settings = ref.watch(miniPlayerSettingsProvider);
     final accent = Theme.of(context).colorScheme.primary;
 
@@ -396,7 +397,7 @@ class _CornerWidgetPlayerState extends ConsumerState<CornerWidgetPlayer>
                               color: Colors.white.withValues(alpha: 0.12),
                               child: FractionallySizedBox(
                                 alignment: Alignment.centerLeft,
-                                widthFactor: (playbackState.volume).clamp(
+                                widthFactor: (volume).clamp(
                                   0.0,
                                   1.0,
                                 ),
@@ -422,7 +423,7 @@ class _CornerWidgetPlayerState extends ConsumerState<CornerWidgetPlayer>
                           SizedBox(
                             height: 94,
                             child: _buildHeaderRow(
-                              playbackState,
+                              isPlaying,
                               song,
                               settings,
                               accent,
@@ -459,7 +460,7 @@ class _CornerWidgetPlayerState extends ConsumerState<CornerWidgetPlayer>
                                   width: 314,
                                   height: 94,
                                   child: _buildHeaderRow(
-                                    playbackState,
+                                    isPlaying,
                                     song,
                                     settings,
                                     accent,
@@ -486,7 +487,7 @@ class _CornerWidgetPlayerState extends ConsumerState<CornerWidgetPlayer>
 }
 
   Widget _buildHeaderRow(
-    PlaybackState playbackState,
+    bool isPlaying,
     dynamic song,
     MiniPlayerSettingsState settings,
     Color accent,
@@ -513,7 +514,7 @@ class _CornerWidgetPlayerState extends ConsumerState<CornerWidgetPlayer>
                       milliseconds: 250,
                     ),
                     child: _CornerVisualizerWidget(
-                      isPlaying: playbackState.isPlaying,
+                      isPlaying: isPlaying,
                       accent: accent,
                     ),
                   ),
@@ -681,8 +682,7 @@ class _TopPlaybackControls extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playbackState = ref.watch(playbackProvider);
-    final isPlaying = playbackState.isPlaying;
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
@@ -789,9 +789,8 @@ class _BottomUtilControls extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playbackState = ref.watch(playbackProvider);
-    final isShuffle = playbackState.isShuffle;
-    final repeatMode = playbackState.repeatMode;
+    final isShuffle = ref.watch(playbackProvider.select((s) => s.isShuffle));
+    final repeatMode = ref.watch(playbackProvider.select((s) => s.repeatMode));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
@@ -1695,7 +1694,20 @@ class _CornerVisualizerWidgetState extends ConsumerState<_CornerVisualizerWidget
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_onTick)..start();
+    _ticker = createTicker(_onTick);
+    if (widget.isPlaying) {
+      _ticker.start();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _CornerVisualizerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      if (widget.isPlaying) {
+        if (!_ticker.isActive) _ticker.start();
+      }
+    }
   }
 
   void _onTick(Duration elapsed) {
@@ -1747,6 +1759,16 @@ class _CornerVisualizerWidgetState extends ConsumerState<_CornerVisualizerWidget
       }
     }
 
+    if (!widget.isPlaying) {
+      final allSettled = _smoothed.every((v) => v < 0.005);
+      if (allSettled) {
+        _smoothed.fillRange(0, _barCount, 0.0);
+        if (changed) setState(() {});
+        if (_ticker.isActive) _ticker.stop();
+        return;
+      }
+    }
+
     if (changed) setState(() {});
   }
 
@@ -1758,7 +1780,8 @@ class _CornerVisualizerWidgetState extends ConsumerState<_CornerVisualizerWidget
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(spectrumProvider);
+    // Keep spectrumProvider active while visible without rebuilding widget on every FFT frame
+    ref.listen<List<double>>(spectrumProvider, (previous, next) {});
     return CustomPaint(
       painter: _CornerVisualizerPainter(
         bars: _smoothed,

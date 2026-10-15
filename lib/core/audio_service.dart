@@ -124,6 +124,8 @@ class AudioService {
     // when tracks contain embedded album art / APIC pictures, while avoiding OSD/Lua heap.
     try {
       await player.setRawProperty('vid', 'no');
+      await player.setRawProperty('video', 'no');
+      await player.setRawProperty('audio-display', 'no');
       await player.setRawProperty('vo', 'null');
       await player.setRawProperty('sub', 'no');
       await player.setRawProperty('osd-bar', 'no');
@@ -132,8 +134,8 @@ class AudioService {
       await player.setRawProperty('audio-buffer', '0.15');
     } catch (_) {}
 
-    // SpatialFlow Audio Stream Buffering & Readahead Calculations:
-    // Tuned for lean local & streaming audio playback (~5MB total cache footprint).
+    // Audio Buffering & Readahead Calculations:
+    // Tuned for lean local audio playback (~5MB total cache footprint).
     try {
       await player.setRawProperty('demuxer-max-bytes', '4194304'); // 4MB forward cache
       await player.setRawProperty(

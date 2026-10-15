@@ -249,7 +249,19 @@ class _SongOptionsSheetContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final settings = ref.watch(settingsProvider);
-    final playbackState = ref.watch(playbackProvider);
+    final queue = ref.watch(playbackProvider.select((s) => s.queue));
+    final currentSongPath =
+        ref.watch(playbackProvider.select((s) => s.currentSong?.path));
+    final isSleepTimerActive =
+        ref.watch(playbackProvider.select((s) => s.isSleepTimerActive));
+    final sleepTimerSongsRemaining =
+        ref.watch(playbackProvider.select((s) => s.sleepTimerSongsRemaining));
+    final sleepTimerRemainingText = isSleepTimerActive
+        ? ref.watch(playbackProvider.select(formatSleepTimerRemaining))
+        : '';
+    final isABLooping =
+        ref.watch(playbackProvider.select((s) => s.isABLooping));
+
     final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
     final isPureBlack = settings.isBatterySaverActive ||
         (settings.darkTheme && !useBlur);
@@ -259,15 +271,13 @@ class _SongOptionsSheetContent extends ConsumerWidget {
         ? Colors.black
         : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E));
 
-    final queue = playbackState.queue;
-    final currentSongPath = playbackState.currentSong?.path;
     final currentIdx = queue.indexWhere((s) => s.path == currentSongPath);
     final targetIdx = queueIndex ?? (isFromQueue ? queue.indexWhere((s) => s.path == song.path) : -1);
     final isUpcomingInQueue = isFromQueue && currentIdx != -1 && targetIdx != -1 && targetIdx >= currentIdx;
     final songsUntilStop = isUpcomingInQueue ? (targetIdx - currentIdx + 1) : null;
-    final isStoppingAfterThis = playbackState.isSleepTimerActive &&
-        playbackState.sleepTimerSongsRemaining != null &&
-        playbackState.sleepTimerSongsRemaining == songsUntilStop;
+    final isStoppingAfterThis = isSleepTimerActive &&
+        sleepTimerSongsRemaining != null &&
+        sleepTimerSongsRemaining == songsUntilStop;
 
     Widget sheetContent = Container(
       decoration: BoxDecoration(
@@ -406,11 +416,11 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                         },
                       ),
                       MenuOptionTile(
-                        label: playbackState.isSleepTimerActive
-                            ? 'Sleep Timer (${formatSleepTimerRemaining(playbackState)})'
+                        label: isSleepTimerActive
+                            ? 'Sleep Timer ($sleepTimerRemainingText)'
                             : 'Sleep Timer',
                         icon: LucideIcons.timer,
-                        iconColor: playbackState.isSleepTimerActive ? Colors.white70 : accentColor,
+                        iconColor: isSleepTimerActive ? Colors.white70 : accentColor,
                         onTap: () {
                           HapticFeedback.lightImpact();
                           Navigator.pop(context);
@@ -439,11 +449,11 @@ class _SongOptionsSheetContent extends ConsumerWidget {
                           },
                         ),
                       MenuOptionTile(
-                        label: playbackState.isABLooping
+                        label: isABLooping
                             ? 'A-B Looper (Active)'
                             : 'A-B Section Looper',
                         icon: LucideIcons.repeat1,
-                        iconColor: playbackState.isABLooping ? accentColor : Colors.white70,
+                        iconColor: isABLooping ? accentColor : Colors.white70,
                         onTap: () {
                           HapticFeedback.lightImpact();
                           Navigator.pop(context);

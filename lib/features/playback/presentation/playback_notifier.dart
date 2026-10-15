@@ -24,7 +24,6 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 import 'package:looper_player/core/tag_writer_service.dart';
-import 'package:looper_player/features/streaming/data/youtube_stream_service.dart';
 import 'package:looper_player/features/playback/data/queue_repository.dart';
 import 'package:looper_player/core/app_toast.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -244,14 +243,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       LoggerHelper.write('Mpv Player Error: $err');
     });
 
-    player.stream.log.listen((entry) {
-      LoggerHelper.write('Mpv Player Log: $entry');
-    });
-
-    player.stream.internalLog.listen((entry) {
-      LoggerHelper.write('Mpv Player InternalLog: $entry');
-    });
-
     player.stream.playing.listen((playing) {
       if (_isTogglePlaying) {
         // Ignore native player updates while in the middle of play/pause transitions
@@ -287,8 +278,11 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
       state = state.copyWith(isPlaying: playing);
       _updateNotification();
-      if (!playing && ref.read(settingsProvider).persistQueue) {
-        ref.read(settingsProvider.notifier).updateLastPosition(state.position.inMilliseconds);
+      if (!playing) {
+        if (ref.read(settingsProvider).persistQueue) {
+          ref.read(settingsProvider.notifier).updateLastPosition(state.position.inMilliseconds);
+        }
+        Future.delayed(const Duration(milliseconds: 500), MemoryService.trimWorkingSet);
       }
     });
 
@@ -787,53 +781,18 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
   }
 
   Future<void> play(Song song, {bool forceDisableCrossfade = false, bool play = true, Duration? initialPosition}) async {
-    if (song.isOnlineStream) {
-      if (song.streamUrl == null || _isStreamUrlExpired(song.streamUrl)) {
-        final youtubeId = song.youtubeId;
-        if (youtubeId != null && youtubeId.isNotEmpty) {
-          final settings = ref.read(settingsProvider);
-          final streamService = YouTubeStreamService();
-          try {
-            final newUrl = await streamService.resolveAudioStreamUrl(
-              youtubeId,
-              quality: settings.streamingQuality,
-            );
-            if (newUrl != null) {
-              song.streamUrl = newUrl;
-              song.path = 'https://youtube.com/watch?v=$youtubeId';
-
-              // Only save if it's already in the database
-              if (song.id != Isar.autoIncrement) {
-                await DbService.isar.writeTxn(() async {
-                  await DbService.isar.songs.put(song);
-                });
-              }
-            }
-          } catch (e) {
-            LoggerHelper.write('Failed to re-resolve expired online stream URL: $e');
-          } finally {
-            streamService.dispose();
-          }
-        }
-      }
-    }
-
     _silenceTimer?.cancel();
     _songCompletionTimer?.cancel();
     _playCountTimer?.cancel();
 
-    final isUrl = song.isOnlineStream || song.path.startsWith('http://') || song.path.startsWith('https://');
-    if (!isUrl) {
-      final file = File(song.path);
-      if (!await file.exists()) {
-
-        _showErrorSnackBar(
-          'File not found or inaccessible: ${song.title}',
+    final file = File(song.path);
+    if (!await file.exists()) {
+      _showErrorSnackBar(
+        'File not found or inaccessible: ${song.title}',
           (l10n) => 'File not found or inaccessible: ${song.title}',
         );
         return;
       }
-    }
 
     final crossfadeId = ++_activeCrossfadeId;
     _isTransitioning = true;
@@ -921,9 +880,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
 
     await ref.read(audioServiceProvider).play(
-      (song.isOnlineStream && song.streamUrl != null && song.streamUrl!.isNotEmpty)
-          ? song.streamUrl!
-          : song.path,
+      song.path,
       metadata: metadata,
       play: targetPlay,
       equalizerGains: gains,
@@ -957,21 +914,12 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
     }
 
     await DbService.isar.writeTxn(() async {
-      final dbSong = (song.isOnlineStream && song.youtubeId != null && song.youtubeId!.isNotEmpty)
-          ? await DbService.isar.songs
-              .filter()
-              .youtubeIdEqualTo(song.youtubeId)
-              .findFirst()
-          : await DbService.isar.songs
-              .filter()
-              .pathEqualTo(song.path)
-              .findFirst();
+      final dbSong = await DbService.isar.songs
+          .filter()
+          .pathEqualTo(song.path)
+          .findFirst();
 
       final songToUpdate = dbSong ?? song;
-      if (song.isOnlineStream) {
-        songToUpdate.streamUrl = song.streamUrl;
-        songToUpdate.path = song.path;
-      }
 
       if (dbSong != null) {
         song.id = dbSong.id;
@@ -1127,15 +1075,10 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
 
       DbService.isar.writeTxn(() async {
         await DbService.isar.playbackHistoryEntrys.put(entry);
-        final dbSong = (song.isOnlineStream && song.youtubeId != null && song.youtubeId!.isNotEmpty)
-            ? await DbService.isar.songs
-                .filter()
-                .youtubeIdEqualTo(song.youtubeId)
-                .findFirst()
-            : await DbService.isar.songs
-                .filter()
-                .pathEqualTo(song.path)
-                .findFirst();
+        final dbSong = await DbService.isar.songs
+            .filter()
+            .pathEqualTo(song.path)
+            .findFirst();
         if (dbSong != null) {
           dbSong.lastPlayed = now;
           dbSong.playCount++;
@@ -3332,21 +3275,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         _armPlayCount(resumed);
       }
       _updateNotification();
-    }
-  }
-
-  bool _isStreamUrlExpired(String? url) {
-    if (url == null || url.isEmpty) return true;
-    try {
-      final uri = Uri.parse(url);
-      final expireStr = uri.queryParameters['expire'];
-      if (expireStr == null) return false;
-      final expireUnix = int.tryParse(expireStr);
-      if (expireUnix == null) return false;
-      final expireTime = DateTime.fromMillisecondsSinceEpoch(expireUnix * 1000);
-      return DateTime.now().add(const Duration(minutes: 10)).isAfter(expireTime);
-    } catch (_) {
-      return true;
     }
   }
 

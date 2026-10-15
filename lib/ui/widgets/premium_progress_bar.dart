@@ -74,21 +74,71 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = ref.watch(settingsProvider);
+    final disableSquiggle =
+        ref.watch(settingsProvider.select((s) => s.disableSquiggle));
     final double progress = widget.duration.inMilliseconds > 0
         ? (widget.position.inMilliseconds / widget.duration.inMilliseconds)
             .clamp(0.0, 1.0)
         : 0.0;
 
     final displayValue = _dragValue ?? progress;
-    final bool enableWave = widget.isPlaying && displayValue > 0.12;
+    final bool enableWave =
+        !disableSquiggle && widget.isPlaying && displayValue > 0.12;
     final displayPosition = _dragValue != null
         ? widget.duration * _dragValue!
         : widget.position;
 
-    final targetAmplitude = settings.disableSquiggle
-        ? 0.0
-        : (enableWave ? 2.0 : 0.0);
+    final targetAmplitude = enableWave ? 2.0 : 0.0;
+
+    final Widget innerSlider;
+    if (disableSquiggle) {
+      innerSlider = Slider(
+        value: displayValue,
+        onChanged: (val) {
+          setState(() => _dragValue = val);
+          widget.onSeek(widget.duration * val);
+        },
+        onChangeStart: (val) {
+          setState(() => _dragValue = val);
+          widget.onSeekStart?.call();
+        },
+        onChangeEnd: (val) {
+          setState(() => _dragValue = null);
+          widget.onSeekEnd?.call();
+        },
+        activeColor: widget.color,
+        inactiveColor: Colors.white10,
+      );
+    } else {
+      innerSlider = TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.0, end: targetAmplitude),
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOutCubic,
+        builder: (context, amplitude, child) {
+          return SquigglySlider(
+            value: displayValue,
+            onChanged: (val) {
+              setState(() => _dragValue = val);
+              widget.onSeek(widget.duration * val);
+            },
+            onChangeStart: (val) {
+              setState(() => _dragValue = val);
+              widget.onSeekStart?.call();
+            },
+            onChangeEnd: (val) {
+              setState(() => _dragValue = null);
+              widget.onSeekEnd?.call();
+            },
+            activeColor: widget.color,
+            inactiveColor: Colors.white10,
+            squiggleAmplitude: amplitude,
+            squiggleWavelength: Platform.isLinux ? 4.5 : 6.0,
+            squiggleSpeed: enableWave ? (Platform.isLinux ? 0.08 : 0.05) : 0.0,
+            useLineThumb: false,
+          );
+        },
+      );
+    }
 
     final sliderWidget = Listener(
       onPointerSignal: _onPointerSignal,
@@ -98,41 +148,13 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
           activeTrackColor: widget.color,
           trackShape: PremiumGapTrackShape(gap: Platform.isLinux ? 4 : 6),
           inactiveTrackColor: Colors.white10,
-
           thumbShape: LineThumbShape(
             thumbHeight: Platform.isLinux ? 12 : 16,
             thumbWidth: Platform.isLinux ? 3 : 6,
           ),
           overlayShape: SliderComponentShape.noOverlay,
         ),
-        child: TweenAnimationBuilder<double>(
-          tween: Tween<double>(begin: 0.0, end: targetAmplitude),
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeInOutCubic,
-          builder: (context, amplitude, child) {
-            return SquigglySlider(
-              value: displayValue,
-              onChanged: (val) {
-                setState(() => _dragValue = val);
-                widget.onSeek(widget.duration * val);
-              },
-              onChangeStart: (val) {
-                setState(() => _dragValue = val);
-                widget.onSeekStart?.call();
-              },
-              onChangeEnd: (val) {
-                setState(() => _dragValue = null);
-                widget.onSeekEnd?.call();
-              },
-              activeColor: widget.color,
-              inactiveColor: Colors.white10,
-              squiggleAmplitude: amplitude,
-              squiggleWavelength: Platform.isLinux ? 4.5 : 6.0,
-              squiggleSpeed: Platform.isLinux ? 0.08 : 0.05,
-              useLineThumb: false,
-            );
-          },
-        ),
+        child: innerSlider,
       ),
     );
 

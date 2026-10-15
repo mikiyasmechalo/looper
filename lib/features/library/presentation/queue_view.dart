@@ -91,9 +91,13 @@ class _QueueViewState extends ConsumerState<QueueView> {
 
   @override
   Widget build(BuildContext context) {
-    final playbackState = ref.watch(playbackProvider);
-    final queue = playbackState.queue;
-    final currentSongPath = playbackState.currentSong?.path;
+    final queue = ref.watch(playbackProvider.select((s) => s.queue));
+    final currentSongPath =
+        ref.watch(playbackProvider.select((s) => s.currentSong?.path));
+    final isSleepTimerActive =
+        ref.watch(playbackProvider.select((s) => s.isSleepTimerActive));
+    final sleepTimerSongsRemaining =
+        ref.watch(playbackProvider.select((s) => s.sleepTimerSongsRemaining));
     final l10n = AppLocalizations.of(context)!;
 
     final showPlayed =
@@ -234,12 +238,12 @@ class _QueueViewState extends ConsumerState<QueueView> {
                         final isPlayed =
                             currentIdx != -1 && originalIndex < currentIdx;
                         final isDraggable = !isCurrent;
-                        final isStopTarget = playbackState.isSleepTimerActive &&
-                            playbackState.sleepTimerSongsRemaining != null &&
+                        final isStopTarget = isSleepTimerActive &&
+                            sleepTimerSongsRemaining != null &&
                             currentIdx != -1 &&
                             originalIndex ==
                                 currentIdx +
-                                    playbackState.sleepTimerSongsRemaining! -
+                                    sleepTimerSongsRemaining -
                                     1;
 
                         return SizedBox(

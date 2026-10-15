@@ -1591,7 +1591,9 @@ class _MobileUtilityControls extends StatelessWidget {
             final isSleepActive = ref.watch(
               playbackProvider.select((s) => s.isSleepTimerActive),
             );
-            final playbackState = ref.watch(playbackProvider);
+            final sleepRemainingText = isSleepActive
+                ? ref.watch(playbackProvider.select(formatSleepTimerRemaining))
+                : '';
             return Padding(
               padding: const EdgeInsets.only(left: 6),
               child: PremiumSection(
@@ -1609,7 +1611,7 @@ class _MobileUtilityControls extends StatelessWidget {
                 child: Center(
                   child: isSleepActive
                       ? Text(
-                          formatSleepTimerRemaining(playbackState),
+                          sleepRemainingText,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -1787,7 +1789,10 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
   void initState() {
     super.initState();
     _initBars(widget.barCount);
-    _ticker = createTicker(_onTick)..start();
+    _ticker = createTicker(_onTick);
+    if (widget.isPlaying) {
+      _ticker.start();
+    }
   }
 
   void _initBars(int count) {
@@ -1809,6 +1814,11 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
     super.didUpdateWidget(old);
     if (widget.barCount != old.barCount) {
       _initBars(widget.barCount);
+    }
+    if (widget.isPlaying != old.isPlaying) {
+      if (widget.isPlaying) {
+        if (!_ticker.isActive) _ticker.start();
+      }
     }
   }
 
@@ -1880,6 +1890,16 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
       }
     }
 
+    if (!widget.isPlaying) {
+      final allSettled = _smoothed.every((v) => v < 0.005);
+      if (allSettled) {
+        _smoothed.fillRange(0, _barCount, 0.0);
+        if (changed) setState(() {});
+        if (_ticker.isActive) _ticker.stop();
+        return;
+      }
+    }
+
     if (changed) setState(() {});
   }
 
@@ -1897,7 +1917,8 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(spectrumProvider);
+    // Keep spectrumProvider active without rebuilding widget on every FFT frame
+    ref.listen<List<double>>(spectrumProvider, (previous, next) {});
 
     final progress = widget.duration.inMilliseconds > 0
         ? (widget.position.inMilliseconds / widget.duration.inMilliseconds)
@@ -2871,10 +2892,14 @@ class _QueueListState extends ConsumerState<_QueueList> {
 
   @override
   Widget build(BuildContext context) {
-    final playback = ref.watch(playbackProvider);
-    final queue = playback.queue;
-    final currentSongPath = playback.currentSong?.path;
-    final isPlaying = playback.isPlaying;
+    final queue = ref.watch(playbackProvider.select((s) => s.queue));
+    final currentSongPath =
+        ref.watch(playbackProvider.select((s) => s.currentSong?.path));
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
+    final isSleepTimerActive =
+        ref.watch(playbackProvider.select((s) => s.isSleepTimerActive));
+    final sleepTimerSongsRemaining =
+        ref.watch(playbackProvider.select((s) => s.sleepTimerSongsRemaining));
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
@@ -2991,12 +3016,12 @@ class _QueueListState extends ConsumerState<_QueueList> {
                   final isDraggable = !isCurrent;
 
                   final isStopTarget =
-                      playback.isSleepTimerActive &&
-                      playback.sleepTimerSongsRemaining != null &&
+                      isSleepTimerActive &&
+                      sleepTimerSongsRemaining != null &&
                       currentIndex != -1 &&
                       originalIndex != -1 &&
                       originalIndex ==
-                          currentIndex + playback.sleepTimerSongsRemaining! - 1;
+                          currentIndex + sleepTimerSongsRemaining - 1;
 
                   return _FullscreenQueueTile(
                     key: ValueKey('fsq_${song.path}_$i'),
@@ -3785,7 +3810,20 @@ class _DesktopBottomVisualizerState
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_onTick)..start();
+    _ticker = createTicker(_onTick);
+    if (widget.isPlaying) {
+      _ticker.start();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _DesktopBottomVisualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      if (widget.isPlaying) {
+        if (!_ticker.isActive) _ticker.start();
+      }
+    }
   }
 
   @override
@@ -3872,6 +3910,16 @@ class _DesktopBottomVisualizerState
       }
     }
 
+    if (!widget.isPlaying) {
+      final allSettled = _smoothed.every((v) => v < 0.005);
+      if (allSettled) {
+        _smoothed.fillRange(0, _barCount, 0.0);
+        if (changed) setState(() {});
+        if (_ticker.isActive) _ticker.stop();
+        return;
+      }
+    }
+
     if (changed) {
       setState(() {});
     }
@@ -3879,8 +3927,8 @@ class _DesktopBottomVisualizerState
 
   @override
   Widget build(BuildContext context) {
-    // Keep spectrumProvider active and listening to real mpv FFT stream
-    ref.watch(spectrumProvider);
+    // Keep spectrumProvider active and listening to real mpv FFT stream without rebuilding widget on every FFT frame
+    ref.listen<List<double>>(spectrumProvider, (previous, next) {});
 
     return AnimatedOpacity(
       opacity: widget.isPlaying ? 1.0 : 0.0,

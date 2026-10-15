@@ -61,7 +61,13 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
-    final playbackState = ref.watch(playbackProvider);
+    final isSleepTimerActive =
+        ref.watch(playbackProvider.select((s) => s.isSleepTimerActive));
+    final sleepTimerRemainingText = isSleepTimerActive
+        ? ref.watch(playbackProvider.select(formatSleepTimerRemaining))
+        : '';
+    final isDurationRemaining = isSleepTimerActive &&
+        ref.watch(playbackProvider.select((s) => s.sleepTimerDurationRemaining != null));
     final accentColor = Color(settings.accentColor);
     final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
     final isPureBlack = settings.isBatterySaverActive ||
@@ -115,14 +121,14 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: playbackState.isSleepTimerActive
+                    color: isSleepTimerActive
                         ? accentColor.withValues(alpha: 0.2)
                         : Colors.white10,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     LucideIcons.timer,
-                    color: playbackState.isSleepTimerActive ? accentColor : Colors.white70,
+                    color: isSleepTimerActive ? accentColor : Colors.white70,
                     size: 22,
                   ),
                 ),
@@ -141,17 +147,17 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        playbackState.isSleepTimerActive
-                            ? (playbackState.sleepTimerDurationRemaining != null
-                                ? 'Active: Stopping in ${formatSleepTimerRemaining(playbackState)}'
-                                : 'Active: Stopping after ${formatSleepTimerRemaining(playbackState)}')
+                        isSleepTimerActive
+                            ? (isDurationRemaining
+                                ? 'Active: Stopping in $sleepTimerRemainingText'
+                                : 'Active: Stopping after $sleepTimerRemainingText')
                             : 'Automatically fade out and pause playback',
                         style: AppFonts.jostStyle(
                           fontSize: 13,
-                          color: playbackState.isSleepTimerActive
+                          color: isSleepTimerActive
                               ? accentColor
                               : Colors.white54,
-                          fontWeight: playbackState.isSleepTimerActive
+                          fontWeight: isSleepTimerActive
                               ? FontWeight.bold
                               : FontWeight.normal,
                         ),
@@ -381,7 +387,7 @@ class _SleepTimerSheetContentState extends ConsumerState<SleepTimerSheetContent>
               ),
             ),
             const SizedBox(height: 24),
-            if (playbackState.isSleepTimerActive)
+            if (isSleepTimerActive)
               ElevatedButton.icon(
                 onPressed: () {
                   HapticFeedback.mediumImpact();
