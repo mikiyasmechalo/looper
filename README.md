@@ -250,8 +250,13 @@ A massive thank you to the creators and open-source communities that make Looper
 * **Nilesh Suthar** — *Original Creator & Architect* ([GitHub](https://github.com/SthrNilshaaa) • [Telegram](https://t.me/neelshy))
 * **Karan Suthar** — *Original UI/UX & Interaction Design* ([GitHub](https://github.com/sthrkaran) • [Telegram](https://t.me/karanwhy))
 
+## 💬 Community & Support
+
+Join the Looper community for support, feedback, and discussion:
+* **Telegram Discussion Group**: [t.me/looperPlayer](https://t.me/looperPlayer)
+
 ---
 
 ## 📄 License
 
-This project is open source and licensed under the [GPL-3.0 License](LICENSE).
+This project is open source and licensed under the [GPL-3.0 License](LICENSE.md).
