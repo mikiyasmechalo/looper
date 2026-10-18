@@ -83,7 +83,7 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
 
     final displayValue = _dragValue ?? progress;
     final bool enableWave =
-        !disableSquiggle && widget.isPlaying && displayValue > 0.12;
+        !disableSquiggle && widget.isPlaying && displayValue > 0.0;
     final displayPosition = _dragValue != null
         ? widget.duration * _dragValue!
         : widget.position;
@@ -140,21 +140,23 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
       );
     }
 
-    final sliderWidget = Listener(
-      onPointerSignal: _onPointerSignal,
-      child: SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          trackHeight: Platform.isLinux ? 3.0 : 8.0,
-          activeTrackColor: widget.color,
-          trackShape: PremiumGapTrackShape(gap: Platform.isLinux ? 4 : 6),
-          inactiveTrackColor: Colors.white10,
-          thumbShape: LineThumbShape(
-            thumbHeight: Platform.isLinux ? 12 : 16,
-            thumbWidth: Platform.isLinux ? 3 : 6,
+    final sliderWidget = RepaintBoundary(
+      child: Listener(
+        onPointerSignal: _onPointerSignal,
+        child: SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: Platform.isLinux ? 3.0 : 8.0,
+            activeTrackColor: widget.color,
+            trackShape: PremiumGapTrackShape(gap: Platform.isLinux ? 4 : 6),
+            inactiveTrackColor: Colors.white10,
+            thumbShape: LineThumbShape(
+              thumbHeight: Platform.isLinux ? 12 : 16,
+              thumbWidth: Platform.isLinux ? 3 : 6,
+            ),
+            overlayShape: SliderComponentShape.noOverlay,
           ),
-          overlayShape: SliderComponentShape.noOverlay,
+          child: innerSlider,
         ),
-        child: innerSlider,
       ),
     );
 
@@ -164,13 +166,13 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (widget.showTimestamps) ...[
-            _buildAnimatedDuration(displayPosition, false),
+            RepaintBoundary(child: _buildAnimatedDuration(displayPosition, false)),
             const SizedBox(width: 12),
           ],
           Expanded(child: sliderWidget),
           if (widget.showTimestamps) ...[
             const SizedBox(width: 12),
-            _buildAnimatedDuration(widget.duration, true),
+            RepaintBoundary(child: _buildAnimatedDuration(widget.duration, true)),
           ],
         ],
       );
@@ -182,14 +184,16 @@ class _ExpressiveSliderState extends ConsumerState<ExpressiveSlider> {
         sliderWidget,
         if (widget.showTimestamps) ...[
           const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildAnimatedDuration(displayPosition, false),
-                _buildAnimatedDuration(widget.duration, true),
-              ],
+          RepaintBoundary(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildAnimatedDuration(displayPosition, false),
+                  _buildAnimatedDuration(widget.duration, true),
+                ],
+              ),
             ),
           ),
         ],

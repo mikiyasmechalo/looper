@@ -141,8 +141,8 @@ class AppSettings {
   bool audioFocusReleaseOnPause = true;
   bool audioFocusStopOnOtherSession = true;
   bool audioFocusRestartOnGain = true;
-  bool disableSquiggle = false;
-  bool disableAnimatedDuration = false;
+  bool disableSquiggle = true;
+  bool disableAnimatedDuration = true;
   bool disableBlur = false;
   bool enableInternet = true;
   bool downloadArtwork = false;
@@ -154,6 +154,7 @@ class AppSettings {
   bool settingsV4 = false;
   bool settingsV5 = false;
   bool settingsV6 = false;
+  bool settingsV7 = false;
   bool showPerformanceOptimizer = false;
   bool autoBatterySaver = true;
   int batterySaverThreshold = 20;
@@ -279,7 +280,11 @@ class AppSettings {
   bool uniformLyricsFontSize = false;
 
   // Desktop Fullscreen: bottom full-width visualizer.
-  bool fullscreenVisualizerEnabled = true;
+  bool fullscreenVisualizerEnabled = false;
+
+  // Desktop Fullscreen: bottom visualizer density (0: 64 Classic, 1: 96 Balanced, 2: 128 Dense [Default], 3: 160 Ultra-Fine).
+  @ignore
+  int fullscreenVisualizerDensity = 2;
 
   // Queue: show previously played songs in the queue list with darker styling.
   bool showPlayedSongsInQueue = true;

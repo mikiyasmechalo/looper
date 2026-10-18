@@ -29,7 +29,7 @@ class MiniPlayerSettingsState {
     this.miniPlayerY = -1,
     this.lyricsEnabled = false,
     this.expressiveSlider = false,
-    this.visualizerEnabled = true,
+    this.visualizerEnabled = false,
     this.alwaysOnTop = true,
   });
 
@@ -78,7 +78,7 @@ class MiniPlayerSettingsState {
       miniPlayerY: (json['miniPlayerY'] as num?)?.toDouble() ?? (json['y'] as num?)?.toDouble() ?? -1,
       lyricsEnabled: json['lyricsEnabled'] as bool? ?? false,
       expressiveSlider: json['expressiveSlider'] as bool? ?? false,
-      visualizerEnabled: json['visualizerEnabled'] as bool? ?? true,
+      visualizerEnabled: json['visualizerEnabled'] as bool? ?? false,
       alwaysOnTop: json['alwaysOnTop'] as bool? ?? true,
     );
   }

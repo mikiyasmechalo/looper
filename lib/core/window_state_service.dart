@@ -66,6 +66,7 @@ class WindowState {
 }
 
 final initialWindowStateProvider = Provider<WindowState>((ref) => const WindowState());
+final isWindowMinimizedProvider = StateProvider<bool>((ref) => false);
 
 class WindowStateService extends WindowListener {
   static final WindowStateService instance = WindowStateService._();
@@ -76,6 +77,13 @@ class WindowStateService extends WindowListener {
 
   Timer? _saveDebounce;
   bool _isAttached = false;
+  WidgetRef? _ref;
+
+  void setMinimized(bool minimized) {
+    if (_ref != null && _ref!.read(isWindowMinimizedProvider) != minimized) {
+      _ref!.read(isWindowMinimizedProvider.notifier).state = minimized;
+    }
+  }
 
   static Future<File> get _file async {
     final dir = await getApplicationSupportDirectory();
@@ -129,11 +137,16 @@ class WindowStateService extends WindowListener {
   }
 
   void attach(WidgetRef ref) {
+    _ref = ref;
     if (_isAttached) return;
     _isAttached = true;
 
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
+
+      windowManager.isMinimized().then((minimized) {
+        setMinimized(minimized);
+      }).catchError((_) {});
 
       // Inspect initial state
       final currentMini = ref.read(miniPlayerModeProvider);
@@ -179,7 +192,18 @@ class WindowStateService extends WindowListener {
 
   @override
   void onWindowMinimize() {
+    setMinimized(true);
     MemoryService.trimWorkingSet(clearImageCache: true);
+  }
+
+  @override
+  void onWindowRestore() {
+    setMinimized(false);
+  }
+
+  @override
+  void onWindowFocus() {
+    setMinimized(false);
   }
 
   @override
@@ -189,6 +213,7 @@ class WindowStateService extends WindowListener {
 
   @override
   void onWindowMaximize() {
+    setMinimized(false);
     if (_currentState.playerType == 'miniPlayer' ||
         _currentState.playerType == 'cornerWidget') {
       return;
@@ -198,6 +223,7 @@ class WindowStateService extends WindowListener {
 
   @override
   void onWindowUnmaximize() {
+    setMinimized(false);
     if (_currentState.playerType == 'miniPlayer' ||
         _currentState.playerType == 'cornerWidget') {
       return;

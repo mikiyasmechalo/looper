@@ -673,9 +673,7 @@ class SettingsView extends ConsumerWidget {
             HapticFeedback.lightImpact();
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const EqualizerScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const EqualizerScreen()),
             );
           },
         ),
@@ -839,11 +837,13 @@ class SettingsView extends ConsumerWidget {
         _SearchItem(
           category: 'Desktop & Window',
           title: 'Minimize to Tray',
-          subtitle: 'Keep running in the system tray when the window is minimized',
+          subtitle:
+              'Keep running in the system tray when the window is minimized',
           widget: _PremiumSwitchRow(
             icon: LucideIcons.panelTop,
             title: 'Minimize to Tray',
-            subtitle: 'Keep running in the system tray when the window is minimized',
+            subtitle:
+                'Keep running in the system tray when the window is minimized',
             value: settings.minimizeToTray,
             onChanged: (v) =>
                 ref.read(settingsProvider.notifier).updateMinimizeToTray(v),
@@ -856,7 +856,8 @@ class SettingsView extends ConsumerWidget {
           widget: _PremiumSwitchRow(
             icon: LucideIcons.xSquare,
             title: 'Close to Tray',
-            subtitle: 'Keep running in the system tray when the window is closed',
+            subtitle:
+                'Keep running in the system tray when the window is closed',
             value: settings.closeToTray,
             onChanged: (v) =>
                 ref.read(settingsProvider.notifier).updateCloseToTray(v),
@@ -1436,9 +1437,7 @@ class SettingsView extends ConsumerWidget {
             HapticFeedback.lightImpact();
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const EqualizerScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const EqualizerScreen()),
             );
           },
           isLast: false,
@@ -1680,7 +1679,8 @@ class SettingsView extends ConsumerWidget {
         _PremiumSwitchRow(
           icon: LucideIcons.panelTop,
           title: 'Minimize to Tray',
-          subtitle: 'Keep running in the system tray when the window is minimized',
+          subtitle:
+              'Keep running in the system tray when the window is minimized',
           value: settings.minimizeToTray,
           onChanged: (value) {
             HapticFeedback.lightImpact();
@@ -1803,7 +1803,7 @@ class SettingsView extends ConsumerWidget {
           icon: LucideIcons.activity,
           title: 'Bottom Visualizer',
           subtitle:
-              'Display a dynamic audio visualizer across the bottom of the player',
+              'Display a dynamic audio visualizer across the bottom of the player (might increase CPU usage)',
           value: settings.fullscreenVisualizerEnabled,
           onChanged: (value) {
             HapticFeedback.lightImpact();
@@ -1813,6 +1813,28 @@ class SettingsView extends ConsumerWidget {
           },
           isLast: false,
         ),
+        if (settings.fullscreenVisualizerEnabled)
+          _PremiumDropdownRow<int>(
+            icon: LucideIcons.sliders,
+            title: 'Visualizer Density',
+            subtitle: 'Select the visualizer bar count and detail level',
+            value: settings.fullscreenVisualizerDensity.clamp(0, 3),
+            items: const [
+              DropdownMenuItem(value: 0, child: Text('Classic (64 bars)')),
+              DropdownMenuItem(value: 1, child: Text('Balanced (96 bars)')),
+              DropdownMenuItem(value: 2, child: Text('Dense (128 bars) [Default]')),
+              DropdownMenuItem(value: 3, child: Text('Ultra-Fine (160 bars)')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                HapticFeedback.lightImpact();
+                ref
+                    .read(settingsProvider.notifier)
+                    .updateFullscreenVisualizerDensity(value);
+              }
+            },
+            isLast: false,
+          ),
         _PremiumSwitchRow(
           icon: LucideIcons.repeat1,
           title: 'Show A-B Looper Button',
@@ -1858,7 +1880,10 @@ class SettingsView extends ConsumerWidget {
           title: 'Now playing seek bar',
           value: settings.seekBarStyleIndex,
           items: const [
-            DropdownMenuItem(value: 0, child: Text('Visualizer')),
+            DropdownMenuItem(
+              value: 0,
+              child: Text('Visualizer (might increase CPU usage)'),
+            ),
             DropdownMenuItem(value: 1, child: Text('Expressive')),
             DropdownMenuItem(value: 2, child: Text('Flat')),
           ],
@@ -2028,8 +2053,11 @@ class SettingsView extends ConsumerWidget {
     AppSettings settings,
     AppLocalizations l10n,
   ) {
-    final versionStr = ref.watch(appVersionProvider).valueOrNull ?? 'v1.0.0-beta.1';
-    final displayVersion = versionStr.startsWith('v') ? versionStr.substring(1) : versionStr;
+    final versionStr =
+        ref.watch(appVersionProvider).valueOrNull ?? 'v1.0.0-beta.1';
+    final displayVersion = versionStr.startsWith('v')
+        ? versionStr.substring(1)
+        : versionStr;
 
     return _Section(
       title: l10n.aboutApp,
@@ -2186,7 +2214,6 @@ class SettingsView extends ConsumerWidget {
       ],
     );
   }
-
 
   // ─── Dialogs ──────────────────────────────────────────────────────────────
 

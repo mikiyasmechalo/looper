@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:window_manager/window_manager.dart';
@@ -90,30 +89,28 @@ class _PremiumPlayerBar extends ConsumerWidget {
             ],
           ),
           child: RepaintBoundary(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Row(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
                     children: [
                       Expanded(
                         flex: isVeryNarrow ? 3 : 4,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: openPlayer,
-                          onSecondaryTap: () => showSongOptionsBottomSheet(
-                            context: context,
-                            ref: ref,
-                            song: song,
-                          ),
-                          child: _buildSongInfo(
-                            context,
-                            title,
-                            artist,
-                            artPath,
-                            isVeryNarrow,
+                        child: RepaintBoundary(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: openPlayer,
+                            onSecondaryTap: () => showSongOptionsBottomSheet(
+                              context: context,
+                              ref: ref,
+                              song: song,
+                            ),
+                            child: _buildSongInfo(
+                              context,
+                              title,
+                              artist,
+                              artPath,
+                              isVeryNarrow,
+                            ),
                           ),
                         ),
                       ),
@@ -126,47 +123,51 @@ class _PremiumPlayerBar extends ConsumerWidget {
                           color: Colors.white10,
                         ),
 
-                      _buildControls(
-                        context,
-                        ref,
-                        colorScheme,
-                        isPlaying,
-                        isShuffle,
-                        repeatMode,
-                        isVeryNarrow,
-                        stackControls,
+                      RepaintBoundary(
+                        child: _buildControls(
+                          context,
+                          ref,
+                          colorScheme,
+                          isPlaying,
+                          isShuffle,
+                          repeatMode,
+                          isVeryNarrow,
+                          stackControls,
+                        ),
                       ),
 
                       const SizedBox(width: 12),
 
                       Expanded(
                         flex: stackControls ? 4 : 6,
-                        child: Consumer(
-                          builder: (context, ref, child) {
-                            final position = ref.watch(
-                              playbackProvider.select((s) => s.position),
-                            );
-                            final duration = ref.watch(
-                              playbackProvider.select((s) => s.duration),
-                            );
-                            final isPlayingVal = ref.watch(
-                              playbackProvider.select((s) => s.isPlaying),
-                            );
-                            return ExpressiveSlider(
-                              position: position,
-                              duration: duration,
-                              isPlaying: isPlayingVal,
-                              onSeek: (pos) =>
-                                  ref.read(playbackProvider.notifier).seek(pos),
-                              onSeekStart: () => ref
-                                  .read(playbackProvider.notifier)
-                                  .startScrubbing(),
-                              onSeekEnd: () => ref
-                                  .read(playbackProvider.notifier)
-                                  .stopScrubbing(),
-                              color: colorScheme.primary,
-                            );
-                          },
+                        child: RepaintBoundary(
+                          child: Consumer(
+                            builder: (context, ref, child) {
+                              final position = ref.watch(
+                                playbackProvider.select((s) => s.position),
+                              );
+                              final duration = ref.watch(
+                                playbackProvider.select((s) => s.duration),
+                              );
+                              final isPlayingVal = ref.watch(
+                                playbackProvider.select((s) => s.isPlaying),
+                              );
+                              return ExpressiveSlider(
+                                position: position,
+                                duration: duration,
+                                isPlaying: isPlayingVal,
+                                onSeek: (pos) =>
+                                    ref.read(playbackProvider.notifier).seek(pos),
+                                onSeekStart: () => ref
+                                    .read(playbackProvider.notifier)
+                                    .startScrubbing(),
+                                onSeekEnd: () => ref
+                                    .read(playbackProvider.notifier)
+                                    .stopScrubbing(),
+                                color: colorScheme.primary,
+                              );
+                            },
+                          ),
                         ),
                       ),
 
@@ -182,10 +183,10 @@ class _PremiumPlayerBar extends ConsumerWidget {
                       ],
                       if (wideVolume) ...[
                         const SizedBox(width: 16),
-                        const _VolumeInlineControl(),
+                        const RepaintBoundary(child: _VolumeInlineControl()),
                         const SizedBox(width: 16),
                       ],
-                      if (hoverVolume) ...[const _VolumeHoverControl()],
+                      if (hoverVolume) ...[const RepaintBoundary(child: _VolumeHoverControl())],
 
                       if (stackControls)
                         const SizedBox(width: 16)
@@ -194,23 +195,23 @@ class _PremiumPlayerBar extends ConsumerWidget {
                       else
                         const Spacer(),
 
-                      _buildActions(
-                        context,
-                        ref,
-                        colorScheme,
-                        isFavorite,
-                        isLyricsActive,
-                        isQueueActive,
-                        isVeryNarrow,
-                        isTightActions,
+                      RepaintBoundary(
+                        child: _buildActions(
+                          context,
+                          ref,
+                          colorScheme,
+                          isFavorite,
+                          isLyricsActive,
+                          isQueueActive,
+                          isVeryNarrow,
+                          isTightActions,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ),
-        );
+            );
       },
     );
   }

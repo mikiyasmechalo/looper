@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -42,6 +43,23 @@ class SquigglySliderTrackShape extends SliderTrackShape
   final double squiggleAmplitude;
   final double squiggleWavelength;
   final double squigglePhaseFactor;
+
+  static final Float64List _sinLUT = () {
+    final list = Float64List(512);
+    for (int i = 0; i < 512; i++) {
+      list[i] = sin(i * (2 * pi / 512));
+    }
+    return list;
+  }();
+
+  static double _fastSin(double rad) {
+    if (rad.isNaN || rad.isInfinite) return 0.0;
+    const double twoPi = 2 * pi;
+    final normalized = rad % twoPi;
+    final positive = normalized < 0 ? normalized + twoPi : normalized;
+    final index = (positive * (512 / twoPi)).floor() & 511;
+    return _sinLUT[index];
+  }
   
 
   @override
@@ -125,7 +143,7 @@ class SquigglySliderTrackShape extends SliderTrackShape
         : trackRect.bottom;
 
     final double radius = (lt - lb).abs() / 2;
-    if (squiggleAmplitude == 0 || (lr - ll) < 2 * radius) {
+    if (squiggleAmplitude <= 0.001 || squiggleWavelength <= 0.001 || (lr - ll) < 2 * radius) {
       context.canvas.drawRRect(
         RRect.fromLTRBAndCorners(
           ll,
@@ -149,19 +167,23 @@ class SquigglySliderTrackShape extends SliderTrackShape
       final double totalLength = endX - startX;
 
       final path = Path();
-      const double ppp = 1.0;
+      const double ppp = 5.0;
       final int pointsCount = (totalLength / ppp).ceil() + 1;
+      final double easeLength = squiggleWavelength * 3;
+      final double invEaseLength = easeLength > 0 ? 1.0 / easeLength : 1.0;
+      final double invWavelength = 1.0 / squiggleWavelength;
+      final double phaseConst = phase * 2 * pi;
+
       for (int index = 0; index < pointsCount; index++) {
         final double xOff = index * ppp;
         final double x = min(endX, startX + xOff);
-        final double easeLength = squiggleWavelength * 3;
         final double easeFactor = (xOff < easeLength
-            ? xOff / easeLength
+            ? xOff * invEaseLength
             : xOff > totalLength - easeLength
-                ? (totalLength - xOff) / easeLength
-                : 1);
+                ? (totalLength - xOff) * invEaseLength
+                : 1.0);
         final double y = heightCenter +
-            (sin(x / squiggleWavelength + phase * 2 * pi) *
+            (_fastSin(x * invWavelength + phaseConst) *
                     squiggleAmplitude) *
                 easeFactor.clamp(0.0, 1.0);
         if (index == 0) {

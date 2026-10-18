@@ -273,7 +273,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
 
             // Global Background Art / persistent gradient
-            if (!showWelcome) ...[
+            if (!showWelcome && !nav.isPlayerExpanded) ...[
               if (currentSongArtPath != null && settings.enableDynamicTheming) ...[
                 Positioned.fill(
                   child: AnimatedSwitcher(
@@ -319,14 +319,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
 
             Positioned.fill(
-              child: Column(
+              child: Offstage(
+                offstage: nav.isPlayerExpanded,
+                child: Column(
                 children: [
                   // Custom Title Bar always at the top
                   SizedBox(height: 30, child: CustomTitleBar(showMenu: isNarrow)),
                 Expanded(
-                  child: showWelcome
-                      ? const WelcomeScreen()
-                      : LayoutBuilder(
+                  child: RepaintBoundary(
+                    child: showWelcome
+                        ? const WelcomeScreen()
+                        : LayoutBuilder(
                           builder: (context, constraints) {
                             final bool isNarrowLayout =
                                 constraints.maxWidth < 560;
@@ -479,13 +482,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             );
                           },
                         ),
+                  ),
                 ),
                 // Global Player Bar always at the bottom
                 if (!nav.isPlayerExpanded && !lyricsOnly)
-                  const PlayerBar(),
+                  const RepaintBoundary(child: PlayerBar()),
               ],
             ),
           ),
+        ),
             // Floating Battery Saver Badge (Main window only, hidden in expanded player)
             if (!nav.isPlayerExpanded)
               Positioned(
@@ -497,14 +502,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Expanded Player View
             if (nav.isPlayerExpanded)
               Positioned.fill(
-                child: WillPopScope(
-                  onWillPop: () async {
-                    ref
-                        .read(appNavigationProvider.notifier)
-                        .setPlayerExpansion(false);
-                    return false;
-                  },
-                  child: const ExpandedPlayer(),
+                child: RepaintBoundary(
+                  child: WillPopScope(
+                    onWillPop: () async {
+                      ref
+                          .read(appNavigationProvider.notifier)
+                          .setPlayerExpansion(false);
+                      return false;
+                    },
+                    child: const ExpandedPlayer(),
+                  ),
                 ),
               ),
 

@@ -11,6 +11,7 @@ import 'package:looper_player/features/playback/presentation/lyrics_search_provi
 import 'package:looper_player/features/playback/domain/lyric_models.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_view.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/core/window_state_service.dart';
 import 'word_synced_lyric_text.dart';
 part 'pulsing_instrumental_icon.dart';
 
@@ -124,7 +125,8 @@ class AdvancedLyricLine extends ConsumerWidget {
     // Word-timed lines also need it while inactive: a line that just
     // finished keeps its last word running while it settles.
     final isPlaying = usesWordTiming
-        ? ref.watch(playbackProvider.select((s) => s.isPlaying))
+        ? (ref.watch(playbackProvider.select((s) => s.isPlaying)) &&
+            !ref.watch(isWindowMinimizedProvider))
         : false;
 
     final isPast = isActive || !synced

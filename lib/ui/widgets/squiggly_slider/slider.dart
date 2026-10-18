@@ -123,6 +123,7 @@ class SquigglySlider extends Slider {
 class _SquigglySliderState extends State<SquigglySlider>
     with SingleTickerProviderStateMixin {
   late AnimationController phaseController;
+  int _lastTickMs = 0;
 
   bool get _shouldAnimate =>
       widget.squiggleSpeed != 0 && widget.squiggleAmplitude > 0.001;
@@ -137,7 +138,11 @@ class _SquigglySliderState extends State<SquigglySlider>
       duration: Duration(milliseconds: durationMs),
       vsync: this,
     )..addListener(() {
-        if (mounted) setState(() {});
+        final now = DateTime.now().millisecondsSinceEpoch;
+        if (now - _lastTickMs >= 33) {
+          _lastTickMs = now;
+          if (mounted) setState(() {});
+        }
       });
 
     if (_shouldAnimate) {
@@ -179,37 +184,39 @@ class _SquigglySliderState extends State<SquigglySlider>
   }
 
   @override
-  Widget build(BuildContext context) => SliderTheme(
-        data: SliderTheme.of(context).copyWith(
-          trackShape: SquigglySliderTrackShape(
-            squiggleAmplitude: widget.squiggleAmplitude,
-            squiggleWavelength: widget.squiggleWavelength,
-            squigglePhaseFactor: widget.squiggleSpeed < 0
-                ? 1 - phaseController.value
-                : phaseController.value,
+  Widget build(BuildContext context) => RepaintBoundary(
+        child: SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackShape: SquigglySliderTrackShape(
+              squiggleAmplitude: widget.squiggleAmplitude,
+              squiggleWavelength: widget.squiggleWavelength,
+              squigglePhaseFactor: widget.squiggleSpeed < 0
+                  ? 1 - phaseController.value
+                  : phaseController.value,
+            ),
+            thumbShape: widget.useLineThumb ? const LineThumbShape() : null,
           ),
-          thumbShape: widget.useLineThumb ? const LineThumbShape() : null,
-        ),
-        child: Slider(
-          key: widget.key,
-          value: widget.value,
-          secondaryTrackValue: widget.secondaryTrackValue,
-          onChanged: widget.onChanged,
-          onChangeStart: widget.onChangeStart,
-          onChangeEnd: widget.onChangeEnd,
-          min: widget.min,
-          max: widget.max,
-          divisions: widget.divisions,
-          label: widget.label,
-          activeColor: widget.activeColor,
-          inactiveColor: widget.inactiveColor,
-          secondaryActiveColor: widget.secondaryActiveColor,
-          thumbColor: widget.thumbColor,
-          overlayColor: widget.overlayColor,
-          mouseCursor: widget.mouseCursor,
-          semanticFormatterCallback: widget.semanticFormatterCallback,
-          focusNode: widget.focusNode,
-          autofocus: widget.autofocus,
+          child: Slider(
+            key: widget.key,
+            value: widget.value,
+            secondaryTrackValue: widget.secondaryTrackValue,
+            onChanged: widget.onChanged,
+            onChangeStart: widget.onChangeStart,
+            onChangeEnd: widget.onChangeEnd,
+            min: widget.min,
+            max: widget.max,
+            divisions: widget.divisions,
+            label: widget.label,
+            activeColor: widget.activeColor,
+            inactiveColor: widget.inactiveColor,
+            secondaryActiveColor: widget.secondaryActiveColor,
+            thumbColor: widget.thumbColor,
+            overlayColor: widget.overlayColor,
+            mouseCursor: widget.mouseCursor,
+            semanticFormatterCallback: widget.semanticFormatterCallback,
+            focusNode: widget.focusNode,
+            autofocus: widget.autofocus,
+          ),
         ),
       );
 }

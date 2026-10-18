@@ -13,6 +13,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:looper_player/core/system_tray_service.dart';
+import 'package:looper_player/core/window_state_service.dart';
 
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/app_icons.dart';
@@ -176,12 +177,11 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
     final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
     final isShuffle = ref.watch(playbackProvider.select((s) => s.isShuffle));
     final repeatMode = ref.watch(playbackProvider.select((s) => s.repeatMode));
-    final position = ref.watch(playbackProvider.select((s) => s.position));
-    final duration = ref.watch(playbackProvider.select((s) => s.duration));
 
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     final panelWidth = _panelWidth(screenWidth);
     final notifier = ref.read(playbackProvider.notifier);
     final settings = ref.watch(settingsProvider);
@@ -190,6 +190,8 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
     final String? artPath = song.artPath;
     final bool hasArt = artPath != null && artPath.isNotEmpty;
     final showBottomVisualizer = settings.fullscreenVisualizerEnabled;
+
+    final double visualizerHeight = (screenHeight * 0.32).clamp(220.0, 380.0);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -203,7 +205,7 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
               opacity: (useBlur && hasArt) ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 600),
               curve: Curves.easeInOut,
-              child: hasArt
+              child: (useBlur && hasArt)
                   ? Stack(
                       fit: StackFit.expand,
                       children: [
@@ -251,44 +253,44 @@ class _DesktopExpandedPlayerState extends ConsumerState<DesktopExpandedPlayer>
               left: 0,
               right: 0,
               bottom: 0,
-              height: 200,
+              height: visualizerHeight,
               child: IgnorePointer(
                 child: _DesktopBottomVisualizer(
                   isPlaying: isPlaying,
                   accent: colorScheme.primary,
+                  densityIndex: settings.fullscreenVisualizerDensity,
                 ),
               ),
             ),
           SafeArea(
-            child: _PlayerStage(
-              screenWidth: screenWidth,
-              panelWidth: panelWidth,
-              activePanel: _openPanel,
-              lastTab: _lastTab,
-              fullscreen: _fullscreen,
-              onToggleFullscreen: _toggleFullscreen,
-              song: song,
-              isPlaying: isPlaying,
-              isShuffle: isShuffle,
-              repeatMode: repeatMode,
-              position: position,
-              duration: duration,
-              l10n: l10n,
-              onCollapse: _collapsePlayer,
-              onTogglePlay: notifier.togglePlay,
-              onSkipPrevious: notifier.skipPrevious,
-              onSkipNext: notifier.skipNext,
-              onToggleShuffle: notifier.toggleShuffle,
-              onCycleRepeat: notifier.nextRepeatMode,
-              onToggleFavorite: notifier.toggleFavorite,
-              onSeek: notifier.seek,
-              onToggleQueue: () => _togglePanel(PlayerPanelTab.queue),
-              onToggleLyrics: () => _togglePanel(PlayerPanelTab.lyrics),
-              onTabChanged: (t) => setState(() {
-                _lastTab = t;
-                _openPanel = t;
-              }),
-              onClosePanel: _closePanel,
+            child: RepaintBoundary(
+              child: _PlayerStage(
+                screenWidth: screenWidth,
+                panelWidth: panelWidth,
+                activePanel: _openPanel,
+                lastTab: _lastTab,
+                fullscreen: _fullscreen,
+                onToggleFullscreen: _toggleFullscreen,
+                song: song,
+                isPlaying: isPlaying,
+                isShuffle: isShuffle,
+                repeatMode: repeatMode,
+                l10n: l10n,
+                onCollapse: _collapsePlayer,
+                onTogglePlay: notifier.togglePlay,
+                onSkipPrevious: notifier.skipPrevious,
+                onSkipNext: notifier.skipNext,
+                onToggleShuffle: notifier.toggleShuffle,
+                onCycleRepeat: notifier.nextRepeatMode,
+                onToggleFavorite: notifier.toggleFavorite,
+                onToggleQueue: () => _togglePanel(PlayerPanelTab.queue),
+                onToggleLyrics: () => _togglePanel(PlayerPanelTab.lyrics),
+                onTabChanged: (t) => setState(() {
+                  _lastTab = t;
+                  _openPanel = t;
+                }),
+                onClosePanel: _closePanel,
+              ),
             ),
           ),
         ],
@@ -313,8 +315,6 @@ class _PlayerStage extends StatelessWidget {
     required this.isPlaying,
     required this.isShuffle,
     required this.repeatMode,
-    required this.position,
-    required this.duration,
     required this.l10n,
     required this.onCollapse,
     required this.onTogglePlay,
@@ -323,7 +323,6 @@ class _PlayerStage extends StatelessWidget {
     required this.onToggleShuffle,
     required this.onCycleRepeat,
     required this.onToggleFavorite,
-    required this.onSeek,
     required this.onToggleQueue,
     required this.onToggleLyrics,
     required this.onTabChanged,
@@ -340,8 +339,6 @@ class _PlayerStage extends StatelessWidget {
   final bool isPlaying;
   final bool isShuffle;
   final RepeatMode repeatMode;
-  final Duration position;
-  final Duration duration;
   final AppLocalizations l10n;
   final VoidCallback onCollapse;
   final VoidCallback onTogglePlay;
@@ -350,7 +347,6 @@ class _PlayerStage extends StatelessWidget {
   final VoidCallback onToggleShuffle;
   final VoidCallback onCycleRepeat;
   final VoidCallback onToggleFavorite;
-  final ValueChanged<Duration> onSeek;
   final VoidCallback onToggleQueue;
   final VoidCallback onToggleLyrics;
   final ValueChanged<PlayerPanelTab> onTabChanged;
@@ -425,8 +421,6 @@ class _PlayerStage extends StatelessWidget {
                     isPlaying: isPlaying,
                     isShuffle: isShuffle,
                     repeatMode: repeatMode,
-                    position: position,
-                    duration: duration,
                     l10n: l10n,
                     activePanel: activePanel,
                     onTogglePlay: onTogglePlay,
@@ -435,7 +429,6 @@ class _PlayerStage extends StatelessWidget {
                     onToggleShuffle: onToggleShuffle,
                     onCycleRepeat: onCycleRepeat,
                     onToggleFavorite: onToggleFavorite,
-                    onSeek: onSeek,
                     onToggleQueue: onToggleQueue,
                     onToggleLyrics: onToggleLyrics,
                   ),
@@ -689,8 +682,6 @@ class _ResponsiveContent extends StatelessWidget {
     required this.isPlaying,
     required this.isShuffle,
     required this.repeatMode,
-    required this.position,
-    required this.duration,
     required this.l10n,
     required this.activePanel,
     required this.onTogglePlay,
@@ -699,7 +690,6 @@ class _ResponsiveContent extends StatelessWidget {
     required this.onToggleShuffle,
     required this.onCycleRepeat,
     required this.onToggleFavorite,
-    required this.onSeek,
     required this.onToggleQueue,
     required this.onToggleLyrics,
   });
@@ -708,8 +698,6 @@ class _ResponsiveContent extends StatelessWidget {
   final bool isPlaying;
   final bool isShuffle;
   final RepeatMode repeatMode;
-  final Duration position;
-  final Duration duration;
   final AppLocalizations l10n;
   final PlayerPanelTab? activePanel;
   final double screenWidth;
@@ -719,7 +707,6 @@ class _ResponsiveContent extends StatelessWidget {
   final VoidCallback onToggleShuffle;
   final VoidCallback onCycleRepeat;
   final VoidCallback onToggleFavorite;
-  final ValueChanged<Duration> onSeek;
   final VoidCallback onToggleQueue;
   final VoidCallback onToggleLyrics;
 
@@ -760,8 +747,6 @@ class _ResponsiveContent extends StatelessWidget {
                   isPlaying: isPlaying,
                   isShuffle: isShuffle,
                   repeatMode: repeatMode,
-                  position: position,
-                  duration: duration,
                   l10n: l10n,
                   activePanel: activePanel,
                   onTogglePlay: onTogglePlay,
@@ -770,7 +755,6 @@ class _ResponsiveContent extends StatelessWidget {
                   onToggleShuffle: onToggleShuffle,
                   onCycleRepeat: onCycleRepeat,
                   onToggleFavorite: onToggleFavorite,
-                  onSeek: onSeek,
                   onToggleQueue: onToggleQueue,
                   onToggleLyrics: onToggleLyrics,
                 )
@@ -782,8 +766,6 @@ class _ResponsiveContent extends StatelessWidget {
                   isPlaying: isPlaying,
                   isShuffle: isShuffle,
                   repeatMode: repeatMode,
-                  position: position,
-                  duration: duration,
                   l10n: l10n,
                   activePanel: activePanel,
                   onTogglePlay: onTogglePlay,
@@ -792,7 +774,6 @@ class _ResponsiveContent extends StatelessWidget {
                   onToggleShuffle: onToggleShuffle,
                   onCycleRepeat: onCycleRepeat,
                   onToggleFavorite: onToggleFavorite,
-                  onSeek: onSeek,
                   onToggleQueue: onToggleQueue,
                   onToggleLyrics: onToggleLyrics,
                 ),
@@ -813,8 +794,6 @@ class _HorizontalContent extends ConsumerWidget {
     required this.isPlaying,
     required this.isShuffle,
     required this.repeatMode,
-    required this.position,
-    required this.duration,
     required this.l10n,
     required this.activePanel,
     required this.onTogglePlay,
@@ -823,7 +802,6 @@ class _HorizontalContent extends ConsumerWidget {
     required this.onToggleShuffle,
     required this.onCycleRepeat,
     required this.onToggleFavorite,
-    required this.onSeek,
     required this.onToggleQueue,
     required this.onToggleLyrics,
   });
@@ -834,8 +812,6 @@ class _HorizontalContent extends ConsumerWidget {
   final bool isPlaying;
   final bool isShuffle;
   final RepeatMode repeatMode;
-  final Duration position;
-  final Duration duration;
   final AppLocalizations l10n;
   final PlayerPanelTab? activePanel;
   final VoidCallback onTogglePlay;
@@ -844,15 +820,15 @@ class _HorizontalContent extends ConsumerWidget {
   final VoidCallback onToggleShuffle;
   final VoidCallback onCycleRepeat;
   final VoidCallback onToggleFavorite;
-  final ValueChanged<Duration> onSeek;
   final VoidCallback onToggleQueue;
   final VoidCallback onToggleLyrics;
 
   double get _artSize {
     final colW = width * 0.44 - 64;
     final colH = height - 64;
-    final available = min(colW, colH);
-    return available.clamp(140.0, _artMax);
+    final available = min(colW, colH).floorToDouble();
+    final evenAvailable = available - (available % 2);
+    return evenAvailable.clamp(140.0, _artMax);
   }
 
   double get _seekHeight {
@@ -971,15 +947,11 @@ class _HorizontalContent extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 32),
-                            _SeekBarView(
-                              position: position,
-                              duration: duration,
-                              isPlaying: isPlaying,
-                              onSeek: onSeek,
+                            _FullscreenSeekSection(
                               songPath: song.path,
                               height: _seekHeight,
+                              barCount: 48,
                             ),
-                            _TimeRow(position: position, duration: duration),
                             const SizedBox(height: 24),
                             _MobileMainControls(
                               isPlaying: isPlaying,
@@ -1023,8 +995,6 @@ class _VerticalContent extends ConsumerWidget {
     required this.isPlaying,
     required this.isShuffle,
     required this.repeatMode,
-    required this.position,
-    required this.duration,
     required this.l10n,
     required this.activePanel,
     required this.onTogglePlay,
@@ -1033,7 +1003,6 @@ class _VerticalContent extends ConsumerWidget {
     required this.onToggleShuffle,
     required this.onCycleRepeat,
     required this.onToggleFavorite,
-    required this.onSeek,
     required this.onToggleQueue,
     required this.onToggleLyrics,
   });
@@ -1044,8 +1013,6 @@ class _VerticalContent extends ConsumerWidget {
   final bool isPlaying;
   final bool isShuffle;
   final RepeatMode repeatMode;
-  final Duration position;
-  final Duration duration;
   final AppLocalizations l10n;
   final PlayerPanelTab? activePanel;
   final VoidCallback onTogglePlay;
@@ -1054,7 +1021,6 @@ class _VerticalContent extends ConsumerWidget {
   final VoidCallback onToggleShuffle;
   final VoidCallback onCycleRepeat;
   final VoidCallback onToggleFavorite;
-  final ValueChanged<Duration> onSeek;
   final VoidCallback onToggleQueue;
   final VoidCallback onToggleLyrics;
 
@@ -1116,10 +1082,11 @@ class _VerticalContent extends ConsumerWidget {
                               : width * 0.65)
                           .clamp(120.0, 380.0);
                       final byHeight = h - fixedBelowArt;
-                      final artSize = min(
+                      final rawArtSize = min(
                         maxAllowedWidth,
                         max(100.0, byHeight),
-                      ).clamp(100.0, 380.0);
+                      ).clamp(100.0, 380.0).floorToDouble();
+                      final artSize = rawArtSize - (rawArtSize % 2);
 
                       final deckMaxWidth = (width < 600 ? 380.0 : 440.0)
                           .clamp(300.0, 480.0);
@@ -1226,22 +1193,10 @@ class _VerticalContent extends ConsumerWidget {
                                 constraints: BoxConstraints(
                                   maxWidth: seekMaxWidth,
                                 ),
-                                child: Column(
-                                  children: [
-                                    _SeekBarView(
-                                      position: position,
-                                      duration: duration,
-                                      isPlaying: isPlaying,
-                                      onSeek: onSeek,
-                                      songPath: song.path,
-                                      height: seekHeight,
-                                      barCount: 36,
-                                    ),
-                                    _TimeRow(
-                                      position: position,
-                                      duration: duration,
-                                    ),
-                                  ],
+                                child: _FullscreenSeekSection(
+                                  songPath: song.path,
+                                  height: seekHeight,
+                                  barCount: 36,
                                 ),
                               ),
                               SizedBox(height: gapSeekToControls),
@@ -1713,18 +1668,20 @@ class _TimeRow extends StatelessWidget {
       fontSize: 12,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    return Padding(
-      padding: const EdgeInsets.only(top: 9),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          AnimatedDurationCounter(duration: position, style: style),
-          AnimatedDurationCounter(
-            duration: duration,
-            style: style,
-            isRightAligned: true,
-          ),
-        ],
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 9),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            AnimatedDurationCounter(duration: position, style: style),
+            AnimatedDurationCounter(
+              duration: duration,
+              style: style,
+              isRightAligned: true,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1781,10 +1738,16 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
 
   late Ticker _ticker;
   Duration _elapsed = Duration.zero;
+  Duration _lastTickTime = Duration.zero;
 
   late List<double> _sinePhase;
   late List<double> _sineFreq;
   late List<double> _freqGain;
+  late List<double> _norm;
+  late List<double> _audioFreqScale;
+  late List<double> _bellShape;
+  late List<double> _trebleBoost;
+  late List<double> _fallbackScale;
 
   @override
   void initState() {
@@ -1808,6 +1771,18 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
       final norm = _barCount > 1 ? i / (_barCount - 1) : 0.0;
       return (0.55 + 0.72 * pow(norm, 0.55)).clamp(0.3, 1.3);
     });
+    final center = (_barCount - 1) / 2.0;
+    _norm = List.generate(_barCount, (i) => (i - center).abs() / center);
+    _audioFreqScale = List.generate(_barCount, (i) => pow(_norm[i], 0.85).toDouble());
+    _bellShape = List.generate(
+      _barCount,
+      (i) => (1.0 - 0.20 * pow(_norm[i], 1.4)).clamp(0.4, 1.0),
+    );
+    _trebleBoost = List.generate(
+      _barCount,
+      (i) => (0.75 + 0.60 * pow(_norm[i], 0.6)).clamp(0.5, 1.35),
+    );
+    _fallbackScale = List.generate(_barCount, (i) => (1.0 - _norm[i] * 0.45));
   }
 
   @override
@@ -1825,6 +1800,15 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
 
   void _onTick(Duration elapsed) {
     if (!mounted) return;
+    if (ref.read(isWindowMinimizedProvider)) {
+      if (_ticker.isActive) _ticker.stop();
+      _lastTickTime = Duration.zero;
+      return;
+    }
+    if (_lastTickTime != Duration.zero && (elapsed - _lastTickTime).inMilliseconds < 33) {
+      return;
+    }
+    _lastTickTime = elapsed;
     _elapsed = elapsed;
 
     final raw = ref.read(spectrumProvider);
@@ -1838,18 +1822,13 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
       if (!widget.isPlaying) {
         target = 0.0;
       } else if (hasFftData) {
-        // Center-out normal distribution mapping:
-        // Center bars = punchy bass & low frequencies; outer bars = mids and treble tapering outward.
-        final center = (_barCount - 1) / 2.0;
-        final norm =
-            (i - center).abs() / center; // 0.0 at center -> 1.0 at edges
-        final rawPos = pow(norm, 0.85).toDouble() * (raw.length - 1);
+        final rawPos = _audioFreqScale[i] * (raw.length - 1);
         final idx0 = rawPos.floor().clamp(0, raw.length - 1);
         final idx1 = rawPos.ceil().clamp(0, raw.length - 1);
         final frac = rawPos - idx0;
         final interpolated = raw[idx0] * (1.0 - frac) + raw[idx1] * frac;
 
-        final startIdx = rawPos.floor().clamp(0, raw.length - 1);
+        final startIdx = idx0;
         final endIdx = (rawPos + raw.length / _barCount).ceil().clamp(
           startIdx + 1,
           raw.length,
@@ -1860,18 +1839,14 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
         }
 
         final peak = max(interpolated, rangePeak);
-        final bellShape = (1.0 - 0.20 * pow(norm, 1.4)).clamp(0.4, 1.0);
-        final trebleBoost = (0.75 + 0.60 * pow(norm, 0.6)).clamp(0.5, 1.35);
-        target = (peak * trebleBoost * bellShape).clamp(0.0, 1.0);
+        target = (peak * _trebleBoost[i] * _bellShape[i]).clamp(0.0, 1.0);
       } else {
-        final center = (_barCount - 1) / 2.0;
-        final norm = (i - center).abs() / center;
         final v =
             (sin(t * _sineFreq[i] * 2.5 + _sinePhase[i]) * 0.4 +
                     sin(t * _sineFreq[i] * 1.3 + _sinePhase[i] * 0.7) * 0.3) *
                 0.5 +
             0.5;
-        target = (v * (1.0 - norm * 0.45)).clamp(0.1, 1.0);
+        target = (v * _fallbackScale[i]).clamp(0.1, 1.0);
       }
 
       if (widget.isPlaying && target > 0.05) {
@@ -1918,6 +1893,15 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(isWindowMinimizedProvider, (prev, isMinimized) {
+      if (isMinimized) {
+        if (_ticker.isActive) _ticker.stop();
+        _lastTickTime = Duration.zero;
+      } else if (widget.isPlaying) {
+        if (!_ticker.isActive) _ticker.start();
+      }
+    });
+
     // Keep spectrumProvider active without rebuilding widget on every FFT frame
     ref.listen<List<double>>(spectrumProvider, (previous, next) {});
 
@@ -1953,7 +1937,7 @@ class _VisualizerSeekBarState extends ConsumerState<VisualizerSeekBar>
               width: double.infinity,
               child: CustomPaint(
                 painter: _VisualizerSeekBarPainter(
-                  heights: List.unmodifiable(_smoothed),
+                  heights: _smoothed.toList(growable: false),
                   progress: progress,
                   accent: accent,
                   unfilledColor: unfilled,
@@ -2004,6 +1988,19 @@ class _VisualizerSeekBarPainter extends CustomPainter {
 
     final playheadX = size.width * progress;
 
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [
+          accent.withValues(alpha: 1.0),
+          accent.withValues(alpha: 0.70),
+        ],
+        stops: const [0.0, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    final unfillPaint = Paint()..color = unfilledColor;
+    final cornerRadius = Radius.circular(barW > 3.0 ? 2.5 : 1.5);
+
     for (int i = 0; i < count; i++) {
       final h = (minH + (maxH - minH) * heights[i]).clamp(minH, maxH);
       final x = startX + i * slotW;
@@ -2011,25 +2008,11 @@ class _VisualizerSeekBarPainter extends CustomPainter {
 
       final rect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, top, barW, h),
-        Radius.circular(barW > 3.0 ? 2.5 : 1.5),
+        cornerRadius,
       );
 
       final isFilled = (x + barW / 2) <= playheadX;
-
-      if (isFilled) {
-        final shader = LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            accent.withValues(alpha: 1.0),
-            accent.withValues(alpha: 0.70),
-          ],
-          stops: const [0.0, 1.0],
-        ).createShader(Rect.fromLTWH(x, top, barW, h));
-        canvas.drawRRect(rect, Paint()..shader = shader);
-      } else {
-        canvas.drawRRect(rect, Paint()..color = unfilledColor);
-      }
+      canvas.drawRRect(rect, isFilled ? fillPaint : unfillPaint);
     }
   }
 
@@ -2039,6 +2022,49 @@ class _VisualizerSeekBarPainter extends CustomPainter {
       old.progress != progress ||
       old.accent != accent ||
       old.unfilledColor != unfilledColor;
+}
+
+// ============================================================================
+// FULLSCREEN SEEK SECTION
+// Isolates position & duration subscriptions so that high-frequency audio
+// ticks (10-25 Hz) do NOT trigger rebuilds of DesktopExpandedPlayer,
+// _PlayerStage, or _ResponsiveContent.
+// ============================================================================
+
+class _FullscreenSeekSection extends ConsumerWidget {
+  const _FullscreenSeekSection({
+    required this.songPath,
+    required this.height,
+    this.barCount = 56,
+  });
+
+  final String songPath;
+  final double height;
+  final int barCount;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final position = ref.watch(playbackProvider.select((s) => s.position));
+    final duration = ref.watch(playbackProvider.select((s) => s.duration));
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
+    final onSeek = ref.read(playbackProvider.notifier).seek;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SeekBarView(
+          position: position,
+          duration: duration,
+          isPlaying: isPlaying,
+          onSeek: onSeek,
+          songPath: songPath,
+          height: height,
+          barCount: barCount,
+        ),
+        _TimeRow(position: position, duration: duration),
+      ],
+    );
+  }
 }
 
 // ============================================================================
@@ -2074,14 +2100,15 @@ class _SeekBarView extends ConsumerWidget {
     final accent = Theme.of(context).colorScheme.primary;
 
     switch (styleIndex) {
-      case 1:
-        return ExpressiveSlider(
+      case 0:
+        return VisualizerSeekBar(
           position: position,
           duration: duration,
           isPlaying: isPlaying,
           onSeek: onSeek,
-          color: accent,
-          showTimestamps: false,
+          songPath: songPath,
+          height: height,
+          barCount: barCount,
         );
       case 2:
         return _FlatSeekBar(
@@ -2091,15 +2118,15 @@ class _SeekBarView extends ConsumerWidget {
           onSeek: onSeek,
           color: accent,
         );
+      case 1:
       default:
-        return VisualizerSeekBar(
+        return ExpressiveSlider(
           position: position,
           duration: duration,
           isPlaying: isPlaying,
           onSeek: onSeek,
-          songPath: songPath,
-          height: height,
-          barCount: barCount,
+          color: accent,
+          showTimestamps: false,
         );
     }
   }
@@ -2194,6 +2221,7 @@ class _BreathingAlbumArt extends ConsumerStatefulWidget {
 class _BreathingAlbumArtState extends ConsumerState<_BreathingAlbumArt>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  late final Animation<double> _animation;
 
   @override
   void initState() {
@@ -2201,6 +2229,10 @@ class _BreathingAlbumArtState extends ConsumerState<_BreathingAlbumArt>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 4500),
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutSine,
     );
     final disabled = ref.read(settingsProvider.select((s) => s.disableFullscreenBreathingEffect));
     if (widget.isPlaying && !disabled) _controller.repeat(reverse: true);
@@ -2229,50 +2261,68 @@ class _BreathingAlbumArtState extends ConsumerState<_BreathingAlbumArt>
     super.dispose();
   }
 
+  Widget _buildAlbumArtImage() {
+    return SizedBox(
+      width: widget.maxSize,
+      height: widget.maxSize,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        child: OptimizedImage(
+          imagePath: widget.artPath,
+          width: widget.maxSize,
+          height: widget.maxSize,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.medium,
+          placeholder: Container(
+            color: Colors.white10,
+            child: Icon(
+              LucideIcons.music,
+              color: Colors.white24,
+              size: min(80.0, widget.maxSize * 0.45),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMinimized = ref.watch(isWindowMinimizedProvider);
     final disabled = ref.watch(settingsProvider.select((s) => s.disableFullscreenBreathingEffect));
-    if (disabled && _controller.isAnimating) {
+    if ((disabled || isMinimized) && _controller.isAnimating) {
       _controller.stop();
-    } else if (!disabled && widget.isPlaying && !_controller.isAnimating) {
+    } else if (!disabled && !isMinimized && widget.isPlaying && !_controller.isAnimating) {
       _controller.repeat(reverse: true);
     }
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final scale = disabled ? 1.0 : (1 + _controller.value * 0.03);
-        return Transform.scale(
-          scale: scale,
-          child: SizedBox(
-            width: widget.maxSize,
-            height: widget.maxSize,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: OptimizedImage(
-                  imagePath: widget.artPath,
-                  width: widget.maxSize,
-                  height: widget.maxSize,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.low,
-                  placeholder: Container(
-                    color: Colors.white10,
-                    child: Icon(
-                      LucideIcons.music,
-                      color: Colors.white24,
-                      size: min(80.0, widget.maxSize * 0.45),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    final imageWidget = _buildAlbumArtImage();
+
+    if (disabled) {
+      return RepaintBoundary(child: imageWidget);
+    }
+
+    final outerSize = widget.maxSize * 1.04;
+    return RepaintBoundary(
+      child: SizedBox(
+        width: outerSize,
+        height: outerSize,
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _animation,
+            child: imageWidget,
+            builder: (context, child) {
+              final scale = 1.0 + _animation.value * 0.028;
+              return Transform.scale(
+                scale: scale,
+                alignment: Alignment.center,
+                child: child,
+              );
+            },
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -2293,16 +2343,16 @@ class _FullscreenBlurredBackground extends StatelessWidget {
           scale: 1.15,
           child: ImageFiltered(
             imageFilter: ImageFilter.blur(
-              sigmaX: 35.0,
-              sigmaY: 35.0,
+              sigmaX: 20.0,
+              sigmaY: 20.0,
             ),
             child: OptimizedImage(
               imagePath: artPath,
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              cacheWidth: 128,
-              cacheHeight: 128,
+              cacheWidth: 64,
+              cacheHeight: 64,
               filterQuality: FilterQuality.low,
               placeholder: const SizedBox.shrink(),
             ),
@@ -2893,6 +2943,8 @@ class _QueueListState extends ConsumerState<_QueueList> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.visible) return const SizedBox.shrink();
+
     final queue = ref.watch(playbackProvider.select((s) => s.queue));
     final currentSongPath =
         ref.watch(playbackProvider.select((s) => s.currentSong?.path));
@@ -3549,6 +3601,9 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.visible) {
+      return const SizedBox.shrink();
+    }
     final lyrics = ref.watch(lyricsProvider);
     final position = ref.watch(playbackProvider.select((s) => s.position));
     final l10n = AppLocalizations.of(context)!;
@@ -3777,10 +3832,12 @@ class _LyricsListState extends ConsumerState<_LyricsList> {
 class _DesktopBottomVisualizer extends ConsumerStatefulWidget {
   final bool isPlaying;
   final Color accent;
+  final int densityIndex;
 
   const _DesktopBottomVisualizer({
     required this.isPlaying,
     required this.accent,
+    this.densityIndex = 2,
   });
 
   @override
@@ -3791,38 +3848,95 @@ class _DesktopBottomVisualizer extends ConsumerStatefulWidget {
 class _DesktopBottomVisualizerState
     extends ConsumerState<_DesktopBottomVisualizer>
     with SingleTickerProviderStateMixin {
-  static const int _barCount = 64;
-  final List<double> _smoothed = List.filled(_barCount, 0.0);
-  static const double _attack = 0.45;
-  static const double _release = 0.07;
+  static int _getBarCount(int? densityIndex) {
+    switch (densityIndex) {
+      case 0:
+        return 64;
+      case 1:
+        return 96;
+      case 3:
+        return 160;
+      case 2:
+      default:
+        return 128;
+    }
+  }
+
+  late int _barCount;
+  late List<double> _smoothed;
+  static const double _attack = 0.75;
+  static const double _release = 0.32;
 
   late Ticker _ticker;
-  Duration _elapsed = Duration.zero;
+  Duration _lastTickTime = Duration.zero;
 
-  static final List<double> _sinePhase = List.generate(
-    _barCount,
-    (i) => (i / _barCount) * 2 * pi + (i % 3) * 1.1,
-  );
-  static final List<double> _sineFreq = List.generate(
-    _barCount,
-    (i) => 1.0 + (i % 5) * 0.3,
-  );
+  late List<double> _norm;
+  late List<double> _audioFreqScale;
+  late List<double> _bellContour;
+  late List<double> _barVariance;
+
+  void _initBars(int count) {
+    _barCount = count;
+    _smoothed = List.filled(_barCount, 0.0);
+    _norm = List.generate(
+      _barCount,
+      (i) {
+        final center = (_barCount - 1) / 2.0;
+        return (i - center).abs() / center;
+      },
+    );
+    _audioFreqScale = List.generate(
+      _barCount,
+      (i) => pow(_norm[i], 0.95).toDouble(),
+    );
+    // Expressive cosine bell arch: center peaks prominently, edges taper smoothly
+    _bellContour = List.generate(
+      _barCount,
+      (i) {
+        final arch = cos(_norm[i] * 1.45);
+        return (arch * 0.55 + 0.45).clamp(0.38, 1.0); // 1.0 at center -> 0.45 at edges
+      },
+    );
+    // Dynamic multi-harmonic bar variance: ensures lively jagged contour, never a flat comb
+    _barVariance = List.generate(
+      _barCount,
+      (i) {
+        final s1 = sin(i * 1.55 + (i % 3) * 2.1);
+        final s2 = cos(i * 0.9 + (i % 5) * 1.7);
+        final s3 = sin(i * 3.3);
+        final v = 0.68 + 0.44 * (s1.abs() * 0.45 + s2.abs() * 0.35 + s3.abs() * 0.20);
+        return v.clamp(0.68, 1.18);
+      },
+    );
+  }
+
+  void _startTicker() {
+    if (ref.read(isWindowMinimizedProvider)) return;
+    _lastTickTime = Duration.zero;
+    if (!_ticker.isActive) {
+      _ticker.start();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _initBars(_getBarCount(widget.densityIndex));
     _ticker = createTicker(_onTick);
     if (widget.isPlaying) {
-      _ticker.start();
+      _startTicker();
     }
   }
 
   @override
   void didUpdateWidget(covariant _DesktopBottomVisualizer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.densityIndex != oldWidget.densityIndex) {
+      _initBars(_getBarCount(widget.densityIndex));
+    }
     if (widget.isPlaying != oldWidget.isPlaying) {
       if (widget.isPlaying) {
-        if (!_ticker.isActive) _ticker.start();
+        _startTicker();
       }
     }
   }
@@ -3835,72 +3949,43 @@ class _DesktopBottomVisualizerState
 
   void _onTick(Duration elapsed) {
     if (!mounted) return;
-    _elapsed = elapsed;
+    if (ref.read(isWindowMinimizedProvider)) {
+      if (_ticker.isActive) _ticker.stop();
+      _lastTickTime = Duration.zero;
+      return;
+    }
+    final delta = elapsed - _lastTickTime;
+    if (_lastTickTime != Duration.zero && delta.inMilliseconds >= 0 && delta.inMilliseconds < 33) {
+      return;
+    }
+    _lastTickTime = elapsed;
 
     final raw = ref.read(spectrumProvider);
-    final hasFftData = raw.isNotEmpty && raw.any((v) => v > 0.01);
-    final t = elapsed.inMicroseconds / 1000000.0;
+    final hasFftData = widget.isPlaying && raw.isNotEmpty && raw.any((v) => v > 0.02);
 
     bool changed = false;
     for (int i = 0; i < _barCount; i++) {
-      double target;
-      if (!widget.isPlaying) {
-        target = 0.0;
-      } else if (hasFftData) {
-        // Normal distribution center-out mapping:
-        // Center of the screen represents punchy bass and powerful lower mids.
-        // Moving towards both outer edges maps gracefully to mids, highs, and air.
-        final center = (_barCount - 1) / 2.0;
-        final norm =
-            (i - center).abs() / center; // 0.0 at center -> 1.0 at outer edges
-
-        final audioFreqScale = pow(norm, 0.85).toDouble();
-        final maxActiveBucket = (raw.length * 0.72).clamp(
-          1.0,
+      double target = 0.0;
+      if (hasFftData) {
+        final audioFreqScale = _audioFreqScale[i];
+        const minBucket = 1.8;
+        final maxActiveBucket = (raw.length * 0.88).clamp(
+          minBucket + 2.0,
           raw.length.toDouble() - 1,
         );
-        final rawPos = audioFreqScale * maxActiveBucket;
+        // Frequency dispersion across adjacent bars for distinct motion
+        final freqJitter = sin(i * 2.3 + (i % 7) * 1.3) * 1.5;
+        final rawPos = (minBucket + audioFreqScale * (maxActiveBucket - minBucket) + freqJitter)
+            .clamp(0.0, raw.length - 1.0);
         final idx0 = rawPos.floor().clamp(0, raw.length - 1);
         final idx1 = rawPos.ceil().clamp(0, raw.length - 1);
         final frac = rawPos - idx0;
         final interpolated = raw[idx0] * (1.0 - frac) + raw[idx1] * frac;
 
-        final startIdx = (audioFreqScale * maxActiveBucket).floor().clamp(
-          0,
-          raw.length - 1,
-        );
-        final endIdx =
-            ((audioFreqScale + 1.0 / (_barCount / 2)) * maxActiveBucket)
-                .ceil()
-                .clamp(startIdx + 1, raw.length);
-        double rangePeak = 0;
-        for (int j = startIdx; j < endIdx; j++) {
-          if (raw[j] > rangePeak) rangePeak = raw[j];
-        }
-
-        final peak = max(interpolated, rangePeak);
-        // Symmetrical normal distribution bell curve tapering
-        final bellShape = (1.0 - 0.22 * pow(norm, 1.4)).clamp(0.4, 1.0);
-        final trebleBoost = (0.75 + 0.65 * pow(norm, 0.6)).clamp(0.5, 1.4);
-        target = (peak * trebleBoost * bellShape).clamp(0.0, 0.95);
-      } else {
-        final center = (_barCount - 1) / 2.0;
-        final norm = (i - center).abs() / center;
-        final v =
-            (sin(t * _sineFreq[i] * 2.5 + _sinePhase[i]) * 0.4 +
-                    sin(t * _sineFreq[i] * 1.3 + _sinePhase[i] * 0.7) * 0.3) *
-                0.5 +
-            0.5;
-        target = (v * (1.0 - norm * 0.45)).clamp(0.1, 1.0);
-      }
-
-      if (widget.isPlaying && target > 0.05) {
-        final diff = (target - _smoothed[i]).abs();
-        if (diff < 0.035) {
-          final jitter =
-              sin(t * (2.2 + _sineFreq[i] * 0.6) + _sinePhase[i] * 1.3) * 0.030;
-          target = (target + jitter).clamp(0.0, 1.0);
-        }
+        // Dynamic contrast power curve: expands transient peaks and valleys for lively bouncing motion
+        final dynamicVal = pow(interpolated.clamp(0.0, 1.0), 1.5).toDouble();
+        final softKnee = dynamicVal / (1.0 + 0.18 * dynamicVal);
+        target = softKnee * 1.32 * _bellContour[i] * _barVariance[i];
       }
 
       final alpha = target > _smoothed[i] ? _attack : _release;
@@ -3917,6 +4002,7 @@ class _DesktopBottomVisualizerState
         _smoothed.fillRange(0, _barCount, 0.0);
         if (changed) setState(() {});
         if (_ticker.isActive) _ticker.stop();
+        _lastTickTime = Duration.zero;
         return;
       }
     }
@@ -3928,15 +4014,30 @@ class _DesktopBottomVisualizerState
 
   @override
   Widget build(BuildContext context) {
-    // Keep spectrumProvider active and listening to real mpv FFT stream without rebuilding widget on every FFT frame
-    ref.listen<List<double>>(spectrumProvider, (previous, next) {});
+    ref.listen<bool>(isWindowMinimizedProvider, (previous, isMinimized) {
+      if (isMinimized) {
+        if (_ticker.isActive) _ticker.stop();
+        _lastTickTime = Duration.zero;
+      } else if (widget.isPlaying) {
+        _startTicker();
+      }
+    });
+
+    // Keep spectrumProvider active and listening to real mpv FFT stream; wake ticker on fresh audio
+    ref.listen<List<double>>(spectrumProvider, (previous, next) {
+      if (!ref.read(isWindowMinimizedProvider) && widget.isPlaying && next.any((v) => v > 0.02)) {
+        if (!_ticker.isActive) {
+          _startTicker();
+        }
+      }
+    });
 
     return AnimatedOpacity(
       opacity: widget.isPlaying ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 600),
       child: CustomPaint(
         painter: _DesktopBottomVisualizerPainter(
-          levels: List.unmodifiable(_smoothed),
+          levels: _smoothed.toList(growable: false),
           accent: widget.accent,
         ),
         size: Size.infinite,
@@ -3957,6 +4058,7 @@ class _DesktopBottomVisualizerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (levels.isEmpty || size.width <= 0 || size.height <= 0) return;
+    if (levels.every((v) => v <= 0.001)) return;
 
     final count = levels.length;
     const hPad = 16.0;
@@ -3968,35 +4070,43 @@ class _DesktopBottomVisualizerPainter extends CustomPainter {
     final fieldW = slotW * count - gap;
     final startX = (size.width - fieldW) / 2;
 
-    final maxH = size.height * 0.70;
-    const minH = 4.0;
+    final maxH = size.height * 0.76;
+    const minH = 0.0;
 
-    final paint = Paint()..style = PaintingStyle.fill;
+    final shader = LinearGradient(
+      begin: Alignment.bottomCenter,
+      end: Alignment.topCenter,
+      colors: [
+        accent.withValues(alpha: 0.90),
+        accent.withValues(alpha: 0.72),
+        accent.withValues(alpha: 0.48),
+        accent.withValues(alpha: 0.28),
+      ],
+      stops: const [0.0, 0.45, 0.80, 1.0],
+    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = shader;
+    final cornerRadius = Radius.circular(barW / 2);
 
     for (int i = 0; i < count; i++) {
-      final val = levels[i].clamp(0.0, 1.0);
-      final h = (minH + (maxH - minH) * val).clamp(minH, maxH);
+      final val = levels[i];
+      if (val <= 0.002) continue;
+      // No clipping cap: bars move dynamically with full vertical expression
+      final h = minH + maxH * val;
+      if (h <= 0.5) continue;
       final x = startX + i * slotW;
       final top = size.height - h;
 
       final rect = Rect.fromLTWH(x, top, barW, h);
-      paint.shader = LinearGradient(
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-        colors: [
-          accent.withValues(alpha: 0.85),
-          accent.withValues(alpha: 0.65),
-          accent.withValues(alpha: 0.25),
-        ],
-        stops: const [0.0, 0.7, 1.0],
-      ).createShader(rect);
-
-      final rrect = RRect.fromRectAndRadius(rect, Radius.circular(barW / 2));
+      final rrect = RRect.fromRectAndRadius(rect, cornerRadius);
       canvas.drawRRect(rrect, paint);
     }
   }
 
   @override
-  bool shouldRepaint(_DesktopBottomVisualizerPainter oldDelegate) => true;
+  bool shouldRepaint(_DesktopBottomVisualizerPainter oldDelegate) =>
+      oldDelegate.levels != levels || oldDelegate.accent != accent;
 }
 

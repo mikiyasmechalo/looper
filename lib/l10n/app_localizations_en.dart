@@ -202,7 +202,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get disableSquigglyProgressBar =>
-      'Disable squiggly wave progress bar animation';
+      'Disable squiggly wave progress bar animation (wavy seekbar might increase CPU usage)';
 
   @override
   String get downloadAudioDirectly => 'DOWNLOAD AUDIO DIRECTLY';
@@ -949,7 +949,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get useStaticTextTimestamps =>
-      'Use static text instead of rolling animation for progress duration';
+      'Use static text instead of rolling animation for progress duration (animated timestamps might increase CPU usage)';
 
   @override
   String get verticalMotionEffectPlayer => 'Vertical Motion Effect Player';

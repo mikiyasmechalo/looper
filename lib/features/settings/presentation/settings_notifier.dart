@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/battery_service.dart';
 import '../../../core/db_service.dart';
+import '../../../core/logger_helper.dart';
 import '../../library/domain/models/models.dart';
 
 import '../../library/data/artwork_downloader_service.dart';
@@ -192,6 +194,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         settings.settingsV6 = true;
         needsSave = true;
       }
+      if (!settings.settingsV7) {
+        settings.disableSquiggle = true;
+        settings.disableAnimatedDuration = true;
+        settings.fullscreenVisualizerEnabled = false;
+        settings.seekBarStyleIndex = 1;
+        settings.settingsV7 = true;
+        needsSave = true;
+      }
       if (!settings.autoLyricsFallbackMigrated) {
         settings.autoLyricsFallback = true;
         settings.autoLyricsFallbackMigrated = true;
@@ -235,11 +245,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         ..lyricsDarkness = 0.55
         ..showQualityBadge = true
         ..enablePlayerGradient = true
+        ..disableSquiggle = true
+        ..disableAnimatedDuration = true
+        ..fullscreenVisualizerEnabled = false
+        ..seekBarStyleIndex = 1
         ..settingsV2 = true
         ..settingsV3 = true
         ..settingsV4 = true
         ..settingsV5 = true
         ..settingsV6 = true
+        ..settingsV7 = true
         ..enableTaskbarControls = true
         ..enableUpdateNotifications = true
         ..dynamicLyrics = false
@@ -262,7 +277,21 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       _persistedSettings = defaultSettings;
     }
 
-    state = _persistedSettings;
+    int density = 2;
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final file = File('${dir.path}/visualizer_density.txt');
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final parsed = int.tryParse(content.trim());
+        if (parsed != null && parsed >= 0 && parsed <= 3) {
+          density = parsed;
+        }
+      }
+    } catch (_) {}
+
+    _persistedSettings.fullscreenVisualizerDensity = density;
+    state = _clone(_persistedSettings);
 
     BatteryService.instance.initialize().then((info) {
       _evaluateBatterySaver(info);
@@ -360,6 +389,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..settingsV4 = s.settingsV4
       ..settingsV5 = s.settingsV5
       ..settingsV6 = s.settingsV6
+      ..settingsV7 = s.settingsV7
       ..blurredArtworkForLyrics = s.blurredArtworkForLyrics
       ..customBackgroundImagePath = s.customBackgroundImagePath
       ..bgBrightness = s.bgBrightness
@@ -381,6 +411,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..seekBarStyleIndex = s.seekBarStyleIndex
       ..uniformLyricsFontSize = s.uniformLyricsFontSize
       ..fullscreenVisualizerEnabled = s.fullscreenVisualizerEnabled
+      ..fullscreenVisualizerDensity = s.fullscreenVisualizerDensity
       ..showFullscreenABLooper = s.showFullscreenABLooper
       ..showFullscreenSleepTimer = s.showFullscreenSleepTimer
       ..disableFullscreenBreathingEffect = s.disableFullscreenBreathingEffect
@@ -752,6 +783,19 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _save(newState);
   }
 
+  Future<void> updateFullscreenVisualizerDensity(int value) async {
+    final newState = _clone(state)..fullscreenVisualizerDensity = value;
+    state = newState;
+    _persistedSettings.fullscreenVisualizerDensity = value;
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final file = File('${dir.path}/visualizer_density.txt');
+      await file.writeAsString(value.toString());
+    } catch (e) {
+      LoggerHelper.write('Failed to persist visualizer density: $e');
+    }
+  }
+
   Future<void> updateShowFullscreenABLooper(bool value) async {
     final newState = _clone(state)..showFullscreenABLooper = value;
     await _save(newState);
@@ -952,8 +996,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> updateLastPosition(int positionMs) async {
-    final newState = _clone(state)..lastPositionMs = positionMs;
-    await _save(newState);
+    _persistedSettings.lastPositionMs = positionMs;
+    state.lastPositionMs = positionMs;
+    await DbService.isar.writeTxn(() async {
+      await DbService.isar.appSettings.put(_persistedSettings);
+    });
   }
 
   Future<void> updateVolume(double volume) async {

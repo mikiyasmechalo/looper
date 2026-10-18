@@ -249,13 +249,13 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
         return;
       }
       if (!playing) {
-        if (_isTransitioning || _autoCrossfadeTriggered) {
+        if (_isTransitioning || _autoCrossfadeTriggered || player.state.completed) {
           // Ignore temporary pause/stop events while transitioning/opening a new song
           return;
         }
-        // If the song is near its end, ignore playing: false because it's completing
+        // If the song is near its end or has completed, ignore playing: false because it's completing
         final remaining = state.duration - state.position;
-        if (remaining.inMilliseconds > 0 && remaining.inMilliseconds < 6000) {
+        if (state.duration > Duration.zero && remaining.inMilliseconds < 6000) {
           return;
         }
         final now = DateTime.now();
@@ -322,7 +322,7 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       }
 
       final now = DateTime.now().millisecondsSinceEpoch;
-      if (state.isPlaying && now - _lastPositionPersistTime > 2000) {
+      if (state.isPlaying && now - _lastPositionPersistTime > 30000) {
         _lastPositionPersistTime = now;
         if (ref.read(settingsProvider).persistQueue) {
           ref.read(settingsProvider.notifier).updateLastPosition(position.inMilliseconds);

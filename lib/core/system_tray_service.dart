@@ -5,6 +5,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'logger_helper.dart';
 import 'db_service.dart';
+import 'window_state_service.dart';
 import '../features/library/domain/models/models.dart';
 
 /// Manages the desktop system tray icon and the "minimize to tray" behavior.
@@ -103,6 +104,7 @@ class SystemTrayService {
   Future<void> minimizeToTray() async {
     if (!isSupported) return;
     try {
+      WindowStateService.instance.setMinimized(true);
       await _createTray();
       await windowManager.hide();
     } catch (e, s) {
@@ -113,6 +115,7 @@ class SystemTrayService {
   Future<void> restoreFromTray() async {
     if (!isSupported) return;
     try {
+      WindowStateService.instance.setMinimized(false);
       await windowManager.show();
       await windowManager.focus();
       final settings = await DbService.isar.appSettings.get(0);

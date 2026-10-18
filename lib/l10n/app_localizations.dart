@@ -485,7 +485,7 @@ abstract class AppLocalizations {
   /// No description provided for @disableSquigglyProgressBar.
   ///
   /// In en, this message translates to:
-  /// **'Disable squiggly wave progress bar animation'**
+  /// **'Disable squiggly wave progress bar animation (wavy seekbar might increase CPU usage)'**
   String get disableSquigglyProgressBar;
 
   /// No description provided for @downloadAudioDirectly.
@@ -1859,7 +1859,7 @@ abstract class AppLocalizations {
   /// No description provided for @useStaticTextTimestamps.
   ///
   /// In en, this message translates to:
-  /// **'Use static text instead of rolling animation for progress duration'**
+  /// **'Use static text instead of rolling animation for progress duration (animated timestamps might increase CPU usage)'**
   String get useStaticTextTimestamps;
 
   /// No description provided for @verticalMotionEffectPlayer.

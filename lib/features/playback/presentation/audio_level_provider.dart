@@ -22,6 +22,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mpv_audio_kit/mpv_audio_kit.dart';
+import 'package:looper_player/core/window_state_service.dart';
 
 import 'playback_notifier.dart';
 
@@ -39,12 +40,36 @@ final spectrumProvider =
 class SpectrumLevelNotifier extends StateNotifier<List<double>> {
   SpectrumLevelNotifier(this._ref) : super(const []) {
     _setup();
+    _playbackSub = _ref.listen<PlaybackState>(playbackProvider, (prev, next) {
+      if (prev?.isPlaying != next.isPlaying) {
+        if (!next.isPlaying) {
+          state = const [];
+        } else {
+          _ensureActive();
+        }
+      }
+    });
+    _minimizedSub = _ref.listen<bool>(isWindowMinimizedProvider, (prev, isMinimized) {
+      if (isMinimized) {
+        _fftSub?.cancel();
+        _fftSub = null;
+        if (state.isNotEmpty) state = const [];
+      } else {
+        final playbackState = _ref.read(playbackProvider);
+        if (playbackState.isPlaying) {
+          _ensureActive();
+        }
+      }
+    });
   }
 
   final Ref _ref;
   StreamSubscription<FftFrame>? _fftSub;
+  ProviderSubscription<PlaybackState>? _playbackSub;
+  ProviderSubscription<bool>? _minimizedSub;
 
   Future<void> _setup() async {
+    if (_ref.read(isWindowMinimizedProvider)) return;
     try {
       final player = _ref.read(playbackProvider.notifier).player;
       // 30 fps (33 ms) provides ultra-smooth motion while reducing CPU overhead
@@ -52,6 +77,7 @@ class SpectrumLevelNotifier extends StateNotifier<List<double>> {
       await player.updateSpectrum(
         (s) => s.copyWith(emitInterval: const Duration(milliseconds: 33)),
       );
+      await _fftSub?.cancel();
       _fftSub = player.stream.fft.listen(_onFrame);
     } catch (_) {
       // Player not ready yet, or the platform doesn't expose the tap — the
@@ -59,22 +85,40 @@ class SpectrumLevelNotifier extends StateNotifier<List<double>> {
     }
   }
 
+  Future<void> _ensureActive() async {
+    if (_ref.read(isWindowMinimizedProvider)) return;
+    if (_fftSub == null) {
+      await _setup();
+    } else {
+      try {
+        final player = _ref.read(playbackProvider.notifier).player;
+        await player.updateSpectrum(
+          (s) => s.copyWith(emitInterval: const Duration(milliseconds: 33)),
+        );
+      } catch (_) {}
+    }
+  }
+
   void _onFrame(FftFrame frame) {
-    final isPlaying = _ref.read(playbackProvider.select((s) => s.isPlaying));
-    if (!isPlaying) return;
+    if (_ref.read(isWindowMinimizedProvider)) {
+      _fftSub?.cancel();
+      _fftSub = null;
+      if (state.isNotEmpty) state = const [];
+      return;
+    }
+    final playbackState = _ref.read(playbackProvider);
+    if (!playbackState.isPlaying) {
+      if (state.isNotEmpty) state = const [];
+      return;
+    }
 
     final bands = frame.bands;
     if (bands.isEmpty) return;
 
-    final volume =
-        _ref.read(playbackProvider.select((s) => s.volume)).clamp(0.0, 1.0);
-    // Apply 30%-70% virtual volume scaling:
-    // - Higher volume ALWAYS produces higher or equal bar heights (monotonic).
-    // - At 100% volume, maximum visualizer scale is capped at 0.70 (70% height) so bars never clip into solid blocks.
-    // - At lower volumes (10%-30%), bars stay active with a gentle minimum floor (~0.30-0.42).
+    final volume = playbackState.volume.clamp(0.0, 1.0);
     final effectiveVol = volume > 0.001 ? volume : 0.001;
-    final targetVolScale = 0.30 + 0.40 * volume; // 0.30 at vol=0 -> 0.70 at vol=1.0
-    final gain = targetVolScale / effectiveVol;
+    final targetVolScale = 0.40 + 0.50 * volume; // 0.40 at vol=0 -> 0.90 at vol=1.0
+    final gain = (targetVolScale / effectiveVol.clamp(0.40, 1.0)).clamp(0.5, 1.0);
 
     final buckets = List<double>.filled(_kBucketCount, 0);
     for (int b = 0; b < _kBucketCount; b++) {
@@ -88,14 +132,16 @@ class SpectrumLevelNotifier extends StateNotifier<List<double>> {
         if (v > peak) peak = v;
       }
       final avg = end > start ? sum / (end - start) : 0.0;
-      final rawVal = (peak * 0.75 + avg * 0.25) * gain;
-      buckets[b] = rawVal.clamp(0.0, 0.80);
+      final rawVal = (peak * 0.85 + avg * 0.15) * gain;
+      buckets[b] = rawVal.clamp(0.0, 1.0);
     }
     state = buckets;
   }
 
   @override
   void dispose() {
+    _playbackSub?.close();
+    _minimizedSub?.close();
     _fftSub?.cancel();
     super.dispose();
   }

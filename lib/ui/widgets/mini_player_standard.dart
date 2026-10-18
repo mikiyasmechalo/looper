@@ -13,6 +13,7 @@ import 'package:looper_player/core/system_tray_service.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/core/app_icons.dart';
 import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/core/window_state_service.dart';
 import 'package:looper_player/features/playback/presentation/audio_level_provider.dart';
 import 'package:looper_player/features/playback/presentation/lyrics_notifier.dart';
 import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
@@ -35,7 +36,7 @@ class _StandardMiniPlayerState extends ConsumerState<StandardMiniPlayer>
   bool _lyricsEnabled = false;
   bool _showQueue = false;
   bool _showSnapOverlay = false;
-  bool _visualizerEnabled = true;
+  bool _visualizerEnabled = false;
   bool _showVolumeHud = false;
   Timer? _volumeHudTimer;
 
@@ -1924,6 +1925,7 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
   late Ticker _ticker;
   // Total elapsed time drives the fallback sine animation
   Duration _elapsed = Duration.zero;
+  Duration _lastTickTime = Duration.zero;
 
   // Pre-baked per-bar sine params for organic fallback
   static final List<double> _sinePhase = List.generate(
@@ -1942,6 +1944,30 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
     final norm = i / (_barCount - 1); // 0..1
     return (0.55 + 0.72 * pow(norm, 0.55)).clamp(0.3, 1.3);
   });
+
+  static final List<double> _norm = List.generate(
+    _barCount,
+    (i) {
+      final center = (_barCount - 1) / 2.0;
+      return (i - center).abs() / center;
+    },
+  );
+  static final List<double> _audioFreqScale = List.generate(
+    _barCount,
+    (i) => pow(_norm[i], 0.85).toDouble(),
+  );
+  static final List<double> _bellShape = List.generate(
+    _barCount,
+    (i) => (1.0 - 0.20 * pow(_norm[i], 1.4)).clamp(0.4, 1.0),
+  );
+  static final List<double> _trebleBoost = List.generate(
+    _barCount,
+    (i) => (0.75 + 0.60 * pow(_norm[i], 0.6)).clamp(0.5, 1.35),
+  );
+  static final List<double> _fallbackScale = List.generate(
+    _barCount,
+    (i) => (1.0 - _norm[i] * 0.45),
+  );
 
   @override
   void initState() {
@@ -1964,6 +1990,15 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
 
   void _onTick(Duration elapsed) {
     if (!mounted) return;
+    if (ref.read(isWindowMinimizedProvider)) {
+      if (_ticker.isActive) _ticker.stop();
+      _lastTickTime = Duration.zero;
+      return;
+    }
+    if (_lastTickTime != Duration.zero && (elapsed - _lastTickTime).inMilliseconds < 33) {
+      return;
+    }
+    _lastTickTime = elapsed;
     _elapsed = elapsed;
 
     final raw = ref.read(spectrumProvider);
@@ -1976,16 +2011,13 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
       if (!widget.isPlaying) {
         target = 0.0;
       } else if (hasFftData) {
-        // Center-out normal distribution mapping:
-        final center = (_barCount - 1) / 2.0;
-        final norm = (i - center).abs() / center; // 0.0 at center -> 1.0 at edges
-        final rawPos = pow(norm, 0.85).toDouble() * (raw.length - 1);
+        final rawPos = _audioFreqScale[i] * (raw.length - 1);
         final idx0 = rawPos.floor().clamp(0, raw.length - 1);
         final idx1 = rawPos.ceil().clamp(0, raw.length - 1);
         final frac = rawPos - idx0;
         final interpolated = raw[idx0] * (1.0 - frac) + raw[idx1] * frac;
 
-        final startIdx = rawPos.floor().clamp(0, raw.length - 1);
+        final startIdx = idx0;
         final endIdx = (rawPos + raw.length / _barCount).ceil().clamp(startIdx + 1, raw.length);
         double rangePeak = 0;
         for (int j = startIdx; j < endIdx; j++) {
@@ -1993,18 +2025,14 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
         }
 
         final peak = max(interpolated, rangePeak);
-        final bellShape = (1.0 - 0.20 * pow(norm, 1.4)).clamp(0.4, 1.0);
-        final trebleBoost = (0.75 + 0.60 * pow(norm, 0.6)).clamp(0.5, 1.35);
-        target = (peak * trebleBoost * bellShape).clamp(0.0, 1.0);
+        target = (peak * _trebleBoost[i] * _bellShape[i]).clamp(0.0, 1.0);
       } else {
-        final center = (_barCount - 1) / 2.0;
-        final norm = (i - center).abs() / center;
         final v =
             (sin(t * _sineFreq[i] * 2.5 + _sinePhase[i]) * 0.4 +
                     sin(t * _sineFreq[i] * 1.3 + _sinePhase[i] * 0.7) * 0.3) *
                 0.5 +
             0.5;
-        target = (v * (1.0 - norm * 0.45)).clamp(0.1, 1.0);
+        target = (v * _fallbackScale[i]).clamp(0.1, 1.0);
       }
 
       // Micro-jitter for sustained notes: when target ≈ smoothed (bar is
@@ -2047,6 +2075,15 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(isWindowMinimizedProvider, (prev, isMinimized) {
+      if (isMinimized) {
+        if (_ticker.isActive) _ticker.stop();
+        _lastTickTime = Duration.zero;
+      } else if (widget.isPlaying) {
+        if (!_ticker.isActive) _ticker.start();
+      }
+    });
+
     // Keep spectrumProvider active while visible without rebuilding widget on every FFT frame
     ref.listen<List<double>>(spectrumProvider, (previous, next) {});
 
@@ -2056,7 +2093,7 @@ class _VisualizerWidgetState extends ConsumerState<_VisualizerWidget>
       curve: Curves.easeInOut,
       child: CustomPaint(
         painter: _VisualizerPainter(
-          heights: List.unmodifiable(_smoothed),
+          heights: _smoothed.toList(growable: false),
           accent: widget.accent,
         ),
         size: Size.infinite,
@@ -2090,6 +2127,15 @@ class _VisualizerPainter extends CustomPainter {
     final maxH = size.height * 0.60;
     final minH = 4.0;
 
+    final shader = LinearGradient(
+      begin: Alignment.bottomCenter,
+      end: Alignment.topCenter,
+      colors: [accent.withValues(alpha: 1.0), accent.withValues(alpha: 0.95)],
+      stops: const [0.0, 1.0],
+    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    final barPaint = Paint()..shader = shader;
+    const cornerRadius = Radius.circular(3);
+
     for (int i = 0; i < count; i++) {
       final h = (minH + (maxH - minH) * heights[i]).clamp(minH, maxH);
       final x = startX + i * slotW;
@@ -2097,18 +2143,10 @@ class _VisualizerPainter extends CustomPainter {
 
       final rect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, top, barW, h),
-        const Radius.circular(3),
+        cornerRadius,
       );
 
-      // Solid accent at base, fades upward — high opacity so bars punch through
-      final shader = LinearGradient(
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-        colors: [accent.withValues(alpha: 1.0), accent.withValues(alpha: 0.95)],
-        stops: const [0.0, 1.0],
-      ).createShader(Rect.fromLTWH(x, top, barW, h));
-
-      canvas.drawRRect(rect, Paint()..shader = shader);
+      canvas.drawRRect(rect, barPaint);
     }
   }
 
