@@ -403,24 +403,24 @@ class SongTile extends ConsumerWidget {
           playlist: playlist,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.all(8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(6),
                 child: SizedBox(
-                  width: 52,
-                  height: 52,
+                  width: 56,
+                  height: 56,
                   child: isCurrent
                       ? Stack(
                           children: [
                             OptimizedImage(
                               imagePath: song.artPath,
-                              width: 52,
-                              height: 52,
+                              width: 56,
+                              height: 56,
                               fit: BoxFit.contain,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             Positioned.fill(
                               child: AnimatedOpacity(
@@ -443,14 +443,14 @@ class SongTile extends ConsumerWidget {
                         )
                       : OptimizedImage(
                           imagePath: song.artPath,
-                          width: 52,
-                          height: 52,
+                          width: 56,
+                          height: 56,
                           fit: BoxFit.contain,
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

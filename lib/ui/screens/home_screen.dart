@@ -898,17 +898,23 @@ class Sidebar extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Row(
                               children: [
-                                SizedBox(
-                                  height: 38,
-                                  child: SvgPicture.asset(
-                                    'assets/main_logo_transparent.svg',
-                                    fit: BoxFit.contain,
-                                    colorMapper: AccentColorMapper(
-                                      Theme.of(context).colorScheme.primary,
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: SizedBox(
+                                      height: 34,
+                                      child: SvgPicture.asset(
+                                        'assets/main_logo_transparent.svg',
+                                        fit: BoxFit.contain,
+                                        alignment: Alignment.centerLeft,
+                                        colorMapper: AccentColorMapper(
+                                          Theme.of(context).colorScheme.primary,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                                const Spacer(),
+                                const SizedBox(width: 4),
                                 if (settings.moveNavButtonsToSidebar && !isDrawer) ...[
                                   _SidebarIconButton(
                                     icon: LucideIcons.arrowLeft,

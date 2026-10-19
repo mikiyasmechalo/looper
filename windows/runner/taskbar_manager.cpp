@@ -51,12 +51,10 @@ void TaskbarManager::Initialize(HWND hwnd, flutter::BinaryMessenger* messenger) 
   if (!hwnd) return;
   hwnd_ = hwnd;
 
-  // Enable DWM custom iconic thumbnail representation for taskbar hover
+  // Enable DWM custom iconic thumbnail representation
   BOOL enable = TRUE;
   DwmSetWindowAttribute(hwnd_, DWMWA_FORCE_ICONIC_REPRESENTATION, &enable, sizeof(enable));
-  // Keep DWMWA_HAS_ICONIC_BITMAP false so Alt-Tab and Aero Peek use native live window preview instead of a black/static box
-  BOOL disable_iconic_bitmap = FALSE;
-  DwmSetWindowAttribute(hwnd_, DWMWA_HAS_ICONIC_BITMAP, &disable_iconic_bitmap, sizeof(disable_iconic_bitmap));
+  DwmSetWindowAttribute(hwnd_, DWMWA_HAS_ICONIC_BITMAP, &enable, sizeof(enable));
 
   // Create thumb button icons once
   if (!icon_prev_) {
@@ -94,8 +92,7 @@ void TaskbarManager::OnTaskbarButtonCreated() {
   // Re-apply DWM attributes
   BOOL enable = TRUE;
   DwmSetWindowAttribute(hwnd_, DWMWA_FORCE_ICONIC_REPRESENTATION, &enable, sizeof(enable));
-  BOOL disable_iconic_bitmap = FALSE;
-  DwmSetWindowAttribute(hwnd_, DWMWA_HAS_ICONIC_BITMAP, &disable_iconic_bitmap, sizeof(disable_iconic_bitmap));
+  DwmSetWindowAttribute(hwnd_, DWMWA_HAS_ICONIC_BITMAP, &enable, sizeof(enable));
   DwmInvalidateIconicBitmaps(hwnd_);
 }
 

@@ -77,6 +77,9 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     case WM_DWMSENDICONICTHUMBNAIL:
       TaskbarManager::GetInstance().HandleSendIconicThumbnail(HIWORD(lparam), LOWORD(lparam));
       return 0;
+    case WM_DWMSENDICONICLIVEPREVIEWBITMAP:
+      TaskbarManager::GetInstance().HandleSendIconicLivePreview(HIWORD(lparam), LOWORD(lparam));
+      return 0;
     case WM_COMMAND:
       if (TaskbarManager::GetInstance().HandleCommand(wparam, lparam)) {
         return 0;
