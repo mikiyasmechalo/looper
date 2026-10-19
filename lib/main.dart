@@ -93,7 +93,10 @@ void main(List<String> args) async {
   final Future<void> desktopInit = () async {
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       try {
-        await localNotifier.setup(appName: 'Looper Player');
+        await localNotifier.setup(
+          appName: 'Looper Player',
+          shortcutPolicy: ShortcutPolicy.ignore,
+        );
       } catch (e, s) {
         LoggerHelper.write('Failed to initialize LocalNotifier', e, s);
       }
