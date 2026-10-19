@@ -1,6 +1,7 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
+#include <shobjidl.h>
 
 #include "flutter_window.h"
 #include "utils.h"
@@ -12,6 +13,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
     CreateAndAttachConsole();
   }
+
+  // Set explicit AppUserModelID to match Start Menu shortcut and prevent "Unknown app" in Action Center
+  ::SetCurrentProcessExplicitAppUserModelID(L"Looper Player");
 
   // Initialize COM for the Windows runner.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);

@@ -978,19 +978,6 @@ class PlaybackNotifier extends StateNotifier<PlaybackState> {
       await seek(initialPosition);
     }
 
-    if (settings.crossfadeDuration == 0) {
-      final nextNext = getNextSong(updateIndex: false);
-      if (nextNext != null) {
-        await ref.read(audioServiceProvider).enqueueNext(nextNext.path, metadata: {
-          'title': nextNext.title,
-          'artist': nextNext.artist ?? 'Unknown Artist',
-          'album': nextNext.album ?? 'Unknown Album',
-          if (nextNext.artPath != null) 'artPath': nextNext.artPath!,
-          if (nextNext.duration != null) 'duration': nextNext.duration!.toString(),
-        });
-      }
-    }
-
     // Sweep previous track memory (decoded cover bitmaps, old metadata, transient buffers)
     Future.delayed(const Duration(seconds: 2), MemoryService.trimWorkingSet);
   }

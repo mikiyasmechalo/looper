@@ -170,7 +170,7 @@ class AudioService {
 
     player.setMediaSession(
       MediaSession(
-        appName: 'Looper',
+        appName: 'Looper Player',
         desktopEntry: 'looper_player',
         autoApplyPlaylistNavigation:
             false, // Let our PlaybackNotifier coordinate queue actions
@@ -389,7 +389,7 @@ class AudioService {
         artwork: _lastArtwork,
         duration: duration,
         isFavorite: isFavorite,
-        appName: 'Looper',
+        appName: 'Looper Player',
         desktopEntry: 'looper_player',
         autoApplyPlaylistNavigation: false,
         actions: const {
