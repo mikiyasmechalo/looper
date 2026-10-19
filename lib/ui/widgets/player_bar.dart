@@ -18,6 +18,7 @@ import 'premium_progress_bar.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
 import 'package:looper_player/core/system_tray_service.dart';
+import 'looper_dropdown.dart';
 
 class PlayerBar extends ConsumerWidget {
   const PlayerBar({super.key});
@@ -853,119 +854,81 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
     final mode = ref.watch(miniPlayerModeProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isActive = mode != MiniPlayerMode.none;
+    final service = ref.read(miniPlayerOverlayServiceProvider);
 
-    return Tooltip(
-      message: 'Mini player',
-      child: IconButton(
-        padding: size != null ? EdgeInsets.zero : null,
-        constraints: size != null
-            ? BoxConstraints.tightFor(width: size, height: size)
-            : null,
-        icon: Icon(
-          LucideIcons.minimize2,
-          size: iconSize ?? 16,
-          color: isActive ? colorScheme.primary : Colors.white54,
+    return LooperDropdown<String>(
+      value: null,
+      menuAlignment: Alignment.topRight,
+      width: 175,
+      items: [
+        LooperDropdownItem(
+          value: 'mini_player',
+          icon: LucideIcons.minus,
+          label: Text(
+            'Mini Player',
+            style: TextStyle(
+              color: mode == MiniPlayerMode.miniPlayer
+                  ? colorScheme.primary
+                  : Colors.white,
+              fontSize: 13,
+            ),
+          ),
         ),
-        onPressed: () async {
-          final service = ref.read(miniPlayerOverlayServiceProvider);
-          // Show a tiny popup menu anchored to the button.
-          final renderBox = context.findRenderObject() as RenderBox?;
-          if (renderBox == null) return;
-          final offset = renderBox.localToGlobal(Offset.zero);
-          final rSize = renderBox.size;
-
-          final result = await showMenu<String>(
-            context: context,
-            color: const Color(0xFF1E1E1E),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+        LooperDropdownItem(
+          value: 'corner',
+          icon: LucideIcons.layoutGrid,
+          label: Text(
+            'Corner Widget',
+            style: TextStyle(
+              color: mode == MiniPlayerMode.cornerWidget
+                  ? colorScheme.primary
+                  : Colors.white,
+              fontSize: 13,
             ),
-            position: RelativeRect.fromLTRB(
-              offset.dx,
-              offset.dy - 135,
-              offset.dx + rSize.width,
-              offset.dy,
+          ),
+        ),
+        const LooperDropdownItem(
+          value: 'minimize_tray',
+          icon: LucideIcons.panelTop,
+          label: Text(
+            'Minimize to Tray',
+            style: TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ),
+      ],
+      onChanged: (result) async {
+        if (result == null) return;
+        if (result == 'mini_player') {
+          await service.enterMiniPlayerMode();
+        } else if (result == 'corner') {
+          await service.enterCornerWidgetMode();
+        } else if (result == 'minimize_tray') {
+          await SystemTrayService.instance.minimizeToTray();
+        }
+      },
+      customTrigger: (ctx, isOpen) {
+        return Tooltip(
+          message: 'Mini player',
+          child: Container(
+            width: size ?? 34,
+            height: size ?? 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isOpen
+                  ? colorScheme.primary.withValues(alpha: 0.15)
+                  : Colors.transparent,
             ),
-            items: [
-              PopupMenuItem(
-                value: 'mini_player',
-                child: Row(
-                  children: [
-                    Icon(
-                      LucideIcons.minus,
-                      size: 15,
-                      color: mode == MiniPlayerMode.miniPlayer
-                          ? colorScheme.primary
-                          : Colors.white70,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Mini Player',
-                      style: TextStyle(
-                        color: mode == MiniPlayerMode.miniPlayer
-                            ? colorScheme.primary
-                            : Colors.white,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'corner',
-                child: Row(
-                  children: [
-                    Icon(
-                      LucideIcons.layoutGrid,
-                      size: 15,
-                      color: mode == MiniPlayerMode.cornerWidget
-                          ? colorScheme.primary
-                          : Colors.white70,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Corner Widget',
-                      style: TextStyle(
-                        color: mode == MiniPlayerMode.cornerWidget
-                            ? colorScheme.primary
-                            : Colors.white,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'minimize_tray',
-                child: Row(
-                  children: [
-                    const Icon(
-                      LucideIcons.panelTop,
-                      size: 15,
-                      color: Colors.white70,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Minimize to Tray',
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-
-          if (result == null) return;
-          if (result == 'mini_player') {
-            await service.enterMiniPlayerMode();
-          } else if (result == 'corner') {
-            await service.enterCornerWidgetMode();
-          } else if (result == 'minimize_tray') {
-            await SystemTrayService.instance.minimizeToTray();
-          }
-        },
-      ),
+            child: Icon(
+              LucideIcons.minimize2,
+              size: iconSize ?? 16,
+              color: isActive
+                  ? colorScheme.primary
+                  : (isOpen ? Colors.white : Colors.white54),
+            ),
+          ),
+        );
+      },
     );
   }
 }

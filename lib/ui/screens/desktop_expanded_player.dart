@@ -546,16 +546,16 @@ class _HeaderMenu extends ConsumerWidget {
 }
 
 /// Minimize / maximize / close buttons, hidden in true fullscreen.
-class _WindowControls extends StatefulWidget {
+class _WindowControls extends ConsumerStatefulWidget {
   const _WindowControls({required this.fullscreen});
 
   final bool fullscreen;
 
   @override
-  State<_WindowControls> createState() => _WindowControlsState();
+  ConsumerState<_WindowControls> createState() => _WindowControlsState();
 }
 
-class _WindowControlsState extends State<_WindowControls> with WindowListener {
+class _WindowControlsState extends ConsumerState<_WindowControls> with WindowListener {
   bool _maximized = false;
 
   @override
@@ -612,6 +612,8 @@ class _WindowControlsState extends State<_WindowControls> with WindowListener {
     if (widget.fullscreen) {
       return const SizedBox.shrink();
     }
+    final showTray = ref.watch(settingsProvider.select((s) => s.showFullscreenTrayButton));
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -620,11 +622,12 @@ class _WindowControlsState extends State<_WindowControls> with WindowListener {
           tooltip: 'Minimize',
           onTap: windowManager.minimize,
         ),
-        _button(
-          icon: LucideIcons.panelTop,
-          tooltip: AppLocalizations.of(context)!.minimizeToTray,
-          onTap: () => SystemTrayService.instance.minimizeToTray(),
-        ),
+        if (showTray)
+          _button(
+            icon: LucideIcons.panelTop,
+            tooltip: AppLocalizations.of(context)!.minimizeToTray,
+            onTap: () => SystemTrayService.instance.minimizeToTray(),
+          ),
         _button(
           icon: _maximized ? LucideIcons.copy : LucideIcons.square,
           tooltip: _maximized ? 'Restore' : 'Maximize',

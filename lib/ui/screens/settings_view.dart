@@ -1156,6 +1156,19 @@ class SettingsView extends ConsumerWidget {
                 .read(settingsProvider.notifier)
                 .updateDisableAnimatedDuration(value);
           },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.hourglass,
+          title: 'Show Track Duration in Lists',
+          subtitle: 'Display song duration next to titles in standard song and collection lists',
+          value: settings.showSongDurationInLists,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref
+                .read(settingsProvider.notifier)
+                .updateShowSongDurationInLists(value);
+          },
           isLast: true,
         ),
       ],
@@ -1899,6 +1912,19 @@ class SettingsView extends ConsumerWidget {
             ref
                 .read(settingsProvider.notifier)
                 .updateDisableFullscreenBreathingEffect(value);
+          },
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.panelTop,
+          title: 'Show Hide to Tray Button',
+          subtitle: 'Display the minimize to tray button in the window controls',
+          value: settings.showFullscreenTrayButton,
+          onChanged: (value) {
+            HapticFeedback.lightImpact();
+            ref
+                .read(settingsProvider.notifier)
+                .updateShowFullscreenTrayButton(value);
           },
           isLast: false,
         ),

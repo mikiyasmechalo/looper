@@ -46,6 +46,7 @@ class _MenuOptionTileState extends State<MenuOptionTile> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(14),
             hoverColor: Colors.transparent,

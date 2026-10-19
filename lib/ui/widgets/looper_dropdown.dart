@@ -261,33 +261,43 @@ class _LooperDropdownState<T> extends ConsumerState<LooperDropdown<T>>
               ),
             ),
             // Floating Dropdown Menu
-            CompositedTransformFollower(
-              link: _layerLink,
-              showWhenUnlinked: false,
-              targetAnchor: widget.menuAlignment == Alignment.bottomRight
-                  ? Alignment.bottomRight
-                  : Alignment.bottomLeft,
-              followerAnchor: widget.menuAlignment == Alignment.bottomRight
-                  ? Alignment.topRight
-                  : Alignment.topLeft,
-              offset: const Offset(0, 6),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  alignment: widget.menuAlignment == Alignment.bottomRight
-                      ? Alignment.topRight
-                      : Alignment.topLeft,
-                  child: _DropdownMenuOverlay<T>(
-                    items: widget.items,
-                    selectedValue: widget.value,
-                    accentColor: accentColor,
-                    useBlur: useBlur,
-                    minWidth: widget.width ?? 160,
-                    onSelect: _select,
+            Builder(
+              builder: (context) {
+                final bool opensUp = widget.menuAlignment == Alignment.topRight || widget.menuAlignment == Alignment.topLeft;
+                final targetAnchor = opensUp
+                    ? (widget.menuAlignment == Alignment.topRight ? Alignment.topRight : Alignment.topLeft)
+                    : (widget.menuAlignment == Alignment.bottomRight ? Alignment.bottomRight : Alignment.bottomLeft);
+                final followerAnchor = opensUp
+                    ? (widget.menuAlignment == Alignment.topRight ? Alignment.bottomRight : Alignment.bottomLeft)
+                    : (widget.menuAlignment == Alignment.bottomRight ? Alignment.topRight : Alignment.topLeft);
+                final offset = opensUp ? const Offset(0, -6) : const Offset(0, 6);
+                final scaleAlignment = opensUp
+                    ? (widget.menuAlignment == Alignment.topRight ? Alignment.bottomRight : Alignment.bottomLeft)
+                    : (widget.menuAlignment == Alignment.bottomRight ? Alignment.topRight : Alignment.topLeft);
+
+                return CompositedTransformFollower(
+                  link: _layerLink,
+                  showWhenUnlinked: false,
+                  targetAnchor: targetAnchor,
+                  followerAnchor: followerAnchor,
+                  offset: offset,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      alignment: scaleAlignment,
+                      child: _DropdownMenuOverlay<T>(
+                        items: widget.items,
+                        selectedValue: widget.value,
+                        accentColor: accentColor,
+                        useBlur: useBlur,
+                        minWidth: widget.width ?? 135,
+                        onSelect: _select,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         );
@@ -341,7 +351,7 @@ class _DropdownMenuOverlay<T> extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(
           minWidth: minWidth,
-          maxWidth: 320,
+          maxWidth: 220,
           maxHeight: 280,
         ),
         child: SingleChildScrollView(
@@ -424,7 +434,7 @@ class _DropdownMenuItemTileState<T> extends State<_DropdownMenuItemTile<T>> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           margin: const EdgeInsets.symmetric(vertical: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: BoxDecoration(
             color: itemBg,
             borderRadius: BorderRadius.circular(8),

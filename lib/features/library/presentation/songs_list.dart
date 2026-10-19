@@ -370,6 +370,9 @@ class SongTile extends ConsumerWidget {
         (s) => s.currentSong?.path == song.path && s.isPlaying,
       ),
     );
+    final showDuration = ref.watch(
+      settingsProvider.select((s) => s.showSongDurationInLists),
+    );
 
     String? lyricSnippet;
     if (searchQuery != null && searchQuery!.isNotEmpty && song.lyrics != null) {
@@ -528,7 +531,18 @@ class SongTile extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              if (showDuration && song.duration != null && song.duration! > 0) ...[
+                Text(
+                  UiUtils.formatDurationMs(song.duration),
+                  style: AppFonts.jostStyle(
+                    color: Colors.white38,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(width: 4),
+              ],
               IconButton(
+                mouseCursor: SystemMouseCursors.click,
                 icon: const Icon(Icons.more_vert, color: Colors.grey),
                 onPressed: () => showSongOptionsBottomSheet(
                   context: context,
@@ -1379,6 +1393,7 @@ class _SongCompactTile extends ConsumerWidget {
                   ),
                 ),
               IconButton(
+                mouseCursor: SystemMouseCursors.click,
                 icon: const Icon(Icons.more_vert, color: Colors.grey, size: 18),
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(),
@@ -1528,6 +1543,7 @@ class _SongTextOnlyTile extends ConsumerWidget {
                 ),
               const SizedBox(width: 4),
               IconButton(
+                mouseCursor: SystemMouseCursors.click,
                 icon: const Icon(Icons.more_vert, color: Colors.grey, size: 16),
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(),
@@ -1654,23 +1670,26 @@ class _SongGridCardState extends ConsumerState<_SongGridCard> {
                     Positioned(
                       top: 4,
                       right: 4,
-                      child: GestureDetector(
-                        onTap: () => showSongOptionsBottomSheet(
-                          context: context,
-                          ref: ref,
-                          song: song,
-                          playlist: widget.playlist,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            shape: BoxShape.circle,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => showSongOptionsBottomSheet(
+                            context: context,
+                            ref: ref,
+                            song: song,
+                            playlist: widget.playlist,
                           ),
-                          child: const Icon(
-                            Icons.more_vert,
-                            color: Colors.white,
-                            size: 14,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.more_vert,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                           ),
                         ),
                       ),
