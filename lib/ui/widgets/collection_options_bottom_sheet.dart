@@ -600,7 +600,7 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                       ),
                       MenuOptionTile(
                         label: 'Favorite All Songs',
-                        icon: LucideIcons.heart,
+                        icon: LucideIcons.star,
                         iconColor: accentColor,
                         onTap: () async {
                           HapticFeedback.lightImpact();

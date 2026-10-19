@@ -38,7 +38,7 @@ class FavoritesView extends ConsumerWidget {
 
     return favoritesAsync.when(
       data: (songs) => songs.isEmpty
-          ? _buildEmpty(context, LucideIcons.heart, l10n.noFavoritesYet)
+          ? _buildEmpty(context, LucideIcons.star, l10n.noFavoritesYet)
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

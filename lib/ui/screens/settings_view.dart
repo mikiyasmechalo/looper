@@ -1294,7 +1294,7 @@ class SettingsView extends ConsumerWidget {
           isLast: false,
         ),
         _PremiumSwitchRow(
-          icon: LucideIcons.heart,
+          icon: LucideIcons.star,
           title: 'Favorites',
           subtitle: 'Show Favorites in the sidebar',
           value: settings.showSidebarFavorites,
