@@ -400,7 +400,7 @@ class SongTile extends ConsumerWidget {
           playlist: playlist,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

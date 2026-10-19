@@ -1239,6 +1239,7 @@ void _showEqualizerModeDialog(BuildContext context, WidgetRef ref) {
       final isGlobal = settings.equalizerGlobalMode;
 
       return AppBottomSheetContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -21,6 +21,7 @@ import 'package:looper_player/ui/widgets/empty_state_card.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/core/l10n.dart';
 import 'package:looper_player/core/app_haptics.dart';
+import 'package:looper_player/ui/widgets/header_button.dart';
 
 /// Looper Analyze — a personal listening "report card": top played songs,
 /// top artists/albums/genres, and time-based insights (trend, streaks,
@@ -79,21 +80,13 @@ class _Header extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
         children: [
-          PremiumSection(
-            borderRadius: BorderRadius.circular(24),
-            width: 48,
-            height: 48,
-            useExpanded: false,
-            forceNoBlur: true,
+          HeaderButton(
             onTap: () {
               AppHaptics.light();
               ref.read(appNavigationProvider.notifier).goBack();
             },
-            child: const Icon(
-              LucideIcons.arrowLeft,
-              color: Colors.white,
-              size: 20,
-            ),
+            icon: LucideIcons.arrowLeft,
+            label: 'Back',
           ),
           const SizedBox(width: 14),
           Expanded(

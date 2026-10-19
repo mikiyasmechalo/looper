@@ -369,14 +369,6 @@ class _PlayerStage extends StatelessWidget {
                 Positioned.fill(
                   child: DragToMoveArea(child: const SizedBox.expand()),
                 ),
-              // Title is always centered on screen, regardless of the
-              // side-button widths. IgnorePointer keeps the whole strip
-              // draggable (the drag area lives below this layer).
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Center(child: _TitleText(l10n: l10n)),
-                ),
-              ),
               Positioned(
                 left: 20,
                 top: 12,
@@ -469,26 +461,6 @@ class _PlayerStage extends StatelessWidget {
   }
 }
 
-/// "NOW PLAYING" label in the stage header.
-class _TitleText extends StatelessWidget {
-  const _TitleText({required this.l10n});
-
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      l10n.nowPlaying.toUpperCase(),
-      textAlign: TextAlign.center,
-      style: AppFonts.jostStyle(
-        color: Colors.white.withValues(alpha: 0.6),
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 2,
-      ),
-    );
-  }
-}
 
 /// Three-dot menu in the header: song options, fullscreen toggle (with a
 /// dynamic label that reflects the real state), and Settings.

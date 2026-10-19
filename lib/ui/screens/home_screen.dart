@@ -43,6 +43,7 @@ import 'package:looper_player/core/update_service.dart';
 import 'package:looper_player/core/memory_service.dart';
 
 import '../widgets/empty_library_view.dart';
+import 'package:looper_player/ui/widgets/header_button.dart';
 import 'package:looper_player/features/library/presentation/folder_browser_view.dart';
 import 'package:looper_player/ui/widgets/mini_player_standard.dart';
 import 'package:looper_player/ui/widgets/mini_player_corner_widget.dart';
@@ -404,7 +405,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                             const EdgeInsets.only(
                                                               right: 16,
                                                             ),
-                                                        child: _HeaderButton(
+                                                        child: HeaderButton(
                                                           onTap: () => ref
                                                               .read(
                                                                 appNavigationProvider
@@ -436,34 +437,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                 ),
                                                 const Spacer(),
                                                 if (nav.activeItem == NavItem.home) ...[
-                                                  _HeaderButton(
+                                                  if (!settings.showSidebarAnalyze) ...[
+                                                    HeaderButton(
+                                                      onTap: () {
+                                                        ref
+                                                            .read(
+                                                              appNavigationProvider
+                                                                  .notifier,
+                                                            )
+                                                            .setItem(
+                                                              NavItem.analyze,
+                                                            );
+                                                      },
+                                                      icon: LucideIcons.barChart2,
+                                                      label: 'Stats',
+                                                      isDynamic: isDynamic,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                  ],
+                                                  HeaderButton(
                                                     onTap: () {
-                                                      ref
-                                                          .read(
-                                                            appNavigationProvider
-                                                                .notifier,
-                                                          )
-                                                          .setItem(
-                                                            NavItem.analyze,
-                                                          );
+                                                      FolderPickerHelper.pickFolder(
+                                                        context,
+                                                        ref,
+                                                      );
                                                     },
-                                                    icon: LucideIcons.barChart2,
-                                                    label: 'Stats',
+                                                    icon: LucideIcons.plus,
+                                                    label: 'Add Folder',
                                                     isDynamic: isDynamic,
                                                   ),
-                                                  const SizedBox(width: 8),
                                                 ],
-                                                _HeaderButton(
-                                                  onTap: () {
-                                                    FolderPickerHelper.pickFolder(
-                                                      context,
-                                                      ref,
-                                                    );
-                                                  },
-                                                  icon: LucideIcons.plus,
-                                                  label: 'Add Folder',
-                                                  isDynamic: isDynamic,
-                                                ),
                                               ],
                                             ),
                                           ),
@@ -879,78 +882,6 @@ class Sidebar extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _HeaderButton extends StatelessWidget {
-  final VoidCallback onTap;
-  final IconData icon;
-  final String label;
-  final bool isDynamic;
-
-  const _HeaderButton({
-    required this.onTap,
-    required this.icon,
-    required this.label,
-    required this.isDynamic,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        height: 55.s,
-        padding: EdgeInsets.symmetric(horizontal: 20.s),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          color: const Color.fromARGB(
-            255,
-            53,
-            53,
-            53,
-          ).withValues(alpha: isDynamic ? 0.3 : 0.1),
-          border: Border.all(
-            color: Colors.white10.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          clipBehavior: Clip.hardEdge,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon == LucideIcons.arrowLeft)
-                SvgPicture.asset(
-                  AppIcons.back,
-                  width: AppIcons.headerIcon.s,
-                  height: AppIcons.headerIcon.s,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
-                  ),
-                )
-              else
-                Icon(icon, size: AppIcons.headerIcon.s, color: Colors.white),
-              SizedBox(width: 10.s),
-              Flexible(
-                child: Text(
-                  label,
-                  style: AppFonts.jostStyle(
-                    color: Colors.white,
-                    fontSize: 14.ts,
-                    fontWeight: FontWeight.normal,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
