@@ -52,6 +52,9 @@ import 'package:looper_player/core/window_state_service.dart';
 import 'package:looper_player/core/global_hotkeys_service.dart';
 import 'package:looper_player/core/windows_taskbar_service.dart';
 import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
+import 'package:looper_player/ui/widgets/sidebar_setup_dialog.dart';
+
+final showTopSearchProvider = StateProvider<bool>((ref) => false);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -62,6 +65,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isDraggingOver = false;
+  bool _isSidebarSetupDialogOpen = false;
   Timer? _enqueueToastTimer;
   int _pendingEnqueueCount = 0;
 
@@ -194,6 +198,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final isSetupComplete = ref.watch(welcomeBypassedProvider);
     final bool showWelcome = !isSetupComplete;
+
+    void checkAndShowSidebarSetup() {
+      if (_isSidebarSetupDialogOpen ||
+          settings.hasCompletedSidebarSetup ||
+          showWelcome ||
+          library.songs.isEmpty ||
+          library.isScanning) {
+        return;
+      }
+      _isSidebarSetupDialogOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) {
+          await SidebarSetupDialog.show(context);
+          _isSidebarSetupDialogOpen = false;
+        }
+      });
+    }
+
+    ref.listen(libraryProvider.select((l) => l.isScanning), (prev, isScanning) {
+      if (prev == true && isScanning == false) {
+        checkAndShowSidebarSetup();
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      checkAndShowSidebarSetup();
+    });
+
     // Only below this width does the sidebar collapse into a drawer; above it
     // it always stays visible (just with reduced padding when compact).
     final bool isNarrow = MediaQuery.of(context).size.width < 560;
@@ -230,7 +262,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ? Drawer(
               child: Container(
                 color: Theme.of(context).colorScheme.surface,
-                child: Sidebar(l10n: l10n),
+                child: Sidebar(l10n: l10n, isDrawer: true),
               ),
             )
           : null,
@@ -344,9 +376,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     duration: const Duration(milliseconds: 250),
                                     curve: Curves.easeInOutCubic,
                                     clipBehavior: Clip.hardEdge,
-                                    width: (constraints.maxWidth < 1000
-                                            ? 200
-                                            : 240)
+                                    width: (settings.isSidebarCollapsed
+                                            ? 68
+                                            : (constraints.maxWidth < 1000
+                                                ? 200
+                                                : 240))
                                         .s,
                                     decoration: BoxDecoration(
                                       color: Theme.of(context)
@@ -375,52 +409,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                      crossAxisAlignment:
                                          CrossAxisAlignment.start,
                                      children: [
-                                       if (nav.activeItem != NavItem.lyrics &&
-                                           nav.activeItem != NavItem.analyze)
+                                       if ((nav.activeItem != NavItem.lyrics &&
+                                               nav.activeItem != NavItem.analyze) &&
+                                           (!settings.moveNavButtonsToSidebar ||
+                                               nav.activeItem == NavItem.home ||
+                                               ref.watch(showTopSearchProvider) ||
+                                               ref.watch(searchQueryProvider).isNotEmpty))
                                          Padding(
                                            padding: const EdgeInsets.symmetric(
                                              horizontal: 24,
                                            ),
                                            child: Row(
                                              children: [
-                                               AnimatedContainer(
-                                                  duration: const Duration(
-                                                    milliseconds: 300,
-                                                  ),
-                                                  curve: Curves.easeInOutCubic,
-                                                  width: nav.history.isEmpty
-                                                      ? 0
-                                                      : 120,
-                                                  child: ClipRect(
-                                                    child: AnimatedScale(
-                                                      scale: nav.history.isEmpty
-                                                          ? 0.0
-                                                          : 1.0,
-                                                      duration: const Duration(
-                                                        milliseconds: 300,
-                                                      ),
-                                                      curve: Curves.easeOutBack,
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets.only(
-                                                              right: 16,
-                                                            ),
-                                                        child: HeaderButton(
-                                                          onTap: () => ref
-                                                              .read(
-                                                                appNavigationProvider
-                                                                    .notifier,
-                                                              )
-                                                              .goBack(),
-                                                          icon: LucideIcons
-                                                              .arrowLeft,
-                                                          label: 'Back',
-                                                          isDynamic: isDynamic,
+                                                if (!settings.moveNavButtonsToSidebar) ...[
+                                                  AnimatedContainer(
+                                                    duration: const Duration(
+                                                      milliseconds: 300,
+                                                    ),
+                                                    curve: Curves.easeInOutCubic,
+                                                    width: nav.history.isEmpty
+                                                        ? 0
+                                                        : 120,
+                                                    child: ClipRect(
+                                                      child: AnimatedScale(
+                                                        scale: nav.history.isEmpty
+                                                            ? 0.0
+                                                            : 1.0,
+                                                        duration: const Duration(
+                                                          milliseconds: 300,
+                                                        ),
+                                                        curve: Curves.easeOutBack,
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                right: 16,
+                                                              ),
+                                                          child: HeaderButton(
+                                                            onTap: () => ref
+                                                                .read(
+                                                                  appNavigationProvider
+                                                                      .notifier,
+                                                                )
+                                                                .goBack(),
+                                                            icon: LucideIcons
+                                                                .arrowLeft,
+                                                            label: 'Back',
+                                                            isDynamic: isDynamic,
+                                                          ),
                                                         ),
                                                       ),
                                                     ),
                                                   ),
-                                                ),
+                                                ],
                                                 Expanded(
                                                   flex: 6,
                                                   child: Align(
@@ -431,10 +471,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                           const BoxConstraints(
                                                         maxWidth: 720,
                                                       ),
-                                                      child: GlobalSearchBar(),
+                                                      child: GlobalSearchBar(
+                                                        autofocus: settings.moveNavButtonsToSidebar &&
+                                                            nav.activeItem != NavItem.home,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
+                                                if (settings.moveNavButtonsToSidebar &&
+                                                    nav.activeItem != NavItem.home) ...[
+                                                  const SizedBox(width: 8),
+                                                  HeaderButton(
+                                                    onTap: () {
+                                                      ref.read(showTopSearchProvider.notifier).state = false;
+                                                      ref.read(searchQueryProvider.notifier).state = '';
+                                                    },
+                                                    icon: LucideIcons.x,
+                                                    label: 'Close',
+                                                    isDynamic: isDynamic,
+                                                  ),
+                                                ],
                                                 const Spacer(),
                                                 if (nav.activeItem == NavItem.home) ...[
                                                   if (!settings.showSidebarAnalyze) ...[
@@ -687,9 +743,66 @@ class CustomTitleBar extends StatelessWidget {
   }
 }
 
+class _SidebarIconButton extends StatefulWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  const _SidebarIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  @override
+  State<_SidebarIconButton> createState() => _SidebarIconButtonState();
+}
+
+class _SidebarIconButtonState extends State<_SidebarIconButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = widget.enabled
+        ? (_isHovered ? colorScheme.primary : Colors.white70)
+        : Colors.white24;
+
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onTap: widget.enabled ? widget.onTap : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: _isHovered && widget.enabled
+                  ? colorScheme.primary.withValues(alpha: 0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              widget.icon,
+              size: 18,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class Sidebar extends ConsumerWidget {
   final AppLocalizations l10n;
-  const Sidebar({super.key, required this.l10n});
+  final bool isDrawer;
+  const Sidebar({super.key, required this.l10n, this.isDrawer = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -697,12 +810,14 @@ class Sidebar extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final activeItem = nav.activeItem;
     final highlightItem = nav.highlightItem;
+    final bool isCollapsed = !isDrawer && settings.isSidebarCollapsed;
 
     final currentSong = ref.watch(playbackProvider.select((s) => s.currentSong));
 
     void navigateTo(NavItem item) {
       if (item != NavItem.search) {
         ref.read(searchQueryProvider.notifier).state = '';
+        ref.read(showTopSearchProvider.notifier).state = false;
       }
       ref.read(appNavigationProvider.notifier).setPlayerExpansion(false);
       ref.read(appNavigationProvider.notifier).setItem(item);
@@ -712,7 +827,10 @@ class Sidebar extends ConsumerWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCollapsed ? 6 : 10,
+        vertical: 16,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -722,29 +840,109 @@ class Sidebar extends ConsumerWidget {
                   0.0,
                   double.infinity,
                 ),
-              ), // -padding
+              ),
               child: IntrinsicHeight(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            height: 42,
-                            child: SvgPicture.asset(
-                              'assets/main_logo_transparent.svg',
-                              fit: BoxFit.contain,
-                              colorMapper: AccentColorMapper(
-                                Theme.of(context).colorScheme.primary,
+                    isCollapsed
+                        ? Column(
+                            children: [
+                              Center(
+                                child: SizedBox(
+                                  height: 38,
+                                  width: 38,
+                                  child: SvgPicture.asset(
+                                    'assets/logo_icon_transparent.svg',
+                                    fit: BoxFit.contain,
+                                    colorMapper: AccentColorMapper(
+                                      Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
                               ),
+                              const SizedBox(height: 10),
+                              if (!isDrawer)
+                                _SidebarIconButton(
+                                  icon: LucideIcons.panelLeftOpen,
+                                  tooltip: 'Expand sidebar',
+                                  onTap: () => ref
+                                      .read(settingsProvider.notifier)
+                                      .updateIsSidebarCollapsed(false),
+                                ),
+                              if (settings.moveNavButtonsToSidebar && !isDrawer) ...[
+                                const SizedBox(height: 6),
+                                _SidebarIconButton(
+                                  icon: LucideIcons.arrowLeft,
+                                  tooltip: 'Back',
+                                  enabled: nav.history.isNotEmpty,
+                                  onTap: () => ref
+                                      .read(appNavigationProvider.notifier)
+                                      .goBack(),
+                                ),
+                                const SizedBox(height: 6),
+                                _SidebarIconButton(
+                                  icon: LucideIcons.search,
+                                  tooltip: 'Search',
+                                  onTap: () {
+                                    ref.read(showTopSearchProvider.notifier).state = true;
+                                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                                      ref.read(searchFocusNodeProvider).requestFocus();
+                                    });
+                                  },
+                                ),
+                              ],
+                            ],
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  height: 38,
+                                  child: SvgPicture.asset(
+                                    'assets/main_logo_transparent.svg',
+                                    fit: BoxFit.contain,
+                                    colorMapper: AccentColorMapper(
+                                      Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (settings.moveNavButtonsToSidebar && !isDrawer) ...[
+                                  _SidebarIconButton(
+                                    icon: LucideIcons.arrowLeft,
+                                    tooltip: 'Back',
+                                    enabled: nav.history.isNotEmpty,
+                                    onTap: () => ref
+                                        .read(appNavigationProvider.notifier)
+                                        .goBack(),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  _SidebarIconButton(
+                                    icon: LucideIcons.search,
+                                    tooltip: 'Search',
+                                    onTap: () {
+                                      ref.read(showTopSearchProvider.notifier).state = true;
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        ref.read(searchFocusNodeProvider).requestFocus();
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(width: 2),
+                                ],
+                                if (!isDrawer)
+                                  _SidebarIconButton(
+                                    icon: LucideIcons.panelLeftClose,
+                                    tooltip: 'Collapse sidebar',
+                                    onTap: () => ref
+                                        .read(settingsProvider.notifier)
+                                        .updateIsSidebarCollapsed(true),
+                                  ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _SidebarItem(
                       customIcon: AppIcons.home,
                       label: 'Home',
@@ -752,6 +950,7 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.home ||
                           highlightItem == NavItem.home,
                       onTap: () => navigateTo(NavItem.home),
+                      isCollapsed: isCollapsed,
                     ),
                     if (settings.showSidebarNowPlaying)
                       _SidebarItem(
@@ -770,15 +969,18 @@ class Sidebar extends ConsumerWidget {
                             Navigator.of(context).pop();
                           }
                         },
+                        isCollapsed: isCollapsed,
                       ),
-                    _SidebarItem(
-                      customIcon: AppIcons.songs,
-                      label: l10n.songs,
-                      isSelected:
-                          activeItem == NavItem.songs ||
-                          highlightItem == NavItem.songs,
-                      onTap: () => navigateTo(NavItem.songs),
-                    ),
+                    if (settings.showSidebarSongs)
+                      _SidebarItem(
+                        customIcon: AppIcons.songs,
+                        label: l10n.songs,
+                        isSelected:
+                            activeItem == NavItem.songs ||
+                            highlightItem == NavItem.songs,
+                        onTap: () => navigateTo(NavItem.songs),
+                        isCollapsed: isCollapsed,
+                      ),
                     if (settings.showSidebarAlbums)
                       _SidebarItem(
                         icon: LucideIcons.disc,
@@ -787,6 +989,7 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.albums ||
                             highlightItem == NavItem.albums,
                         onTap: () => navigateTo(NavItem.albums),
+                        isCollapsed: isCollapsed,
                       ),
                     if (settings.showSidebarArtists)
                       _SidebarItem(
@@ -796,6 +999,7 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.artists ||
                             highlightItem == NavItem.artists,
                         onTap: () => navigateTo(NavItem.artists),
+                        isCollapsed: isCollapsed,
                       ),
                     if (settings.showSidebarPlaylists)
                       _SidebarItem(
@@ -805,6 +1009,7 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.playlists ||
                             highlightItem == NavItem.playlists,
                         onTap: () => navigateTo(NavItem.playlists),
+                        isCollapsed: isCollapsed,
                       ),
                     if (settings.showSidebarFolders)
                       _SidebarItem(
@@ -814,6 +1019,7 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.folders ||
                             highlightItem == NavItem.folders,
                         onTap: () => navigateTo(NavItem.folders),
+                        isCollapsed: isCollapsed,
                       ),
                     if (settings.showSidebarRecentlyPlayed)
                       _SidebarItem(
@@ -823,6 +1029,7 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.recentlyPlayed ||
                             highlightItem == NavItem.recentlyPlayed,
                         onTap: () => navigateTo(NavItem.recentlyPlayed),
+                        isCollapsed: isCollapsed,
                       ),
                     if (settings.showSidebarFavorites)
                       _SidebarItem(
@@ -832,15 +1039,18 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.favorites ||
                             highlightItem == NavItem.favorites,
                         onTap: () => navigateTo(NavItem.favorites),
+                        isCollapsed: isCollapsed,
                       ),
-                    _SidebarItem(
-                      icon: LucideIcons.listOrdered,
-                      label: l10n.playQueue,
-                      isSelected:
-                          activeItem == NavItem.queue ||
-                          highlightItem == NavItem.queue,
-                      onTap: () => navigateTo(NavItem.queue),
-                    ),
+                    if (settings.showSidebarQueue)
+                      _SidebarItem(
+                        icon: LucideIcons.listOrdered,
+                        label: l10n.playQueue,
+                        isSelected:
+                            activeItem == NavItem.queue ||
+                            highlightItem == NavItem.queue,
+                        onTap: () => navigateTo(NavItem.queue),
+                        isCollapsed: isCollapsed,
+                      ),
                     if (settings.showSidebarGenres)
                       _SidebarItem(
                         icon: LucideIcons.radio,
@@ -849,6 +1059,17 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.genres ||
                             highlightItem == NavItem.genres,
                         onTap: () => navigateTo(NavItem.genres),
+                        isCollapsed: isCollapsed,
+                      ),
+                    if (settings.showSidebarLyrics)
+                      _SidebarItem(
+                        customIcon: AppIcons.lyrics,
+                        label: 'Lyrics',
+                        isSelected:
+                            activeItem == NavItem.lyrics ||
+                            highlightItem == NavItem.lyrics,
+                        onTap: () => navigateTo(NavItem.lyrics),
+                        isCollapsed: isCollapsed,
                       ),
                     if (settings.showSidebarAnalyze)
                       _SidebarItem(
@@ -858,6 +1079,7 @@ class Sidebar extends ConsumerWidget {
                             activeItem == NavItem.analyze ||
                             highlightItem == NavItem.analyze,
                         onTap: () => navigateTo(NavItem.analyze),
+                        isCollapsed: isCollapsed,
                       ),
                     _SidebarItem(
                       customIcon: AppIcons.settings,
@@ -866,6 +1088,7 @@ class Sidebar extends ConsumerWidget {
                           activeItem == NavItem.settings ||
                           highlightItem == NavItem.settings,
                       onTap: () => navigateTo(NavItem.settings),
+                      isCollapsed: isCollapsed,
                     ),
                     const SizedBox(height: 16),
                     Container(
@@ -893,6 +1116,7 @@ class _SidebarItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool isCollapsed;
 
   const _SidebarItem({
     this.icon,
@@ -900,6 +1124,7 @@ class _SidebarItem extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.isSelected = false,
+    this.isCollapsed = false,
   });
 
   @override
@@ -908,27 +1133,57 @@ class _SidebarItem extends StatelessWidget {
     final Color selectedColor = colorScheme.primary;
     final Color unselectedColor = Colors.white.withValues(alpha: 0.4);
 
+    final iconWidget = customIcon != null
+        ? SvgPicture.asset(
+            customIcon!,
+            width: AppIcons.sidebarIcon.s,
+            height: AppIcons.sidebarIcon.s,
+            colorFilter: ColorFilter.mode(
+              isSelected ? selectedColor : unselectedColor,
+              BlendMode.srcIn,
+            ),
+          )
+        : Icon(
+            icon,
+            size: AppIcons.sidebarIcon.s,
+            color: isSelected ? selectedColor : unselectedColor,
+          );
+
+    if (isCollapsed) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Tooltip(
+          message: label,
+          preferBelow: false,
+          child: Center(
+            child: Material(
+              color: isSelected
+                  ? colorScheme.primary.withValues(alpha: 0.18)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(10),
+                hoverColor: colorScheme.primary.withValues(alpha: 0.08),
+                child: SizedBox(
+                  width: 44.s,
+                  height: 40.s,
+                  child: Center(child: iconWidget),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Material(
         color: Colors.transparent,
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-          leading: customIcon != null
-              ? SvgPicture.asset(
-                  customIcon!,
-                  width: AppIcons.sidebarIcon.s,
-                  height: AppIcons.sidebarIcon.s,
-                  colorFilter: ColorFilter.mode(
-                    isSelected ? selectedColor : unselectedColor,
-                    BlendMode.srcIn,
-                  ),
-                )
-              : Icon(
-                  icon,
-                  size: AppIcons.sidebarIcon.s,
-                  color: isSelected ? selectedColor : unselectedColor,
-                ),
+          leading: iconWidget,
           title: Text(
             label,
             style: AppFonts.jostStyle(

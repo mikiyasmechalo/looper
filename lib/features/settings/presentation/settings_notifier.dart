@@ -519,6 +519,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..showSidebarGenres = s.showSidebarGenres
       ..showSidebarFolders = s.showSidebarFolders
       ..showSidebarAnalyze = s.showSidebarAnalyze
+      ..showSidebarLyrics = s.showSidebarLyrics
+      ..isSidebarCollapsed = s.isSidebarCollapsed
+      ..moveNavButtonsToSidebar = s.moveNavButtonsToSidebar
+      ..hasCompletedSidebarSetup = s.hasCompletedSidebarSetup
+      ..showFullscreenTrayButton = s.showFullscreenTrayButton
+      ..showSongDurationInLists = s.showSongDurationInLists
       ..folderViewTreeMode = s.folderViewTreeMode
       ..enableUpdateNotifications = s.enableUpdateNotifications
       ..skippedUpdateVersion = s.skippedUpdateVersion;
@@ -581,6 +587,36 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateShowSidebarAnalyze(bool value) async {
     final newState = _clone(state)..showSidebarAnalyze = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSidebarLyrics(bool value) async {
+    final newState = _clone(state)..showSidebarLyrics = value;
+    await _save(newState);
+  }
+
+  Future<void> updateIsSidebarCollapsed(bool value) async {
+    final newState = _clone(state)..isSidebarCollapsed = value;
+    await _save(newState);
+  }
+
+  Future<void> updateMoveNavButtonsToSidebar(bool value) async {
+    final newState = _clone(state)..moveNavButtonsToSidebar = value;
+    await _save(newState);
+  }
+
+  Future<void> updateHasCompletedSidebarSetup(bool value) async {
+    final newState = _clone(state)..hasCompletedSidebarSetup = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowFullscreenTrayButton(bool value) async {
+    final newState = _clone(state)..showFullscreenTrayButton = value;
+    await _save(newState);
+  }
+
+  Future<void> updateShowSongDurationInLists(bool value) async {
+    final newState = _clone(state)..showSongDurationInLists = value;
     await _save(newState);
   }
 

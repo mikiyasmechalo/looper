@@ -25,6 +25,7 @@ import 'package:looper_player/features/library/presentation/library_cleanup_view
 import 'package:looper_player/core/update_service.dart';
 import 'package:looper_player/ui/screens/equalizer_screen.dart';
 import 'package:looper_player/core/utils/lyrics_credits.dart';
+import 'package:looper_player/ui/widgets/sidebar_setup_dialog.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 final appVersionProvider = FutureProvider<String>((ref) async {
@@ -1298,12 +1299,38 @@ class SettingsView extends ConsumerWidget {
           isLast: false,
         ),
         _PremiumSwitchRow(
+          icon: LucideIcons.panelLeft,
+          title: 'Move Back & Search Buttons to Sidebar',
+          subtitle: 'Frees up top space by moving navigation and search buttons into the sidebar',
+          value: settings.moveNavButtonsToSidebar,
+          onChanged: (v) => ref
+              .read(settingsProvider.notifier)
+              .updateMoveNavButtonsToSidebar(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
+          icon: LucideIcons.fileText,
+          title: 'Lyrics',
+          subtitle: 'Show dedicated Lyrics view in the sidebar',
+          value: settings.showSidebarLyrics,
+          onChanged: (v) =>
+              ref.read(settingsProvider.notifier).updateShowSidebarLyrics(v),
+          isLast: false,
+        ),
+        _PremiumSwitchRow(
           icon: LucideIcons.barChart2,
           title: 'Stats & Analyze',
           subtitle: 'Show Looper Analyze in the sidebar',
           value: settings.showSidebarAnalyze,
           onChanged: (v) =>
               ref.read(settingsProvider.notifier).updateShowSidebarAnalyze(v),
+          isLast: false,
+        ),
+        _PremiumActionRow(
+          icon: LucideIcons.layoutGrid,
+          title: 'Sidebar Setup Wizard',
+          subtitle: 'Choose which sidebar items to show or hide in a quick modal',
+          onTap: () => SidebarSetupDialog.show(context),
           isLast: true,
         ),
       ],

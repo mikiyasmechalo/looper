@@ -264,6 +264,18 @@ class AppSettings {
   bool showSidebarGenres = true;
   bool showSidebarFolders = true;
   bool showSidebarAnalyze = false;
+  bool showSidebarLyrics = true;
+
+  // Sidebar layout preferences
+  bool isSidebarCollapsed = false;
+  bool moveNavButtonsToSidebar = false;
+  bool hasCompletedSidebarSetup = false;
+
+  // Desktop Fullscreen: show Hide to Tray button in player toolbar.
+  bool showFullscreenTrayButton = false;
+
+  // Song lists: show song duration column/text in standard song lists
+  bool showSongDurationInLists = false;
 
   // Folder view preferences
   bool folderViewTreeMode = false;
