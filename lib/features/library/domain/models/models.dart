@@ -318,7 +318,7 @@ class AppSettings {
   bool autoTrimSilence = false;
 
   // Desktop: System-wide Global Hotkeys
-  bool enableGlobalHotkeys = true;
+  bool enableGlobalHotkeys = false;
 
   // Desktop: Windows Taskbar Thumbnail Preview Controls (ITaskbarList3)
   bool enableTaskbarControls = true;

@@ -65,7 +65,7 @@ class _KeyboardHandlerState extends ConsumerState<KeyboardHandler> {
   }
 
   bool _handleKeyEvent(KeyEvent event) {
-    if (event is! KeyDownEvent) return false;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
 
     final key = event.logicalKey;
     final nav = ref.read(appNavigationProvider.notifier);

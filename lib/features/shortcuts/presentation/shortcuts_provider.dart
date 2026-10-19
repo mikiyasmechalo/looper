@@ -102,7 +102,7 @@ class ShortcutsNotifier extends StateNotifier<Map<String, String>> {
 
   /// Dispatches incoming key events to the matching action.
   bool handleKeyEvent(KeyEvent event, WidgetRef ref) {
-    if (event is! KeyDownEvent) return false;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
 
     // Check custom and primary bindings, prioritizing modified keys (Ctrl/Alt/Shift) first
     final actionsWithCombo = <MapEntry<AppShortcutAction, AppKeyCombo>>[];

@@ -186,7 +186,7 @@ class AppShortcutAction {
       title: 'Global Next Track',
       description: 'Skip to next track anywhere in Windows (even minimized)',
       category: ShortcutCategory.global,
-      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowRight, isCtrl: true, isShift: true),
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowRight, isShift: true, isAlt: true),
       defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.keyN, isCtrl: true, isAlt: true),
     ),
     const AppShortcutAction(
@@ -194,7 +194,7 @@ class AppShortcutAction {
       title: 'Global Previous Track',
       description: 'Skip to previous track anywhere in Windows (even minimized)',
       category: ShortcutCategory.global,
-      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowLeft, isCtrl: true, isShift: true),
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowLeft, isShift: true, isAlt: true),
       defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.keyP, isCtrl: true, isAlt: true),
     ),
     const AppShortcutAction(
@@ -216,7 +216,7 @@ class AppShortcutAction {
       title: 'Global Volume Up (+5%)',
       description: 'Increase volume anywhere in Windows (even minimized)',
       category: ShortcutCategory.global,
-      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowUp, isCtrl: true, isShift: true),
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowUp, isShift: true, isAlt: true),
       defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.arrowUp, isCtrl: true, isAlt: true),
     ),
     const AppShortcutAction(
@@ -224,7 +224,7 @@ class AppShortcutAction {
       title: 'Global Volume Down (-5%)',
       description: 'Decrease volume anywhere in Windows (even minimized)',
       category: ShortcutCategory.global,
-      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowDown, isCtrl: true, isShift: true),
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.arrowDown, isShift: true, isAlt: true),
       defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.arrowDown, isCtrl: true, isAlt: true),
     ),
     const AppShortcutAction(
@@ -232,7 +232,7 @@ class AppShortcutAction {
       title: 'Global Mute / Unmute',
       description: 'Toggle mute state anywhere in Windows (even minimized)',
       category: ShortcutCategory.global,
-      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyM, isCtrl: true, isShift: true),
+      defaultPrimary: AppKeyCombo(key: LogicalKeyboardKey.keyM, isShift: true, isAlt: true),
       defaultSecondary: AppKeyCombo(key: LogicalKeyboardKey.keyM, isCtrl: true, isAlt: true),
     ),
 

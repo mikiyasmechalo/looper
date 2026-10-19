@@ -360,6 +360,7 @@ class SearchView extends ConsumerWidget {
                 l10n: l10n,
                 songs: results.songs,
                 searchQuery: ref.read(searchQueryProvider),
+                queueName: 'Search',
               ),
               childCount: results.songs.length,
             ),
@@ -405,6 +406,7 @@ class SearchView extends ConsumerWidget {
                 l10n: l10n,
                 songs: results.songs,
                 searchQuery: ref.read(searchQueryProvider),
+                queueName: 'Search',
               ),
               childCount: results.songs.length,
             ),
@@ -447,6 +449,7 @@ class SearchView extends ConsumerWidget {
                 l10n: l10n,
                 songs: results.songs,
                 searchQuery: ref.read(searchQueryProvider),
+                queueName: 'Search',
               ),
               childCount: results.songs.length,
             ),
@@ -489,6 +492,7 @@ class SearchView extends ConsumerWidget {
                 l10n: l10n,
                 songs: results.songs,
                 searchQuery: ref.read(searchQueryProvider),
+                queueName: 'Search',
               ),
               childCount: results.songs.length,
             ),
@@ -513,6 +517,7 @@ class SearchView extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _SongResultCard(
                     song: results.songs.first,
+                    songs: results.songs,
                     searchQuery: ref.read(searchQueryProvider),
                   ),
                 ],
@@ -536,8 +541,9 @@ class SearchView extends ConsumerWidget {
               (context, index) => SongTile(
                 song: songListToRender[index],
                 l10n: l10n,
-                songs: songListToRender,
+                songs: results.songs,
                 searchQuery: ref.read(searchQueryProvider),
+                queueName: 'Search',
               ),
               childCount: songListToRender.length,
             ),
@@ -557,8 +563,22 @@ class SearchView extends ConsumerWidget {
 
 class _SongResultCard extends ConsumerWidget {
   final Song song;
+  final List<Song>? songs;
   final String? searchQuery;
-  const _SongResultCard({required this.song, this.searchQuery});
+  const _SongResultCard({required this.song, this.songs, this.searchQuery});
+
+  void _playSong(WidgetRef ref) {
+    if (searchQuery != null) {
+      ref.read(lyricsSearchQueryProvider.notifier).state = searchQuery!;
+    }
+    final playlist = (songs != null && songs!.isNotEmpty) ? songs! : [song];
+    final index = playlist.indexWhere((s) => s.path == song.path);
+    ref.read(playbackProvider.notifier).setPlaylist(
+      playlist,
+      initialIndex: index != -1 ? index : 0,
+      queueName: 'Search',
+    );
+  }
 
   Widget _buildHighlightedText({
     required BuildContext context,
@@ -686,12 +706,7 @@ class _SongResultCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: () {
-                        if (searchQuery != null) {
-                          ref.read(lyricsSearchQueryProvider.notifier).state = searchQuery!;
-                        }
-                        ref.read(playbackProvider.notifier).play(song);
-                      },
+                      onTap: () => _playSong(ref),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -825,12 +840,7 @@ class _SongResultCard extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: () {
-                        if (searchQuery != null) {
-                          ref.read(lyricsSearchQueryProvider.notifier).state = searchQuery!;
-                        }
-                        ref.read(playbackProvider.notifier).play(song);
-                      },
+                      onTap: () => _playSong(ref),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -906,13 +916,7 @@ class _SongResultCard extends ConsumerWidget {
     return GestureDetector(
       onSecondaryTap: () => showSongOptionsBottomSheet(context: context, ref: ref, song: song),
       child: InkWell(
-        onTap: () {
-
-          if (searchQuery != null) {
-            ref.read(lyricsSearchQueryProvider.notifier).state = searchQuery!;
-          }
-          ref.read(playbackProvider.notifier).play(song);
-        },
+        onTap: () => _playSong(ref),
         borderRadius: BorderRadius.circular(16),
         child: cardContent,
       ),
