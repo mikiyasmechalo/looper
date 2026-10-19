@@ -833,6 +833,11 @@ class Sidebar extends ConsumerWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final bool hasNavButtons = settings.moveNavButtonsToSidebar && !isDrawer;
+          final double baseLogoHeight = hasNavButtons ? 33.0 : 44.0;
+          final double maxLogoWidth = constraints.maxWidth - (hasNavButtons ? 104.0 : 44.0);
+          final double logoHeight = (maxLogoWidth / 3.162).clamp(24.0, baseLogoHeight);
+
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -901,8 +906,10 @@ class Sidebar extends ConsumerWidget {
                                 Expanded(
                                   child: Align(
                                     alignment: Alignment.centerLeft,
-                                    child: SizedBox(
-                                      height: 34,
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      curve: Curves.easeOutCubic,
+                                      height: logoHeight,
                                       child: SvgPicture.asset(
                                         'assets/main_logo_transparent.svg',
                                         fit: BoxFit.contain,
