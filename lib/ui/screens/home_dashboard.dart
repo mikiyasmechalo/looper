@@ -737,7 +737,7 @@ class HomeDashboard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: isNarrow ? 180 : 204,
+              height: isNarrow ? 186 : 210,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: featuredAlbums.length,
@@ -1214,7 +1214,7 @@ class HomeDashboard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: isNarrow ? 198 : 218,
+              height: isNarrow ? 208 : 228,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -1435,7 +1435,7 @@ class HomeDashboard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: isNarrow ? 170 : 192,
+              height: isNarrow ? 178 : 200,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -1563,7 +1563,7 @@ class HomeDashboard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: isNarrow ? 170 : 192,
+              height: isNarrow ? 178 : 200,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
