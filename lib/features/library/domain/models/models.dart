@@ -163,15 +163,23 @@ class AppSettings {
   String? customBackgroundImagePath;
   double bgBrightness = 0.5;
   double bgOpacity = 0.3;
+  bool showHomeRecentlyPlayed = true;
+  bool showHomeQuickPicks = true;
+  bool showHomeTopSongs = true;
   bool showHomeArtists = true;
-  bool showHomeAlbums = false;
+  bool showHomeAlbums = true;
   bool showHomeGenres = true;
+  bool showHomeNewlyAdded = true;
+  bool showHomeRediscover = true;
   List<String> homeSectionOrder = [
+    'recently_played',
     'quick_picks',
-    'songs',
-    'albums',
+    'top_songs',
     'artists',
+    'albums',
     'genres',
+    'newly_added',
+    'rediscover',
   ];
   bool enableSlideGesture = false;
   bool stopOnTaskRemoved = true;
@@ -265,6 +273,22 @@ class AppSettings {
   bool showSidebarFolders = true;
   bool showSidebarAnalyze = false;
   bool showSidebarLyrics = true;
+
+  // Sidebar item ordering (Home is always pinned first, Settings always last)
+  List<String> sidebarItemOrder = [
+    'now_playing',
+    'songs',
+    'albums',
+    'artists',
+    'playlists',
+    'folders',
+    'recently_played',
+    'favorites',
+    'queue',
+    'genres',
+    'lyrics',
+    'analyze',
+  ];
 
   // Sidebar layout preferences
   bool isSidebarCollapsed = false;

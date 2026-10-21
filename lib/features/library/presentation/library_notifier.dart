@@ -167,8 +167,8 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
         break;
       case SongSortStrategy.playCount:
         query = isAsc
-            ? DbService.isar.songs.where().sortByPlayCount()
-            : DbService.isar.songs.where().sortByPlayCountDesc();
+            ? DbService.isar.songs.where().sortByPlayCount().thenByLastPlayed().thenByTitle()
+            : DbService.isar.songs.where().sortByPlayCountDesc().thenByLastPlayedDesc().thenByTitle();
         break;
       case SongSortStrategy.lastPlayed:
         query = isAsc
@@ -599,14 +599,37 @@ final recentlyPlayedProvider = StreamProvider<List<Song>>((ref) {
       .filter()
       .lastPlayedIsNotNull()
       .sortByLastPlayedDesc()
-      .limit(10)
+      .limit(30)
       .watch(fireImmediately: true);
 });
 
 final topSongsProvider = StreamProvider<List<Song>>((ref) {
   return DbService.isar.songs
       .where()
+      .filter()
+      .playCountGreaterThan(0)
       .sortByPlayCountDesc()
-      .limit(8)
+      .thenByLastPlayedDesc()
+      .thenByTitle()
+      .limit(20)
       .watch(fireImmediately: true);
 });
+
+final newlyAddedSongsProvider = StreamProvider<List<Song>>((ref) {
+  return DbService.isar.songs
+      .where()
+      .sortByDateAddedDesc()
+      .limit(20)
+      .watch(fireImmediately: true);
+});
+
+final rediscoverSongsProvider = StreamProvider<List<Song>>((ref) {
+  return DbService.isar.songs
+      .where()
+      .filter()
+      .group((q) => q.isFavoriteEqualTo(true).or().playCountGreaterThan(1))
+      .sortByLastPlayed()
+      .limit(20)
+      .watch(fireImmediately: true);
+});
+

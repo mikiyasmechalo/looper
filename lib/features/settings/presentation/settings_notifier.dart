@@ -78,13 +78,114 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       }
       if (settings.homeSectionOrder.isEmpty) {
         settings.homeSectionOrder = [
+          'recently_played',
           'quick_picks',
-          'songs',
-          'albums',
+          'top_songs',
+          'newly_added',
+          'rediscover',
           'artists',
+          'albums',
           'genres',
         ];
         needsSave = true;
+      } else {
+        // Migrate legacy entries: replace 'songs' with 'artists' and 'albums' if needed, and add missing sections
+        final order = List<String>.from(settings.homeSectionOrder);
+        bool orderChanged = false;
+        if (order.contains('songs')) {
+          final idx = order.indexOf('songs');
+          order.removeAt(idx);
+          if (!order.contains('artists')) order.insert(idx, 'artists');
+          if (!order.contains('albums')) order.insert(idx + 1, 'albums');
+          orderChanged = true;
+        }
+        final allSections = [
+          'recently_played',
+          'quick_picks',
+          'top_songs',
+          'newly_added',
+          'rediscover',
+          'artists',
+          'albums',
+          'genres',
+        ];
+        if (!order.contains('recently_played')) {
+          order.insert(0, 'recently_played');
+          orderChanged = true;
+        } else if (order.indexOf('recently_played') == order.length - 1 && order.length > 1) {
+          order.remove('recently_played');
+          order.insert(0, 'recently_played');
+          orderChanged = true;
+        }
+        // Ensure top_songs is placed right below quick_picks by default
+        if (order.contains('quick_picks') && order.contains('top_songs')) {
+          final qIdx = order.indexOf('quick_picks');
+          final tIdx = order.indexOf('top_songs');
+          if (tIdx != qIdx + 1) {
+            order.removeAt(tIdx);
+            final newQIdx = order.indexOf('quick_picks');
+            order.insert(newQIdx + 1, 'top_songs');
+            orderChanged = true;
+          }
+        }
+        for (final sec in allSections) {
+          if (!order.contains(sec)) {
+            if (sec == 'top_songs' && order.contains('quick_picks')) {
+              order.insert(order.indexOf('quick_picks') + 1, sec);
+            } else {
+              order.add(sec);
+            }
+            orderChanged = true;
+          }
+        }
+        if (orderChanged) {
+          settings.homeSectionOrder = order;
+          needsSave = true;
+        }
+      }
+      if (settings.sidebarItemOrder.isEmpty) {
+        settings.sidebarItemOrder = [
+          'now_playing',
+          'songs',
+          'albums',
+          'artists',
+          'playlists',
+          'folders',
+          'recently_played',
+          'favorites',
+          'queue',
+          'genres',
+          'lyrics',
+          'analyze',
+        ];
+        needsSave = true;
+      } else {
+        final order = List<String>.from(settings.sidebarItemOrder);
+        final defaultSidebarItems = [
+          'now_playing',
+          'songs',
+          'albums',
+          'artists',
+          'playlists',
+          'folders',
+          'recently_played',
+          'favorites',
+          'queue',
+          'genres',
+          'lyrics',
+          'analyze',
+        ];
+        bool sidebarChanged = false;
+        for (final item in defaultSidebarItems) {
+          if (!order.contains(item)) {
+            order.add(item);
+            sidebarChanged = true;
+          }
+        }
+        if (sidebarChanged) {
+          settings.sidebarItemOrder = order;
+          needsSave = true;
+        }
       }
       if (settings.homeDarkness.isNaN || (settings.homeDarkness == 0.0 && !settings.settingsV3)) {
         settings.homeDarkness = 0.72;
@@ -228,15 +329,37 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         ..disableBlur = false
         ..bgBrightness = 0.5
         ..bgOpacity = 0.3
+        ..showHomeRecentlyPlayed = true
+        ..showHomeQuickPicks = true
+        ..showHomeTopSongs = true
         ..showHomeArtists = true
-        ..showHomeAlbums = false
-        ..showHomeGenres = false
+        ..showHomeAlbums = true
+        ..showHomeGenres = true
+        ..showHomeNewlyAdded = true
+        ..showHomeRediscover = true
         ..homeSectionOrder = [
+          'recently_played',
           'quick_picks',
+          'top_songs',
+          'artists',
+          'albums',
+          'genres',
+          'newly_added',
+          'rediscover',
+        ]
+        ..sidebarItemOrder = [
+          'now_playing',
           'songs',
           'albums',
           'artists',
+          'playlists',
+          'folders',
+          'recently_played',
+          'favorites',
+          'queue',
           'genres',
+          'lyrics',
+          'analyze',
         ]
         ..homeDarkness = 0.72
         ..songsDarkness = 0.72
@@ -394,12 +517,26 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..customBackgroundImagePath = s.customBackgroundImagePath
       ..bgBrightness = s.bgBrightness
       ..bgOpacity = s.bgOpacity
+      ..showHomeRecentlyPlayed = s.showHomeRecentlyPlayed
+      ..showHomeQuickPicks = s.showHomeQuickPicks
+      ..showHomeTopSongs = s.showHomeTopSongs
       ..showHomeArtists = s.showHomeArtists
       ..showHomeAlbums = s.showHomeAlbums
       ..showHomeGenres = s.showHomeGenres
+      ..showHomeNewlyAdded = s.showHomeNewlyAdded
+      ..showHomeRediscover = s.showHomeRediscover
       ..homeSectionOrder = List.from(
         s.homeSectionOrder.isEmpty
-            ? ['quick_picks', 'songs', 'albums', 'artists', 'genres']
+            ? [
+                'recently_played',
+                'quick_picks',
+                'top_songs',
+                'artists',
+                'albums',
+                'genres',
+                'newly_added',
+                'rediscover',
+              ]
             : s.homeSectionOrder,
       )
       ..enableSlideGesture = s.enableSlideGesture
@@ -520,6 +657,24 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..showSidebarFolders = s.showSidebarFolders
       ..showSidebarAnalyze = s.showSidebarAnalyze
       ..showSidebarLyrics = s.showSidebarLyrics
+      ..sidebarItemOrder = List.from(
+        s.sidebarItemOrder.isEmpty
+            ? [
+                'now_playing',
+                'songs',
+                'albums',
+                'artists',
+                'playlists',
+                'folders',
+                'recently_played',
+                'favorites',
+                'queue',
+                'genres',
+                'lyrics',
+                'analyze',
+              ]
+            : s.sidebarItemOrder,
+      )
       ..isSidebarCollapsed = s.isSidebarCollapsed
       ..moveNavButtonsToSidebar = s.moveNavButtonsToSidebar
       ..hasCompletedSidebarSetup = s.hasCompletedSidebarSetup
@@ -927,20 +1082,133 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     state = newState;
   }
 
-  Future<void> updateShowHomeArtists(bool value) async {
+  int countEnabledHomeSections() {
+    int count = 0;
+    if (state.showHomeRecentlyPlayed) count++;
+    if (state.showHomeQuickPicks) count++;
+    if (state.showHomeTopSongs) count++;
+    if (state.showHomeArtists) count++;
+    if (state.showHomeAlbums) count++;
+    if (state.showHomeGenres) count++;
+    if (state.showHomeNewlyAdded) count++;
+    if (state.showHomeRediscover) count++;
+    return count;
+  }
+
+  bool canToggleHomeSectionOff() {
+    return countEnabledHomeSections() > 2;
+  }
+
+  Future<bool> updateShowHomeRecentlyPlayed(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
+    final newState = _clone(state)..showHomeRecentlyPlayed = value;
+    await _save(newState);
+    state = newState;
+    return true;
+  }
+
+  Future<bool> updateShowHomeQuickPicks(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
+    final newState = _clone(state)..showHomeQuickPicks = value;
+    await _save(newState);
+    state = newState;
+    return true;
+  }
+
+  Future<bool> updateShowHomeTopSongs(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
+    final newState = _clone(state)..showHomeTopSongs = value;
+    await _save(newState);
+    state = newState;
+    return true;
+  }
+
+  Future<bool> updateShowHomeArtists(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
     final newState = _clone(state)..showHomeArtists = value;
     await _save(newState);
     state = newState;
+    return true;
   }
 
-  Future<void> updateShowHomeAlbums(bool value) async {
+  Future<bool> updateShowHomeAlbums(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
     final newState = _clone(state)..showHomeAlbums = value;
+    await _save(newState);
+    state = newState;
+    return true;
+  }
+
+  Future<bool> updateShowHomeGenres(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
+    final newState = _clone(state)..showHomeGenres = value;
+    await _save(newState);
+    state = newState;
+    return true;
+  }
+
+  Future<bool> updateShowHomeNewlyAdded(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
+    final newState = _clone(state)..showHomeNewlyAdded = value;
+    await _save(newState);
+    state = newState;
+    return true;
+  }
+
+  Future<bool> updateShowHomeRediscover(bool value) async {
+    if (!value && !canToggleHomeSectionOff()) return false;
+    final newState = _clone(state)..showHomeRediscover = value;
+    await _save(newState);
+    state = newState;
+    return true;
+  }
+
+  Future<void> resetHomeSectionOrder() async {
+    final newState = _clone(state)
+      ..homeSectionOrder = [
+        'recently_played',
+        'quick_picks',
+        'top_songs',
+        'newly_added',
+        'rediscover',
+        'artists',
+        'albums',
+        'genres',
+      ]
+      ..showHomeRecentlyPlayed = true
+      ..showHomeQuickPicks = true
+      ..showHomeTopSongs = true
+      ..showHomeArtists = true
+      ..showHomeAlbums = true
+      ..showHomeGenres = true
+      ..showHomeNewlyAdded = true
+      ..showHomeRediscover = true;
     await _save(newState);
     state = newState;
   }
 
-  Future<void> updateShowHomeGenres(bool value) async {
-    final newState = _clone(state)..showHomeGenres = value;
+  Future<void> updateSidebarItemOrder(List<String> order) async {
+    final newState = _clone(state)..sidebarItemOrder = List.from(order);
+    await _save(newState);
+    state = newState;
+  }
+
+  Future<void> resetSidebarItemOrder() async {
+    final newState = _clone(state)
+      ..sidebarItemOrder = [
+        'now_playing',
+        'songs',
+        'albums',
+        'artists',
+        'playlists',
+        'folders',
+        'recently_played',
+        'favorites',
+        'queue',
+        'genres',
+        'lyrics',
+        'analyze',
+      ];
     await _save(newState);
     state = newState;
   }

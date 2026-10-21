@@ -17,6 +17,7 @@ import '../widgets/expanded_player.dart';
 import 'package:looper_player/features/library/presentation/library_notifier.dart';
 import 'package:looper_player/features/library/presentation/songs_list.dart';
 import 'package:looper_player/features/library/presentation/library_grids.dart';
+import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/ui/screens/home_dashboard.dart';
 import 'package:looper_player/features/playlists/presentation/playlist_view.dart';
 import 'package:looper_player/features/search/presentation/search_view.dart';
@@ -965,135 +966,23 @@ class Sidebar extends ConsumerWidget {
                       onTap: () => navigateTo(NavItem.home),
                       isCollapsed: isCollapsed,
                     ),
-                    if (settings.showSidebarNowPlaying)
-                      _SidebarItem(
-                        icon: LucideIcons.headphones,
-                        label: l10n.nowPlaying,
-                        isSelected: nav.isPlayerExpanded && currentSong != null,
-                        onTap: () {
-                          if (currentSong != null) {
-                            ref
-                                .read(appNavigationProvider.notifier)
-                                .setPlayerExpansion(true);
-                          } else {
-                            navigateTo(NavItem.queue);
-                          }
-                          if (Scaffold.of(context).isDrawerOpen) {
-                            Navigator.of(context).pop();
-                          }
-                        },
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarSongs)
-                      _SidebarItem(
-                        customIcon: AppIcons.songs,
-                        label: l10n.songs,
-                        isSelected:
-                            activeItem == NavItem.songs ||
-                            highlightItem == NavItem.songs,
-                        onTap: () => navigateTo(NavItem.songs),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarAlbums)
-                      _SidebarItem(
-                        icon: LucideIcons.disc,
-                        label: l10n.albums,
-                        isSelected:
-                            activeItem == NavItem.albums ||
-                            highlightItem == NavItem.albums,
-                        onTap: () => navigateTo(NavItem.albums),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarArtists)
-                      _SidebarItem(
-                        icon: LucideIcons.mic2,
-                        label: l10n.artists,
-                        isSelected:
-                            activeItem == NavItem.artists ||
-                            highlightItem == NavItem.artists,
-                        onTap: () => navigateTo(NavItem.artists),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarPlaylists)
-                      _SidebarItem(
-                        customIcon: AppIcons.library,
-                        label: l10n.playlists,
-                        isSelected:
-                            activeItem == NavItem.playlists ||
-                            highlightItem == NavItem.playlists,
-                        onTap: () => navigateTo(NavItem.playlists),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarFolders)
-                      _SidebarItem(
-                        icon: LucideIcons.folder,
-                        label: 'Folders',
-                        isSelected:
-                            activeItem == NavItem.folders ||
-                            highlightItem == NavItem.folders,
-                        onTap: () => navigateTo(NavItem.folders),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarRecentlyPlayed)
-                      _SidebarItem(
-                        icon: LucideIcons.clock,
-                        label: 'Recently Played',
-                        isSelected:
-                            activeItem == NavItem.recentlyPlayed ||
-                            highlightItem == NavItem.recentlyPlayed,
-                        onTap: () => navigateTo(NavItem.recentlyPlayed),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarFavorites)
-                      _SidebarItem(
-                        customIcon: AppIcons.heart,
-                        label: 'Favorites',
-                        isSelected:
-                            activeItem == NavItem.favorites ||
-                            highlightItem == NavItem.favorites,
-                        onTap: () => navigateTo(NavItem.favorites),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarQueue)
-                      _SidebarItem(
-                        icon: LucideIcons.listOrdered,
-                        label: l10n.playQueue,
-                        isSelected:
-                            activeItem == NavItem.queue ||
-                            highlightItem == NavItem.queue,
-                        onTap: () => navigateTo(NavItem.queue),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarGenres)
-                      _SidebarItem(
-                        icon: LucideIcons.radio,
-                        label: l10n.genres,
-                        isSelected:
-                            activeItem == NavItem.genres ||
-                            highlightItem == NavItem.genres,
-                        onTap: () => navigateTo(NavItem.genres),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarLyrics)
-                      _SidebarItem(
-                        customIcon: AppIcons.lyrics,
-                        label: 'Lyrics',
-                        isSelected:
-                            activeItem == NavItem.lyrics ||
-                            highlightItem == NavItem.lyrics,
-                        onTap: () => navigateTo(NavItem.lyrics),
-                        isCollapsed: isCollapsed,
-                      ),
-                    if (settings.showSidebarAnalyze)
-                      _SidebarItem(
-                        icon: LucideIcons.barChart2,
-                        label: 'Analyze',
-                        isSelected:
-                            activeItem == NavItem.analyze ||
-                            highlightItem == NavItem.analyze,
-                        onTap: () => navigateTo(NavItem.analyze),
-                        isCollapsed: isCollapsed,
-                      ),
+                    ...settings.sidebarItemOrder
+                        .map(
+                          (itemId) => _buildSidebarNavElement(
+                            itemId,
+                            settings: settings,
+                            nav: nav,
+                            currentSong: currentSong,
+                            activeItem: activeItem,
+                            highlightItem: highlightItem,
+                            isCollapsed: isCollapsed,
+                            context: context,
+                            ref: ref,
+                            navigateTo: navigateTo,
+                            l10n: l10n,
+                          ),
+                        )
+                        .whereType<Widget>(),
                     _SidebarItem(
                       customIcon: AppIcons.settings,
                       label: l10n.settings,
@@ -1120,6 +1009,166 @@ class Sidebar extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Widget? _buildSidebarNavElement(
+    String id, {
+    required AppSettings settings,
+    required NavigationState nav,
+    required Song? currentSong,
+    required NavItem? activeItem,
+    required NavItem? highlightItem,
+    required bool isCollapsed,
+    required BuildContext context,
+    required WidgetRef ref,
+    required void Function(NavItem) navigateTo,
+    required AppLocalizations l10n,
+  }) {
+    switch (id) {
+      case 'now_playing':
+        if (!settings.showSidebarNowPlaying) return null;
+        return _SidebarItem(
+          icon: LucideIcons.headphones,
+          label: l10n.nowPlaying,
+          isSelected: nav.isPlayerExpanded && currentSong != null,
+          onTap: () {
+            if (currentSong != null) {
+              ref
+                  .read(appNavigationProvider.notifier)
+                  .setPlayerExpansion(true);
+            } else {
+              navigateTo(NavItem.queue);
+            }
+            if (Scaffold.of(context).isDrawerOpen) {
+              Navigator.of(context).pop();
+            }
+          },
+          isCollapsed: isCollapsed,
+        );
+      case 'songs':
+        if (!settings.showSidebarSongs) return null;
+        return _SidebarItem(
+          customIcon: AppIcons.songs,
+          label: l10n.songs,
+          isSelected:
+              activeItem == NavItem.songs ||
+              highlightItem == NavItem.songs,
+          onTap: () => navigateTo(NavItem.songs),
+          isCollapsed: isCollapsed,
+        );
+      case 'albums':
+        if (!settings.showSidebarAlbums) return null;
+        return _SidebarItem(
+          icon: LucideIcons.disc,
+          label: l10n.albums,
+          isSelected:
+              activeItem == NavItem.albums ||
+              highlightItem == NavItem.albums,
+          onTap: () => navigateTo(NavItem.albums),
+          isCollapsed: isCollapsed,
+        );
+      case 'artists':
+        if (!settings.showSidebarArtists) return null;
+        return _SidebarItem(
+          icon: LucideIcons.mic2,
+          label: l10n.artists,
+          isSelected:
+              activeItem == NavItem.artists ||
+              highlightItem == NavItem.artists,
+          onTap: () => navigateTo(NavItem.artists),
+          isCollapsed: isCollapsed,
+        );
+      case 'playlists':
+        if (!settings.showSidebarPlaylists) return null;
+        return _SidebarItem(
+          customIcon: AppIcons.library,
+          label: l10n.playlists,
+          isSelected:
+              activeItem == NavItem.playlists ||
+              highlightItem == NavItem.playlists,
+          onTap: () => navigateTo(NavItem.playlists),
+          isCollapsed: isCollapsed,
+        );
+      case 'folders':
+        if (!settings.showSidebarFolders) return null;
+        return _SidebarItem(
+          icon: LucideIcons.folder,
+          label: 'Folders',
+          isSelected:
+              activeItem == NavItem.folders ||
+              highlightItem == NavItem.folders,
+          onTap: () => navigateTo(NavItem.folders),
+          isCollapsed: isCollapsed,
+        );
+      case 'recently_played':
+        if (!settings.showSidebarRecentlyPlayed) return null;
+        return _SidebarItem(
+          icon: LucideIcons.clock,
+          label: 'Recently Played',
+          isSelected:
+              activeItem == NavItem.recentlyPlayed ||
+              highlightItem == NavItem.recentlyPlayed,
+          onTap: () => navigateTo(NavItem.recentlyPlayed),
+          isCollapsed: isCollapsed,
+        );
+      case 'favorites':
+        if (!settings.showSidebarFavorites) return null;
+        return _SidebarItem(
+          icon: LucideIcons.star,
+          label: 'Favorites',
+          isSelected:
+              activeItem == NavItem.favorites ||
+              highlightItem == NavItem.favorites,
+          onTap: () => navigateTo(NavItem.favorites),
+          isCollapsed: isCollapsed,
+        );
+      case 'queue':
+        if (!settings.showSidebarQueue) return null;
+        return _SidebarItem(
+          icon: LucideIcons.listOrdered,
+          label: l10n.playQueue,
+          isSelected:
+              activeItem == NavItem.queue ||
+              highlightItem == NavItem.queue,
+          onTap: () => navigateTo(NavItem.queue),
+          isCollapsed: isCollapsed,
+        );
+      case 'genres':
+        if (!settings.showSidebarGenres) return null;
+        return _SidebarItem(
+          icon: LucideIcons.radio,
+          label: l10n.genres,
+          isSelected:
+              activeItem == NavItem.genres ||
+              highlightItem == NavItem.genres,
+          onTap: () => navigateTo(NavItem.genres),
+          isCollapsed: isCollapsed,
+        );
+      case 'lyrics':
+        if (!settings.showSidebarLyrics) return null;
+        return _SidebarItem(
+          customIcon: AppIcons.lyrics,
+          label: 'Lyrics',
+          isSelected:
+              activeItem == NavItem.lyrics ||
+              highlightItem == NavItem.lyrics,
+          onTap: () => navigateTo(NavItem.lyrics),
+          isCollapsed: isCollapsed,
+        );
+      case 'analyze':
+        if (!settings.showSidebarAnalyze) return null;
+        return _SidebarItem(
+          icon: LucideIcons.barChart2,
+          label: 'Analyze',
+          isSelected:
+              activeItem == NavItem.analyze ||
+              highlightItem == NavItem.analyze,
+          onTap: () => navigateTo(NavItem.analyze),
+          isCollapsed: isCollapsed,
+        );
+      default:
+        return null;
+    }
   }
 }
 

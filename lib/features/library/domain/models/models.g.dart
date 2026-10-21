@@ -10126,153 +10126,183 @@ const AppSettingsSchema = CollectionSchema(
       name: r'showHomeGenres',
       type: IsarType.bool,
     ),
-    r'showPerformanceOptimizer': PropertySchema(
+    r'showHomeNewlyAdded': PropertySchema(
       id: 137,
+      name: r'showHomeNewlyAdded',
+      type: IsarType.bool,
+    ),
+    r'showHomeQuickPicks': PropertySchema(
+      id: 138,
+      name: r'showHomeQuickPicks',
+      type: IsarType.bool,
+    ),
+    r'showHomeRecentlyPlayed': PropertySchema(
+      id: 139,
+      name: r'showHomeRecentlyPlayed',
+      type: IsarType.bool,
+    ),
+    r'showHomeRediscover': PropertySchema(
+      id: 140,
+      name: r'showHomeRediscover',
+      type: IsarType.bool,
+    ),
+    r'showHomeTopSongs': PropertySchema(
+      id: 141,
+      name: r'showHomeTopSongs',
+      type: IsarType.bool,
+    ),
+    r'showPerformanceOptimizer': PropertySchema(
+      id: 142,
       name: r'showPerformanceOptimizer',
       type: IsarType.bool,
     ),
     r'showPlayedSongsInQueue': PropertySchema(
-      id: 138,
+      id: 143,
       name: r'showPlayedSongsInQueue',
       type: IsarType.bool,
     ),
     r'showQualityBadge': PropertySchema(
-      id: 139,
+      id: 144,
       name: r'showQualityBadge',
       type: IsarType.bool,
     ),
     r'showSidebarAlbums': PropertySchema(
-      id: 140,
+      id: 145,
       name: r'showSidebarAlbums',
       type: IsarType.bool,
     ),
     r'showSidebarAnalyze': PropertySchema(
-      id: 141,
+      id: 146,
       name: r'showSidebarAnalyze',
       type: IsarType.bool,
     ),
     r'showSidebarArtists': PropertySchema(
-      id: 142,
+      id: 147,
       name: r'showSidebarArtists',
       type: IsarType.bool,
     ),
     r'showSidebarFavorites': PropertySchema(
-      id: 143,
+      id: 148,
       name: r'showSidebarFavorites',
       type: IsarType.bool,
     ),
     r'showSidebarFolders': PropertySchema(
-      id: 144,
+      id: 149,
       name: r'showSidebarFolders',
       type: IsarType.bool,
     ),
     r'showSidebarGenres': PropertySchema(
-      id: 145,
+      id: 150,
       name: r'showSidebarGenres',
       type: IsarType.bool,
     ),
     r'showSidebarLyrics': PropertySchema(
-      id: 146,
+      id: 151,
       name: r'showSidebarLyrics',
       type: IsarType.bool,
     ),
     r'showSidebarNowPlaying': PropertySchema(
-      id: 147,
+      id: 152,
       name: r'showSidebarNowPlaying',
       type: IsarType.bool,
     ),
     r'showSidebarPlaylists': PropertySchema(
-      id: 148,
+      id: 153,
       name: r'showSidebarPlaylists',
       type: IsarType.bool,
     ),
     r'showSidebarQueue': PropertySchema(
-      id: 149,
+      id: 154,
       name: r'showSidebarQueue',
       type: IsarType.bool,
     ),
     r'showSidebarRecentlyPlayed': PropertySchema(
-      id: 150,
+      id: 155,
       name: r'showSidebarRecentlyPlayed',
       type: IsarType.bool,
     ),
     r'showSidebarSongs': PropertySchema(
-      id: 151,
+      id: 156,
       name: r'showSidebarSongs',
       type: IsarType.bool,
     ),
     r'showSongDurationInLists': PropertySchema(
-      id: 152,
+      id: 157,
       name: r'showSongDurationInLists',
       type: IsarType.bool,
     ),
     r'showTrayOnlyWhenMinimized': PropertySchema(
-      id: 153,
+      id: 158,
       name: r'showTrayOnlyWhenMinimized',
       type: IsarType.bool,
     ),
     r'shuffle': PropertySchema(
-      id: 154,
+      id: 159,
       name: r'shuffle',
       type: IsarType.bool,
     ),
+    r'sidebarItemOrder': PropertySchema(
+      id: 160,
+      name: r'sidebarItemOrder',
+      type: IsarType.stringList,
+    ),
     r'skippedUpdateVersion': PropertySchema(
-      id: 155,
+      id: 161,
       name: r'skippedUpdateVersion',
       type: IsarType.string,
     ),
     r'songViewStyleIndex': PropertySchema(
-      id: 156,
+      id: 162,
       name: r'songViewStyleIndex',
       type: IsarType.long,
     ),
     r'songsDarkness': PropertySchema(
-      id: 157,
+      id: 163,
       name: r'songsDarkness',
       type: IsarType.double,
     ),
     r'sortAscending': PropertySchema(
-      id: 158,
+      id: 164,
       name: r'sortAscending',
       type: IsarType.bool,
     ),
     r'sortStrategyIndex': PropertySchema(
-      id: 159,
+      id: 165,
       name: r'sortStrategyIndex',
       type: IsarType.long,
     ),
     r'stopOnTaskRemoved': PropertySchema(
-      id: 160,
+      id: 166,
       name: r'stopOnTaskRemoved',
       type: IsarType.bool,
     ),
     r'streamingQuality': PropertySchema(
-      id: 161,
+      id: 167,
       name: r'streamingQuality',
       type: IsarType.long,
     ),
     r'uniformLyricsFontSize': PropertySchema(
-      id: 162,
+      id: 168,
       name: r'uniformLyricsFontSize',
       type: IsarType.bool,
     ),
     r'useAlbumArtistForArtists': PropertySchema(
-      id: 163,
+      id: 169,
       name: r'useAlbumArtistForArtists',
       type: IsarType.bool,
     ),
     r'useNewFont': PropertySchema(
-      id: 164,
+      id: 170,
       name: r'useNewFont',
       type: IsarType.bool,
     ),
     r'useNewFontLyrics': PropertySchema(
-      id: 165,
+      id: 171,
       name: r'useNewFontLyrics',
       type: IsarType.bool,
     ),
     r'volume': PropertySchema(
-      id: 166,
+      id: 172,
       name: r'volume',
       type: IsarType.double,
     )
@@ -10347,6 +10377,13 @@ int _appSettingsEstimateSize(
     }
   }
   bytesCount += 3 + object.lyricsSyncStyle.length * 3;
+  bytesCount += 3 + object.sidebarItemOrder.length * 3;
+  {
+    for (var i = 0; i < object.sidebarItemOrder.length; i++) {
+      final value = object.sidebarItemOrder[i];
+      bytesCount += value.length * 3;
+    }
+  }
   bytesCount += 3 + object.skippedUpdateVersion.length * 3;
   return bytesCount;
 }
@@ -10494,36 +10531,42 @@ void _appSettingsSerialize(
   writer.writeBool(offsets[134], object.showHomeAlbums);
   writer.writeBool(offsets[135], object.showHomeArtists);
   writer.writeBool(offsets[136], object.showHomeGenres);
-  writer.writeBool(offsets[137], object.showPerformanceOptimizer);
-  writer.writeBool(offsets[138], object.showPlayedSongsInQueue);
-  writer.writeBool(offsets[139], object.showQualityBadge);
-  writer.writeBool(offsets[140], object.showSidebarAlbums);
-  writer.writeBool(offsets[141], object.showSidebarAnalyze);
-  writer.writeBool(offsets[142], object.showSidebarArtists);
-  writer.writeBool(offsets[143], object.showSidebarFavorites);
-  writer.writeBool(offsets[144], object.showSidebarFolders);
-  writer.writeBool(offsets[145], object.showSidebarGenres);
-  writer.writeBool(offsets[146], object.showSidebarLyrics);
-  writer.writeBool(offsets[147], object.showSidebarNowPlaying);
-  writer.writeBool(offsets[148], object.showSidebarPlaylists);
-  writer.writeBool(offsets[149], object.showSidebarQueue);
-  writer.writeBool(offsets[150], object.showSidebarRecentlyPlayed);
-  writer.writeBool(offsets[151], object.showSidebarSongs);
-  writer.writeBool(offsets[152], object.showSongDurationInLists);
-  writer.writeBool(offsets[153], object.showTrayOnlyWhenMinimized);
-  writer.writeBool(offsets[154], object.shuffle);
-  writer.writeString(offsets[155], object.skippedUpdateVersion);
-  writer.writeLong(offsets[156], object.songViewStyleIndex);
-  writer.writeDouble(offsets[157], object.songsDarkness);
-  writer.writeBool(offsets[158], object.sortAscending);
-  writer.writeLong(offsets[159], object.sortStrategyIndex);
-  writer.writeBool(offsets[160], object.stopOnTaskRemoved);
-  writer.writeLong(offsets[161], object.streamingQuality);
-  writer.writeBool(offsets[162], object.uniformLyricsFontSize);
-  writer.writeBool(offsets[163], object.useAlbumArtistForArtists);
-  writer.writeBool(offsets[164], object.useNewFont);
-  writer.writeBool(offsets[165], object.useNewFontLyrics);
-  writer.writeDouble(offsets[166], object.volume);
+  writer.writeBool(offsets[137], object.showHomeNewlyAdded);
+  writer.writeBool(offsets[138], object.showHomeQuickPicks);
+  writer.writeBool(offsets[139], object.showHomeRecentlyPlayed);
+  writer.writeBool(offsets[140], object.showHomeRediscover);
+  writer.writeBool(offsets[141], object.showHomeTopSongs);
+  writer.writeBool(offsets[142], object.showPerformanceOptimizer);
+  writer.writeBool(offsets[143], object.showPlayedSongsInQueue);
+  writer.writeBool(offsets[144], object.showQualityBadge);
+  writer.writeBool(offsets[145], object.showSidebarAlbums);
+  writer.writeBool(offsets[146], object.showSidebarAnalyze);
+  writer.writeBool(offsets[147], object.showSidebarArtists);
+  writer.writeBool(offsets[148], object.showSidebarFavorites);
+  writer.writeBool(offsets[149], object.showSidebarFolders);
+  writer.writeBool(offsets[150], object.showSidebarGenres);
+  writer.writeBool(offsets[151], object.showSidebarLyrics);
+  writer.writeBool(offsets[152], object.showSidebarNowPlaying);
+  writer.writeBool(offsets[153], object.showSidebarPlaylists);
+  writer.writeBool(offsets[154], object.showSidebarQueue);
+  writer.writeBool(offsets[155], object.showSidebarRecentlyPlayed);
+  writer.writeBool(offsets[156], object.showSidebarSongs);
+  writer.writeBool(offsets[157], object.showSongDurationInLists);
+  writer.writeBool(offsets[158], object.showTrayOnlyWhenMinimized);
+  writer.writeBool(offsets[159], object.shuffle);
+  writer.writeStringList(offsets[160], object.sidebarItemOrder);
+  writer.writeString(offsets[161], object.skippedUpdateVersion);
+  writer.writeLong(offsets[162], object.songViewStyleIndex);
+  writer.writeDouble(offsets[163], object.songsDarkness);
+  writer.writeBool(offsets[164], object.sortAscending);
+  writer.writeLong(offsets[165], object.sortStrategyIndex);
+  writer.writeBool(offsets[166], object.stopOnTaskRemoved);
+  writer.writeLong(offsets[167], object.streamingQuality);
+  writer.writeBool(offsets[168], object.uniformLyricsFontSize);
+  writer.writeBool(offsets[169], object.useAlbumArtistForArtists);
+  writer.writeBool(offsets[170], object.useNewFont);
+  writer.writeBool(offsets[171], object.useNewFontLyrics);
+  writer.writeDouble(offsets[172], object.volume);
 }
 
 AppSettings _appSettingsDeserialize(
@@ -10671,36 +10714,42 @@ AppSettings _appSettingsDeserialize(
   object.showHomeAlbums = reader.readBool(offsets[134]);
   object.showHomeArtists = reader.readBool(offsets[135]);
   object.showHomeGenres = reader.readBool(offsets[136]);
-  object.showPerformanceOptimizer = reader.readBool(offsets[137]);
-  object.showPlayedSongsInQueue = reader.readBool(offsets[138]);
-  object.showQualityBadge = reader.readBool(offsets[139]);
-  object.showSidebarAlbums = reader.readBool(offsets[140]);
-  object.showSidebarAnalyze = reader.readBool(offsets[141]);
-  object.showSidebarArtists = reader.readBool(offsets[142]);
-  object.showSidebarFavorites = reader.readBool(offsets[143]);
-  object.showSidebarFolders = reader.readBool(offsets[144]);
-  object.showSidebarGenres = reader.readBool(offsets[145]);
-  object.showSidebarLyrics = reader.readBool(offsets[146]);
-  object.showSidebarNowPlaying = reader.readBool(offsets[147]);
-  object.showSidebarPlaylists = reader.readBool(offsets[148]);
-  object.showSidebarQueue = reader.readBool(offsets[149]);
-  object.showSidebarRecentlyPlayed = reader.readBool(offsets[150]);
-  object.showSidebarSongs = reader.readBool(offsets[151]);
-  object.showSongDurationInLists = reader.readBool(offsets[152]);
-  object.showTrayOnlyWhenMinimized = reader.readBool(offsets[153]);
-  object.shuffle = reader.readBool(offsets[154]);
-  object.skippedUpdateVersion = reader.readString(offsets[155]);
-  object.songViewStyleIndex = reader.readLong(offsets[156]);
-  object.songsDarkness = reader.readDouble(offsets[157]);
-  object.sortAscending = reader.readBool(offsets[158]);
-  object.sortStrategyIndex = reader.readLong(offsets[159]);
-  object.stopOnTaskRemoved = reader.readBool(offsets[160]);
-  object.streamingQuality = reader.readLong(offsets[161]);
-  object.uniformLyricsFontSize = reader.readBool(offsets[162]);
-  object.useAlbumArtistForArtists = reader.readBool(offsets[163]);
-  object.useNewFont = reader.readBool(offsets[164]);
-  object.useNewFontLyrics = reader.readBool(offsets[165]);
-  object.volume = reader.readDouble(offsets[166]);
+  object.showHomeNewlyAdded = reader.readBool(offsets[137]);
+  object.showHomeQuickPicks = reader.readBool(offsets[138]);
+  object.showHomeRecentlyPlayed = reader.readBool(offsets[139]);
+  object.showHomeRediscover = reader.readBool(offsets[140]);
+  object.showHomeTopSongs = reader.readBool(offsets[141]);
+  object.showPerformanceOptimizer = reader.readBool(offsets[142]);
+  object.showPlayedSongsInQueue = reader.readBool(offsets[143]);
+  object.showQualityBadge = reader.readBool(offsets[144]);
+  object.showSidebarAlbums = reader.readBool(offsets[145]);
+  object.showSidebarAnalyze = reader.readBool(offsets[146]);
+  object.showSidebarArtists = reader.readBool(offsets[147]);
+  object.showSidebarFavorites = reader.readBool(offsets[148]);
+  object.showSidebarFolders = reader.readBool(offsets[149]);
+  object.showSidebarGenres = reader.readBool(offsets[150]);
+  object.showSidebarLyrics = reader.readBool(offsets[151]);
+  object.showSidebarNowPlaying = reader.readBool(offsets[152]);
+  object.showSidebarPlaylists = reader.readBool(offsets[153]);
+  object.showSidebarQueue = reader.readBool(offsets[154]);
+  object.showSidebarRecentlyPlayed = reader.readBool(offsets[155]);
+  object.showSidebarSongs = reader.readBool(offsets[156]);
+  object.showSongDurationInLists = reader.readBool(offsets[157]);
+  object.showTrayOnlyWhenMinimized = reader.readBool(offsets[158]);
+  object.shuffle = reader.readBool(offsets[159]);
+  object.sidebarItemOrder = reader.readStringList(offsets[160]) ?? [];
+  object.skippedUpdateVersion = reader.readString(offsets[161]);
+  object.songViewStyleIndex = reader.readLong(offsets[162]);
+  object.songsDarkness = reader.readDouble(offsets[163]);
+  object.sortAscending = reader.readBool(offsets[164]);
+  object.sortStrategyIndex = reader.readLong(offsets[165]);
+  object.stopOnTaskRemoved = reader.readBool(offsets[166]);
+  object.streamingQuality = reader.readLong(offsets[167]);
+  object.uniformLyricsFontSize = reader.readBool(offsets[168]);
+  object.useAlbumArtistForArtists = reader.readBool(offsets[169]);
+  object.useNewFont = reader.readBool(offsets[170]);
+  object.useNewFontLyrics = reader.readBool(offsets[171]);
+  object.volume = reader.readDouble(offsets[172]);
   return object;
 }
 
@@ -11022,28 +11071,40 @@ P _appSettingsDeserializeProp<P>(
     case 154:
       return (reader.readBool(offset)) as P;
     case 155:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 156:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 157:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 158:
       return (reader.readBool(offset)) as P;
     case 159:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 160:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     case 161:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 162:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 163:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 164:
       return (reader.readBool(offset)) as P;
     case 165:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 166:
+      return (reader.readBool(offset)) as P;
+    case 167:
+      return (reader.readLong(offset)) as P;
+    case 168:
+      return (reader.readBool(offset)) as P;
+    case 169:
+      return (reader.readBool(offset)) as P;
+    case 170:
+      return (reader.readBool(offset)) as P;
+    case 171:
+      return (reader.readBool(offset)) as P;
+    case 172:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -17474,6 +17535,56 @@ extension AppSettingsQueryFilter
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      showHomeNewlyAddedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'showHomeNewlyAdded',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      showHomeQuickPicksEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'showHomeQuickPicks',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      showHomeRecentlyPlayedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'showHomeRecentlyPlayed',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      showHomeRediscoverEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'showHomeRediscover',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      showHomeTopSongsEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'showHomeTopSongs',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
       showPerformanceOptimizerEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -17650,6 +17761,233 @@ extension AppSettingsQueryFilter
         property: r'shuffle',
         value: value,
       ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'sidebarItemOrder',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'sidebarItemOrder',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'sidebarItemOrder',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'sidebarItemOrder',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'sidebarItemOrder',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'sidebarItemOrder',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'sidebarItemOrder',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'sidebarItemOrder',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'sidebarItemOrder',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'sidebarItemOrder',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'sidebarItemOrder',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'sidebarItemOrder',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'sidebarItemOrder',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'sidebarItemOrder',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'sidebarItemOrder',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterFilterCondition>
+      sidebarItemOrderLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'sidebarItemOrder',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
     });
   }
 
@@ -19929,6 +20267,76 @@ extension AppSettingsQuerySortBy
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeNewlyAdded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeNewlyAdded', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeNewlyAddedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeNewlyAdded', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeQuickPicks() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeQuickPicks', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeQuickPicksDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeQuickPicks', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeRecentlyPlayed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRecentlyPlayed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeRecentlyPlayedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRecentlyPlayed', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeRediscover() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRediscover', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeRediscoverDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRediscover', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeTopSongs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeTopSongs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      sortByShowHomeTopSongsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeTopSongs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       sortByShowPerformanceOptimizer() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'showPerformanceOptimizer', Sort.asc);
@@ -22129,6 +22537,76 @@ extension AppSettingsQuerySortThenBy
   }
 
   QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeNewlyAdded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeNewlyAdded', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeNewlyAddedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeNewlyAdded', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeQuickPicks() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeQuickPicks', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeQuickPicksDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeQuickPicks', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeRecentlyPlayed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRecentlyPlayed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeRecentlyPlayedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRecentlyPlayed', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeRediscover() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRediscover', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeRediscoverDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeRediscover', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeTopSongs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeTopSongs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
+      thenByShowHomeTopSongsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'showHomeTopSongs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QAfterSortBy>
       thenByShowPerformanceOptimizer() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'showPerformanceOptimizer', Sort.asc);
@@ -23484,6 +23962,41 @@ extension AppSettingsQueryWhereDistinct
   }
 
   QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByShowHomeNewlyAdded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'showHomeNewlyAdded');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByShowHomeQuickPicks() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'showHomeQuickPicks');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByShowHomeRecentlyPlayed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'showHomeRecentlyPlayed');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByShowHomeRediscover() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'showHomeRediscover');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctByShowHomeTopSongs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'showHomeTopSongs');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
       distinctByShowPerformanceOptimizer() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'showPerformanceOptimizer');
@@ -23605,6 +24118,13 @@ extension AppSettingsQueryWhereDistinct
   QueryBuilder<AppSettings, AppSettings, QDistinct> distinctByShuffle() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'shuffle');
+    });
+  }
+
+  QueryBuilder<AppSettings, AppSettings, QDistinct>
+      distinctBySidebarItemOrder() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'sidebarItemOrder');
     });
   }
 
@@ -24606,6 +25126,40 @@ extension AppSettingsQueryProperty
   }
 
   QueryBuilder<AppSettings, bool, QQueryOperations>
+      showHomeNewlyAddedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'showHomeNewlyAdded');
+    });
+  }
+
+  QueryBuilder<AppSettings, bool, QQueryOperations>
+      showHomeQuickPicksProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'showHomeQuickPicks');
+    });
+  }
+
+  QueryBuilder<AppSettings, bool, QQueryOperations>
+      showHomeRecentlyPlayedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'showHomeRecentlyPlayed');
+    });
+  }
+
+  QueryBuilder<AppSettings, bool, QQueryOperations>
+      showHomeRediscoverProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'showHomeRediscover');
+    });
+  }
+
+  QueryBuilder<AppSettings, bool, QQueryOperations> showHomeTopSongsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'showHomeTopSongs');
+    });
+  }
+
+  QueryBuilder<AppSettings, bool, QQueryOperations>
       showPerformanceOptimizerProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'showPerformanceOptimizer');
@@ -24724,6 +25278,13 @@ extension AppSettingsQueryProperty
   QueryBuilder<AppSettings, bool, QQueryOperations> shuffleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'shuffle');
+    });
+  }
+
+  QueryBuilder<AppSettings, List<String>, QQueryOperations>
+      sidebarItemOrderProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'sidebarItemOrder');
     });
   }
 

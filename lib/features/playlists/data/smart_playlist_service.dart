@@ -18,11 +18,11 @@ class SmartPlaylistService {
     final List<SmartPlaylist> result = [];
 
     // 1. Top Most Played
-    final topPlayed = _computeTopPlayed(allSongs);
+    final topPlayed = computeTopPlayed(allSongs);
     if (topPlayed != null) result.add(topPlayed);
 
-    // 2. Added in the Last 30 Days
-    final recentlyAdded = _computeRecentlyAdded(allSongs, now);
+    // 2. Added in the Last 30 Days (or Recently Added)
+    final recentlyAdded = computeRecentlyAdded(allSongs, now);
     if (recentlyAdded != null) result.add(recentlyAdded);
 
     // 3. Forgotten Favorites
@@ -44,15 +44,23 @@ class SmartPlaylistService {
     return result;
   }
 
-  static SmartPlaylist? _computeTopPlayed(List<Song> allSongs) {
+  static SmartPlaylist? computeTopPlayed(List<Song> allSongs) {
     final playedSongs = allSongs
         .where((s) => s.playCount > 0)
-        .toList()
-      ..sort((a, b) => b.playCount.compareTo(a.playCount));
+        .toList();
+    if (playedSongs.isEmpty) return null;
+
+    playedSongs.sort((a, b) {
+      final cmp = b.playCount.compareTo(a.playCount);
+      if (cmp != 0) return cmp;
+      final aDate = a.lastPlayed ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.lastPlayed ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final dateCmp = bDate.compareTo(aDate);
+      if (dateCmp != 0) return dateCmp;
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    });
 
     final count = playedSongs.length;
-    if (count < 3) return null;
-
     int targetCount;
     String title;
 
@@ -73,7 +81,7 @@ class SmartPlaylistService {
       title = 'Top 10 Most Played';
     } else {
       targetCount = count;
-      title = 'Most Played';
+      title = 'Top Songs';
     }
 
     final songs = playedSongs.take(targetCount).toList();
@@ -91,17 +99,17 @@ class SmartPlaylistService {
     );
   }
 
-  static SmartPlaylist? _computeRecentlyAdded(List<Song> allSongs, DateTime now) {
-    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+  static SmartPlaylist? computeRecentlyAdded(List<Song> allSongs, [DateTime? now]) {
+    if (allSongs.isEmpty) return null;
 
-    final recentSongs = allSongs
-        .where((s) => s.dateAdded.isAfter(thirtyDaysAgo))
-        .toList()
-      ..sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+    final sorted = List<Song>.from(allSongs)
+      ..sort((a, b) {
+        final cmp = b.dateAdded.compareTo(a.dateAdded);
+        if (cmp != 0) return cmp;
+        return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      });
 
-    if (recentSongs.isEmpty) return null;
-
-    final songs = recentSongs.take(maxSongsPerPlaylist).toList();
+    final songs = sorted.take(maxSongsPerPlaylist).toList();
 
     return SmartPlaylist(
       id: 'recently_added',

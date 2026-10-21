@@ -21,6 +21,7 @@ import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/playlists/domain/smart_playlist.dart';
+import 'package:looper_player/features/playlists/presentation/smart_playlists_provider.dart';
 
 // Persistent collection sorting is stored in settings.collectionSortOptionIndex
 
@@ -32,6 +33,7 @@ enum CollectionSortOption {
   playCount,
   duration,
   year,
+  dateAdded,
 }
 
 class CollectionDetailView extends ConsumerWidget {
@@ -71,10 +73,10 @@ class CollectionDetailView extends ConsumerWidget {
             subtitle?.toLowerCase() == 'artist' ||
             subtitle == l10n.artists);
 
-    final bool isPlaylistCollection = playlist != null ||
-        nav.highlightItem == NavItem.playlists ||
-        subtitle == 'Playlist' ||
-        isSmartPlaylist;
+    final bool isPlaylistCollection = !isSmartPlaylist &&
+        (playlist != null ||
+            nav.highlightItem == NavItem.playlists ||
+            subtitle == 'Playlist');
 
     final bool isAlbumCollection = playlist == null &&
         !isArtistCollection &&
@@ -118,6 +120,15 @@ class CollectionDetailView extends ConsumerWidget {
             ? nav.collectionSongs
             : songs);
 
+    final bool isTopPlayedSmart = isSmartPlaylist &&
+        (titleToRender.contains('Most Played') ||
+            titleToRender.contains('Top') ||
+            titleToRender == 'Top Songs');
+
+    final bool isRecentlyAddedSmart = isSmartPlaylist &&
+        (titleToRender.contains('Recently Added') ||
+            titleToRender.contains('Newly Added'));
+
     final int sortOptionIndex;
     final bool isAscending;
 
@@ -130,50 +141,81 @@ class CollectionDetailView extends ConsumerWidget {
     } else if (isPlaylistCollection) {
       sortOptionIndex = ref.watch(settingsProvider.select((s) => s.playlistDetailSortOptionIndex));
       isAscending = ref.watch(settingsProvider.select((s) => s.playlistDetailSortAscending));
+    } else if (isSmartPlaylist) {
+      final customSort = ref.watch(settingsProvider.select((s) => s.collectionSortOptionIndex));
+      final customAsc = ref.watch(settingsProvider.select((s) => s.collectionSortAscending));
+      if (customSort != 0) {
+        sortOptionIndex = customSort;
+        isAscending = customAsc;
+      } else if (isTopPlayedSmart) {
+        sortOptionIndex = CollectionSortOption.playCount.index;
+        isAscending = false;
+      } else if (isRecentlyAddedSmart) {
+        sortOptionIndex = CollectionSortOption.dateAdded.index;
+        isAscending = false;
+      } else {
+        sortOptionIndex = -1;
+        isAscending = false;
+      }
     } else {
       sortOptionIndex = ref.watch(settingsProvider.select((s) => s.collectionSortOptionIndex));
       isAscending = ref.watch(settingsProvider.select((s) => s.collectionSortAscending));
     }
-    final sortOption = CollectionSortOption.values[sortOptionIndex.clamp(0, CollectionSortOption.values.length - 1)];
 
     // Always sort a copy of the list so we don't mutate input state.
     final sortedSongs = List<Song>.from(songsToRender);
-    switch (sortOption) {
-      case CollectionSortOption.trackNumber:
-        sortedSongs.sort((a, b) => isAscending
-            ? (a.trackNumber ?? 0).compareTo(b.trackNumber ?? 0)
-            : (b.trackNumber ?? 0).compareTo(a.trackNumber ?? 0));
-        break;
-      case CollectionSortOption.title:
-        sortedSongs.sort((a, b) => isAscending
-            ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
-            : b.title.toLowerCase().compareTo(a.title.toLowerCase()));
-        break;
-      case CollectionSortOption.artist:
-        sortedSongs.sort((a, b) => isAscending
-            ? (a.artist ?? '').toLowerCase().compareTo((b.artist ?? '').toLowerCase())
-            : (b.artist ?? '').toLowerCase().compareTo((a.artist ?? '').toLowerCase()));
-        break;
-      case CollectionSortOption.album:
-        sortedSongs.sort((a, b) => isAscending
-            ? (a.album ?? '').toLowerCase().compareTo((b.album ?? '').toLowerCase())
-            : (b.album ?? '').toLowerCase().compareTo((a.album ?? '').toLowerCase()));
-        break;
-      case CollectionSortOption.playCount:
-        sortedSongs.sort((a, b) => isAscending
-            ? (a.playCount).compareTo(b.playCount)
-            : (b.playCount).compareTo(a.playCount));
-        break;
-      case CollectionSortOption.duration:
-        sortedSongs.sort((a, b) => isAscending
-            ? (a.duration ?? 0).compareTo(b.duration ?? 0)
-            : (b.duration ?? 0).compareTo(a.duration ?? 0));
-        break;
-      case CollectionSortOption.year:
-        sortedSongs.sort((a, b) => isAscending
-            ? (a.year ?? 0).compareTo(b.year ?? 0)
-            : (b.year ?? 0).compareTo(a.year ?? 0));
-        break;
+    if (sortOptionIndex >= 0 && sortOptionIndex < CollectionSortOption.values.length) {
+      final sortOption = CollectionSortOption.values[sortOptionIndex];
+      switch (sortOption) {
+        case CollectionSortOption.trackNumber:
+          sortedSongs.sort((a, b) => isAscending
+              ? (a.trackNumber ?? 0).compareTo(b.trackNumber ?? 0)
+              : (b.trackNumber ?? 0).compareTo(a.trackNumber ?? 0));
+          break;
+        case CollectionSortOption.title:
+          sortedSongs.sort((a, b) => isAscending
+              ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
+              : b.title.toLowerCase().compareTo(a.title.toLowerCase()));
+          break;
+        case CollectionSortOption.artist:
+          sortedSongs.sort((a, b) => isAscending
+              ? (a.artist ?? '').toLowerCase().compareTo((b.artist ?? '').toLowerCase())
+              : (b.artist ?? '').toLowerCase().compareTo((a.artist ?? '').toLowerCase()));
+          break;
+        case CollectionSortOption.album:
+          sortedSongs.sort((a, b) => isAscending
+              ? (a.album ?? '').toLowerCase().compareTo((b.album ?? '').toLowerCase())
+              : (b.album ?? '').toLowerCase().compareTo((a.album ?? '').toLowerCase()));
+          break;
+        case CollectionSortOption.playCount:
+          sortedSongs.sort((a, b) {
+            final cmp = isAscending
+                ? (a.playCount).compareTo(b.playCount)
+                : (b.playCount).compareTo(a.playCount);
+            if (cmp != 0) return cmp;
+            final aDate = a.lastPlayed ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bDate = b.lastPlayed ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final dateCmp = isAscending ? aDate.compareTo(bDate) : bDate.compareTo(aDate);
+            if (dateCmp != 0) return dateCmp;
+            return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+          });
+          break;
+        case CollectionSortOption.duration:
+          sortedSongs.sort((a, b) => isAscending
+              ? (a.duration ?? 0).compareTo(b.duration ?? 0)
+              : (b.duration ?? 0).compareTo(a.duration ?? 0));
+          break;
+        case CollectionSortOption.year:
+          sortedSongs.sort((a, b) => isAscending
+              ? (a.year ?? 0).compareTo(b.year ?? 0)
+              : (b.year ?? 0).compareTo(a.year ?? 0));
+          break;
+        case CollectionSortOption.dateAdded:
+          sortedSongs.sort((a, b) => isAscending
+              ? a.dateAdded.compareTo(b.dateAdded)
+              : b.dateAdded.compareTo(a.dateAdded));
+          break;
+      }
     }
 
     return Scaffold(
@@ -200,8 +242,11 @@ class CollectionDetailView extends ConsumerWidget {
                                   Center(
                                     child: _buildArt(
                                       context,
-                                      (playlist != null || isPlaylistCollection) ? songsToRender : null,
+                                      ref,
+                                      (playlist != null || isPlaylistCollection || isSmartPlaylist) ? songsToRender : null,
                                       customArtPath: effectiveArtPath,
+                                      isSmartPlaylist: isSmartPlaylist,
+                                      titleToRender: titleToRender,
                                     ),
                                   ),
                                   const SizedBox(height: 20),
@@ -223,8 +268,11 @@ class CollectionDetailView extends ConsumerWidget {
                                 children: [
                                   _buildArt(
                                     context,
-                                    (playlist != null || isPlaylistCollection) ? songsToRender : null,
+                                    ref,
+                                    (playlist != null || isPlaylistCollection || isSmartPlaylist) ? songsToRender : null,
                                     customArtPath: effectiveArtPath,
+                                    isSmartPlaylist: isSmartPlaylist,
+                                    titleToRender: titleToRender,
                                   ),
                                   const SizedBox(width: 20),
                                   Expanded(
@@ -308,10 +356,86 @@ class CollectionDetailView extends ConsumerWidget {
     return '$effectiveSubtitle · ${collectionSongs.length} ${l10n.songs}';
   }
 
-  Widget _buildArt(BuildContext context, List<Song>? playlistSongs, {String? customArtPath}) {
+  Widget _buildArt(
+    BuildContext context,
+    WidgetRef ref,
+    List<Song>? playlistSongs, {
+    String? customArtPath,
+    bool isSmartPlaylist = false,
+    String? titleToRender,
+  }) {
     final double size = 140; // Unified size for a cleaner Row look
 
     if (playlistSongs != null) {
+      if (isSmartPlaylist) {
+        final smart = ref.watch(smartPlaylistsProvider).value?.where((p) =>
+            p.title == titleToRender ||
+            (titleToRender != null && (
+              (titleToRender.contains('Most Played') || titleToRender.contains('Top')) && p.id == 'top_played' ||
+              (titleToRender.contains('Recently Added') || titleToRender.contains('Newly Added')) && p.id == 'recently_added'
+            ))
+        ).firstOrNull;
+
+        if (smart != null) {
+          return SizedBox(
+            width: size,
+            height: size,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: smart.gradientColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          if (playlistSongs.isNotEmpty)
+                            Opacity(
+                              opacity: 0.35,
+                              child: PlaylistArtwork(
+                                songs: playlistSongs,
+                                fallbackBackground: Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          Center(
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  smart.icon,
+                                  size: 24,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      }
+
       return SizedBox(
         width: size,
         height: size,
@@ -512,6 +636,11 @@ class CollectionDetailView extends ConsumerWidget {
 
         final nav = ref.read(appNavigationProvider);
 
+        final titleToRender = playlist?.name ??
+            (nav.activeItem == NavItem.collectionDetail && nav.collectionTitle != null
+                ? nav.collectionTitle!
+                : title);
+
         final bool isSmartPlaylist = subtitle == 'Smart Playlist' ||
             (nav.activeItem == NavItem.collectionDetail && nav.collectionSubtitle == 'Smart Playlist');
 
@@ -522,10 +651,10 @@ class CollectionDetailView extends ConsumerWidget {
                 subtitle?.toLowerCase() == 'artist' ||
                 subtitle == l10n.artists);
 
-        final bool isPlaylistCollection = playlist != null ||
-            nav.highlightItem == NavItem.playlists ||
-            subtitle == 'Playlist' ||
-            isSmartPlaylist;
+        final bool isPlaylistCollection = !isSmartPlaylist &&
+            (playlist != null ||
+                nav.highlightItem == NavItem.playlists ||
+                subtitle == 'Playlist');
 
         final bool isAlbumCollection = playlist == null &&
             !isArtistCollection &&
@@ -536,6 +665,15 @@ class CollectionDetailView extends ConsumerWidget {
         final int sortIdx;
         final bool isAscending;
 
+        final bool isTopPlayedSmart = isSmartPlaylist &&
+            (titleToRender.contains('Most Played') ||
+                titleToRender.contains('Top') ||
+                titleToRender == 'Top Songs');
+
+        final bool isRecentlyAddedSmart = isSmartPlaylist &&
+            (titleToRender.contains('Recently Added') ||
+                titleToRender.contains('Newly Added'));
+
         if (isAlbumCollection) {
           sortIdx = settings.albumDetailSortOptionIndex;
           isAscending = settings.albumDetailSortAscending;
@@ -545,22 +683,25 @@ class CollectionDetailView extends ConsumerWidget {
         } else if (isPlaylistCollection) {
           sortIdx = settings.playlistDetailSortOptionIndex;
           isAscending = settings.playlistDetailSortAscending;
+        } else if (isSmartPlaylist) {
+          final customSort = settings.collectionSortOptionIndex;
+          final customAsc = settings.collectionSortAscending;
+          if (customSort != 0) {
+            sortIdx = customSort;
+            isAscending = customAsc;
+          } else if (isTopPlayedSmart) {
+            sortIdx = CollectionSortOption.playCount.index;
+            isAscending = false;
+          } else if (isRecentlyAddedSmart) {
+            sortIdx = CollectionSortOption.dateAdded.index;
+            isAscending = false;
+          } else {
+            sortIdx = -1;
+            isAscending = false;
+          }
         } else {
           sortIdx = settings.collectionSortOptionIndex;
           isAscending = settings.collectionSortAscending;
-        }
-
-        void updateSortIndex(int index) {
-          final notifier = ref.read(settingsProvider.notifier);
-          if (isAlbumCollection) {
-            notifier.updateAlbumDetailSortOptionIndex(index);
-          } else if (isArtistCollection) {
-            notifier.updateArtistDetailSortOptionIndex(index);
-          } else if (isPlaylistCollection) {
-            notifier.updatePlaylistDetailSortOptionIndex(index);
-          } else {
-            notifier.updateCollectionSortOptionIndex(index);
-          }
         }
 
         void updateSortAsc(bool asc) {
@@ -573,6 +714,24 @@ class CollectionDetailView extends ConsumerWidget {
             notifier.updatePlaylistDetailSortAscending(asc);
           } else {
             notifier.updateCollectionSortAscending(asc);
+          }
+        }
+
+        void updateSortIndex(int index) {
+          final notifier = ref.read(settingsProvider.notifier);
+          final defaultAsc = (index == CollectionSortOption.playCount.index ||
+                              index == CollectionSortOption.dateAdded.index)
+              ? false
+              : true;
+          updateSortAsc(defaultAsc);
+          if (isAlbumCollection) {
+            notifier.updateAlbumDetailSortOptionIndex(index);
+          } else if (isArtistCollection) {
+            notifier.updateArtistDetailSortOptionIndex(index);
+          } else if (isPlaylistCollection) {
+            notifier.updatePlaylistDetailSortOptionIndex(index);
+          } else {
+            notifier.updateCollectionSortOptionIndex(index);
           }
         }
 
@@ -717,10 +876,23 @@ class CollectionDetailView extends ConsumerWidget {
                             icon: LucideIcons.calendarDays,
                             isSelected: sortIdx == CollectionSortOption.year.index,
                             accentColor: accentColor,
-                            isLast: true,
+                            isLast: false,
                             onTap: () {
                               HapticFeedback.lightImpact();
                               updateSortIndex(CollectionSortOption.year.index);
+                              Navigator.pop(context);
+                            },
+                          ),
+                          const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+                          _SortOption(
+                            label: l10n.dateAdded,
+                            icon: LucideIcons.calendar,
+                            isSelected: sortIdx == CollectionSortOption.dateAdded.index,
+                            accentColor: accentColor,
+                            isLast: true,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              updateSortIndex(CollectionSortOption.dateAdded.index);
                               Navigator.pop(context);
                             },
                           ),

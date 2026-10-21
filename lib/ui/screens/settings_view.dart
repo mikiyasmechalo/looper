@@ -39,6 +39,7 @@ final appVersionProvider = FutureProvider<String>((ref) async {
 
 enum SettingsCategory {
   appearance,
+  homepageAndSidebar,
   audio,
   library,
   desktop,
@@ -68,6 +69,11 @@ class SettingsView extends ConsumerWidget {
         category: SettingsCategory.appearance,
         label: l10n.appearance,
         icon: LucideIcons.palette,
+      ),
+      _CategoryItemData(
+        category: SettingsCategory.homepageAndSidebar,
+        label: 'Home & Sidebar',
+        icon: LucideIcons.layoutGrid,
       ),
       _CategoryItemData(
         category: SettingsCategory.audio,
@@ -370,9 +376,10 @@ class SettingsView extends ConsumerWidget {
             if (isDesktop)
               _buildFullscreenPlayerSection(context, ref, settings, l10n),
             _buildBatterySaverSection(context, ref, settings, l10n),
-            _buildSidebarSection(context, ref, settings, l10n),
             _buildLanguageSection(context, ref, settings, l10n),
             _buildTypographySection(context, ref, settings, l10n),
+          ] else if (category == SettingsCategory.homepageAndSidebar) ...[
+            _buildHomepageAndSidebarSection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.audio) ...[
             _buildAudioSection(context, ref, settings, l10n),
           ] else if (category == SettingsCategory.library) ...[
@@ -513,6 +520,31 @@ class SettingsView extends ConsumerWidget {
     bool isDesktop,
   ) {
     return [
+      _SearchItem(
+        category: 'Home & Sidebar',
+        title: 'Move Back & Search Buttons to Sidebar',
+        subtitle: 'Frees up top space by moving navigation and search buttons into the sidebar',
+        widget: _PremiumSwitchRow(
+          icon: LucideIcons.panelLeft,
+          title: 'Move Back & Search Buttons to Sidebar',
+          subtitle: 'Frees up top space by moving navigation and search buttons into the sidebar',
+          value: settings.moveNavButtonsToSidebar,
+          onChanged: (v) => ref
+              .read(settingsProvider.notifier)
+              .updateMoveNavButtonsToSidebar(v),
+        ),
+      ),
+      _SearchItem(
+        category: 'Home & Sidebar',
+        title: 'Sidebar Setup Wizard',
+        subtitle: 'Quick modal to select your preferred sidebar items',
+        widget: _PremiumActionRow(
+          icon: LucideIcons.layoutGrid,
+          title: 'Sidebar Setup Wizard',
+          subtitle: 'Quick modal to select your preferred sidebar items',
+          onTap: () => SidebarSetupDialog.show(context),
+        ),
+      ),
       _SearchItem(
         category: 'Appearance',
         title: l10n.autoBatterySaver,
@@ -1228,123 +1260,445 @@ class SettingsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildSidebarSection(
+  Widget _buildHomepageAndSidebarSection(
     BuildContext context,
     WidgetRef ref,
     AppSettings settings,
     AppLocalizations l10n,
   ) {
-    return _Section(
-      title: 'Sidebar Navigation Items',
+    final notifier = ref.read(settingsProvider.notifier);
+
+    // Map of homepage section definitions
+    final homeMetaMap = <String, _HomeSectionItem>{
+      'recently_played': _HomeSectionItem(
+        id: 'recently_played',
+        title: 'Recently Played',
+        subtitle: 'Show your recently played songs horizontally',
+        icon: LucideIcons.clock,
+        enabled: settings.showHomeRecentlyPlayed,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeRecentlyPlayed(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+      'quick_picks': _HomeSectionItem(
+        id: 'quick_picks',
+        title: 'Quick Picks',
+        subtitle: 'Dynamic mixed recommendations based on your listening habits',
+        icon: LucideIcons.sparkles,
+        enabled: settings.showHomeQuickPicks,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeQuickPicks(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+      'top_songs': _HomeSectionItem(
+        id: 'top_songs',
+        title: 'Top Songs',
+        subtitle: 'Leaderboard of your most played tracks with rank badges',
+        icon: LucideIcons.trophy,
+        enabled: settings.showHomeTopSongs,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeTopSongs(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+      'artists': _HomeSectionItem(
+        id: 'artists',
+        title: 'Top Artists',
+        subtitle: 'Your most listened to artists with circular image cards',
+        icon: LucideIcons.mic2,
+        enabled: settings.showHomeArtists,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeArtists(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+      'albums': _HomeSectionItem(
+        id: 'albums',
+        title: 'Top Albums',
+        subtitle: 'Top albums cards from your library',
+        icon: LucideIcons.disc,
+        enabled: settings.showHomeAlbums,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeAlbums(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+      'genres': _HomeSectionItem(
+        id: 'genres',
+        title: 'Top Genres',
+        subtitle: 'Music library genres collection cards',
+        icon: LucideIcons.radio,
+        enabled: settings.showHomeGenres,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeGenres(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+      'newly_added': _HomeSectionItem(
+        id: 'newly_added',
+        title: 'Newly Added',
+        subtitle: 'Most recently added songs in your library',
+        icon: LucideIcons.history,
+        enabled: settings.showHomeNewlyAdded,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeNewlyAdded(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+      'rediscover': _HomeSectionItem(
+        id: 'rediscover',
+        title: 'Rediscover',
+        subtitle: 'Past favorites and songs you haven\'t heard in a while',
+        icon: LucideIcons.compass,
+        enabled: settings.showHomeRediscover,
+        onToggle: (v) async {
+          final ok = await notifier.updateShowHomeRediscover(v);
+          if (!ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('At least 2 homepage sections must remain enabled.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      ),
+    };
+
+    // Ensure all defined home sections are in the order list
+    final homeOrder = List<String>.from(settings.homeSectionOrder);
+    for (final key in homeMetaMap.keys) {
+      if (!homeOrder.contains(key)) {
+        homeOrder.add(key);
+      }
+    }
+
+    // Map of sidebar items
+    final sidebarMetaMap = <String, _SidebarItemMeta>{
+      'now_playing': _SidebarItemMeta(
+        id: 'now_playing',
+        title: l10n.nowPlaying,
+        subtitle: 'Quick access to currently playing song',
+        icon: LucideIcons.headphones,
+        enabled: settings.showSidebarNowPlaying,
+        onToggle: (v) => notifier.updateShowSidebarNowPlaying(v),
+      ),
+      'songs': _SidebarItemMeta(
+        id: 'songs',
+        title: l10n.songs,
+        subtitle: 'Complete list of library songs',
+        icon: LucideIcons.music,
+        enabled: settings.showSidebarSongs,
+        onToggle: (v) => notifier.updateShowSidebarSongs(v),
+      ),
+      'albums': _SidebarItemMeta(
+        id: 'albums',
+        title: l10n.albums,
+        subtitle: 'Albums collection grid',
+        icon: LucideIcons.disc,
+        enabled: settings.showSidebarAlbums,
+        onToggle: (v) => notifier.updateShowSidebarAlbums(v),
+      ),
+      'artists': _SidebarItemMeta(
+        id: 'artists',
+        title: l10n.artists,
+        subtitle: 'Artists collection grid',
+        icon: LucideIcons.mic2,
+        enabled: settings.showSidebarArtists,
+        onToggle: (v) => notifier.updateShowSidebarArtists(v),
+      ),
+      'playlists': _SidebarItemMeta(
+        id: 'playlists',
+        title: l10n.playlists,
+        subtitle: 'Custom and smart playlists',
+        icon: LucideIcons.library,
+        enabled: settings.showSidebarPlaylists,
+        onToggle: (v) => notifier.updateShowSidebarPlaylists(v),
+      ),
+      'folders': _SidebarItemMeta(
+        id: 'folders',
+        title: 'Folders',
+        subtitle: 'File system folder browser',
+        icon: LucideIcons.folder,
+        enabled: settings.showSidebarFolders,
+        onToggle: (v) => notifier.updateShowSidebarFolders(v),
+      ),
+      'recently_played': _SidebarItemMeta(
+        id: 'recently_played',
+        title: 'Recently Played',
+        subtitle: 'Playback history view',
+        icon: LucideIcons.clock,
+        enabled: settings.showSidebarRecentlyPlayed,
+        onToggle: (v) => notifier.updateShowSidebarRecentlyPlayed(v),
+      ),
+      'favorites': _SidebarItemMeta(
+        id: 'favorites',
+        title: 'Favorites',
+        subtitle: 'Starred favorite songs',
+        icon: LucideIcons.star,
+        enabled: settings.showSidebarFavorites,
+        onToggle: (v) => notifier.updateShowSidebarFavorites(v),
+      ),
+      'queue': _SidebarItemMeta(
+        id: 'queue',
+        title: l10n.playQueue,
+        subtitle: 'Current playback queue list',
+        icon: LucideIcons.listOrdered,
+        enabled: settings.showSidebarQueue,
+        onToggle: (v) => notifier.updateShowSidebarQueue(v),
+      ),
+      'genres': _SidebarItemMeta(
+        id: 'genres',
+        title: l10n.genres,
+        subtitle: 'Genres collection grid',
+        icon: LucideIcons.radio,
+        enabled: settings.showSidebarGenres,
+        onToggle: (v) => notifier.updateShowSidebarGenres(v),
+      ),
+      'lyrics': _SidebarItemMeta(
+        id: 'lyrics',
+        title: 'Lyrics',
+        subtitle: 'Dedicated lyrics view',
+        icon: LucideIcons.fileText,
+        enabled: settings.showSidebarLyrics,
+        onToggle: (v) => notifier.updateShowSidebarLyrics(v),
+      ),
+      'analyze': _SidebarItemMeta(
+        id: 'analyze',
+        title: 'Stats & Analyze',
+        subtitle: 'Library insights and audio stats',
+        icon: LucideIcons.barChart2,
+        enabled: settings.showSidebarAnalyze,
+        onToggle: (v) => notifier.updateShowSidebarAnalyze(v),
+      ),
+    };
+
+    // Ensure all defined sidebar items are in the order list
+    final sidebarOrder = List<String>.from(settings.sidebarItemOrder);
+    for (final key in sidebarMetaMap.keys) {
+      if (!sidebarOrder.contains(key)) {
+        sidebarOrder.add(key);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _PremiumSwitchRow(
-          icon: LucideIcons.headphones,
-          title: l10n.nowPlaying,
-          subtitle: 'Show Now Playing in the sidebar',
-          value: settings.showSidebarNowPlaying,
-          onChanged: (v) => ref
-              .read(settingsProvider.notifier)
-              .updateShowSidebarNowPlaying(v),
-          isLast: false,
+        // 1. Home Dashboard Sections
+        _Section(
+          title: 'Homepage Sections',
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Drag the handle to reorder homepage sections. At least 2 sections must remain enabled.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: () {
+                      notifier.resetHomeSectionOrder();
+                    },
+                    icon: const Icon(LucideIcons.rotateCcw, size: 14),
+                    label: const Text('Reset', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: homeOrder.length,
+              onReorder: (oldIndex, newIndex) {
+                if (oldIndex < newIndex) newIndex -= 1;
+                final updated = List<String>.from(homeOrder);
+                final item = updated.removeAt(oldIndex);
+                updated.insert(newIndex, item);
+                notifier.updateHomeSectionOrder(updated);
+              },
+              itemBuilder: (context, index) {
+                final id = homeOrder[index];
+                final meta = homeMetaMap[id];
+                if (meta == null) return SizedBox.shrink(key: ValueKey(id));
+                return _ReorderableItemTile(
+                  key: ValueKey('home_$id'),
+                  index: index,
+                  icon: meta.icon,
+                  title: meta.title,
+                  subtitle: meta.subtitle,
+                  value: meta.enabled,
+                  onChanged: meta.onToggle,
+                  isLast: index == homeOrder.length - 1,
+                );
+              },
+            ),
+          ],
         ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.disc,
-          title: l10n.albums,
-          subtitle: 'Show Albums library item in the sidebar',
-          value: settings.showSidebarAlbums,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarAlbums(v),
-          isLast: false,
+
+        const SizedBox(height: 24),
+
+        // 2. Sidebar Navigation Items
+        _Section(
+          title: 'Sidebar Navigation Items',
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Drag the handle to reorder sidebar items. "Home" is always pinned first, and "Settings" is always last.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: () {
+                      notifier.resetSidebarItemOrder();
+                    },
+                    icon: const Icon(LucideIcons.rotateCcw, size: 14),
+                    label: const Text('Reset', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: sidebarOrder.length,
+              onReorder: (oldIndex, newIndex) {
+                if (oldIndex < newIndex) newIndex -= 1;
+                final updated = List<String>.from(sidebarOrder);
+                final item = updated.removeAt(oldIndex);
+                updated.insert(newIndex, item);
+                notifier.updateSidebarItemOrder(updated);
+              },
+              itemBuilder: (context, index) {
+                final id = sidebarOrder[index];
+                final meta = sidebarMetaMap[id];
+                if (meta == null) return SizedBox.shrink(key: ValueKey(id));
+                return _ReorderableItemTile(
+                  key: ValueKey('sidebar_$id'),
+                  index: index,
+                  icon: meta.icon,
+                  title: meta.title,
+                  subtitle: meta.subtitle,
+                  value: meta.enabled,
+                  onChanged: meta.onToggle,
+                  isLast: index == sidebarOrder.length - 1,
+                );
+              },
+            ),
+          ],
         ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.mic2,
-          title: l10n.artists,
-          subtitle: 'Show Artists library item in the sidebar',
-          value: settings.showSidebarArtists,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarArtists(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.library,
-          title: l10n.playlists,
-          subtitle: 'Show Playlists in the sidebar',
-          value: settings.showSidebarPlaylists,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarPlaylists(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.folder,
-          title: 'Folders',
-          subtitle: 'Show Directory Tree & Folders in the sidebar',
-          value: settings.showSidebarFolders,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarFolders(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.clock,
-          title: 'Recently Played',
-          subtitle: 'Show Recently Played in the sidebar',
-          value: settings.showSidebarRecentlyPlayed,
-          onChanged: (v) => ref
-              .read(settingsProvider.notifier)
-              .updateShowSidebarRecentlyPlayed(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.star,
-          title: 'Favorites',
-          subtitle: 'Show Favorites in the sidebar',
-          value: settings.showSidebarFavorites,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarFavorites(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.radio,
-          title: l10n.genres,
-          subtitle: 'Show Genres in the sidebar',
-          value: settings.showSidebarGenres,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarGenres(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.panelLeft,
-          title: 'Move Back & Search Buttons to Sidebar',
-          subtitle: 'Frees up top space by moving navigation and search buttons into the sidebar',
-          value: settings.moveNavButtonsToSidebar,
-          onChanged: (v) => ref
-              .read(settingsProvider.notifier)
-              .updateMoveNavButtonsToSidebar(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.fileText,
-          title: 'Lyrics',
-          subtitle: 'Show dedicated Lyrics view in the sidebar',
-          value: settings.showSidebarLyrics,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarLyrics(v),
-          isLast: false,
-        ),
-        _PremiumSwitchRow(
-          icon: LucideIcons.barChart2,
-          title: 'Stats & Analyze',
-          subtitle: 'Show Looper Analyze in the sidebar',
-          value: settings.showSidebarAnalyze,
-          onChanged: (v) =>
-              ref.read(settingsProvider.notifier).updateShowSidebarAnalyze(v),
-          isLast: false,
-        ),
-        _PremiumActionRow(
-          icon: LucideIcons.layoutGrid,
-          title: 'Sidebar Setup Wizard',
-          subtitle: 'Choose which sidebar items to show or hide in a quick modal',
-          onTap: () => SidebarSetupDialog.show(context),
-          isLast: true,
+
+        const SizedBox(height: 24),
+
+        // 3. Sidebar Layout & Preferences
+        _Section(
+          title: 'Sidebar Preferences',
+          children: [
+            _PremiumSwitchRow(
+              icon: LucideIcons.panelLeft,
+              title: 'Move Back & Search Buttons to Sidebar',
+              subtitle: 'Frees up top space by moving navigation and search buttons into the sidebar',
+              value: settings.moveNavButtonsToSidebar,
+              onChanged: (v) => ref
+                  .read(settingsProvider.notifier)
+                  .updateMoveNavButtonsToSidebar(v),
+              isLast: false,
+            ),
+            _PremiumActionRow(
+              icon: LucideIcons.layoutGrid,
+              title: 'Sidebar Setup Wizard',
+              subtitle: 'Choose which sidebar items to show or hide in a quick modal',
+              onTap: () => SidebarSetupDialog.show(context),
+              isLast: true,
+            ),
+          ],
         ),
       ],
     );
@@ -2812,6 +3166,136 @@ class _Section extends ConsumerWidget {
           child: Column(children: children),
         ),
         const SizedBox(height: 28),
+      ],
+    );
+  }
+}
+
+class _HomeSectionItem {
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool enabled;
+  final ValueChanged<bool> onToggle;
+
+  const _HomeSectionItem({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.enabled,
+    required this.onToggle,
+  });
+}
+
+class _SidebarItemMeta {
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool enabled;
+  final ValueChanged<bool> onToggle;
+
+  const _SidebarItemMeta({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.enabled,
+    required this.onToggle,
+  });
+}
+
+class _ReorderableItemTile extends StatelessWidget {
+  final int index;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool isLast;
+
+  const _ReorderableItemTile({
+    super.key,
+    required this.index,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              ReorderableDragStartListener(
+                index: index,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.grab,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Icon(
+                      LucideIcons.gripVertical,
+                      size: 20,
+                      color: Colors.white.withValues(alpha: 0.35),
+                    ),
+                  ),
+                ),
+              ),
+              Icon(
+                icon,
+                color: value
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : Colors.white.withValues(alpha: 0.3),
+                size: 20,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: value ? Colors.white : Colors.white54,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+        ),
+        if (!isLast)
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.white.withValues(alpha: 0.05),
+            indent: 52,
+          ),
       ],
     );
   }
