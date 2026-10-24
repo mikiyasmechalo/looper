@@ -18,6 +18,9 @@ import 'package:looper_player/features/library/presentation/songs_list.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playlists/presentation/playlist_view.dart';
 import 'package:looper_player/core/navigation_provider.dart';
+import 'package:looper_player/core/db_service.dart';
+import 'package:looper_player/core/providers.dart';
+import 'package:looper_player/features/library/presentation/library_notifier.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
 import 'package:looper_player/core/app_fonts.dart';
 import 'package:looper_player/features/playlists/domain/smart_playlist.dart';
@@ -339,21 +342,39 @@ class CollectionDetailView extends ConsumerWidget {
         effectiveSubtitle?.toLowerCase() == 'artist' ||
         effectiveSubtitle?.toLowerCase() == 'artists';
 
+    final int totalMs = collectionSongs.fold(0, (acc, s) => acc + (s.duration ?? 0));
+    final String durationPart;
+    if (totalMs > 0) {
+      final d = Duration(milliseconds: totalMs);
+      final hours = d.inHours;
+      final minutes = d.inMinutes % 60;
+      if (hours > 0) {
+        durationPart = minutes > 0 ? ' · $hours hr $minutes min' : ' · $hours hr';
+      } else {
+        durationPart = ' · $minutes min';
+      }
+    } else {
+      durationPart = '';
+    }
+
     if (isArtistCollection) {
-      return '${collectionSongs.length} ${l10n.songs}';
+      return '${collectionSongs.length} ${l10n.songs}$durationPart';
     }
 
     final isTypeLabel = playlist != null ||
         effectiveSubtitle == 'Playlist' ||
         effectiveSubtitle == l10n.genre ||
         effectiveSubtitle?.toLowerCase() == 'genre';
-    if (isTypeLabel || effectiveSubtitle == null) return effectiveSubtitle ?? '';
-    // Artist detail: the subtitle is just the word "Artists", so show only the
-    // song count instead of "Artists · N Songs".
-    if (effectiveSubtitle == l10n.artists) {
-      return '${collectionSongs.length} ${l10n.songs}';
+    if (isTypeLabel || effectiveSubtitle == null) {
+      final label = effectiveSubtitle ?? '';
+      return label.isNotEmpty
+          ? '$label · ${collectionSongs.length} ${l10n.songs}$durationPart'
+          : '${collectionSongs.length} ${l10n.songs}$durationPart';
     }
-    return '$effectiveSubtitle · ${collectionSongs.length} ${l10n.songs}';
+    if (effectiveSubtitle == l10n.artists) {
+      return '${collectionSongs.length} ${l10n.songs}$durationPart';
+    }
+    return '$effectiveSubtitle · ${collectionSongs.length} ${l10n.songs}$durationPart';
   }
 
   Widget _buildArt(
@@ -540,6 +561,69 @@ class CollectionDetailView extends ConsumerWidget {
                 .playShuffled(songsToRender, queueName: titleToRender);
           },
           extraActions: [
+            if (isAlbumCollection || isArtistCollection)
+              Consumer(
+                builder: (context, ref, _) {
+                  final bool isFav;
+                  if (isAlbumCollection) {
+                    final album = ref.watch(libraryProvider.select((l) =>
+                        l.albums.where((a) => a.name == titleToRender).firstOrNull));
+                    isFav = album?.isFavorite ?? false;
+                  } else {
+                    final artist = ref.watch(libraryProvider.select((l) =>
+                        l.artists.where((a) => a.name == titleToRender).firstOrNull));
+                    isFav = artist?.isFavorite ?? false;
+                  }
+
+                  return StandardActionButton(
+                    width: 44,
+                    onTap: () async {
+                      HapticFeedback.lightImpact();
+                      if (isAlbumCollection) {
+                        final album = ref
+                            .read(libraryProvider)
+                            .albums
+                            .where((a) => a.name == titleToRender)
+                            .firstOrNull;
+                        if (album != null) {
+                          final willBeFav = !album.isFavorite;
+                          await ref.read(libraryProvider.notifier).toggleAlbumFavorite(album);
+                          scaffoldMessengerKey.currentState?.clearSnackBars();
+                          scaffoldMessengerKey.currentState?.showSnackBar(
+                            SnackBar(
+                              content: Text(willBeFav ? 'Added album to favorites' : 'Removed album from favorites'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      } else {
+                        final artist = ref
+                            .read(libraryProvider)
+                            .artists
+                            .where((a) => a.name == titleToRender)
+                            .firstOrNull;
+                        if (artist != null) {
+                          final willBeFav = !artist.isFavorite;
+                          await ref.read(libraryProvider.notifier).toggleArtistFavorite(artist);
+                          scaffoldMessengerKey.currentState?.clearSnackBars();
+                          scaffoldMessengerKey.currentState?.showSnackBar(
+                            SnackBar(
+                              content: Text(willBeFav ? 'Added artist to favorites' : 'Removed artist from favorites'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
+                    child: Icon(
+                      isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      size: 18,
+                      color: isFav ? Colors.redAccent : Colors.white,
+                    ),
+                  );
+                },
+              ),
             StandardActionButton(
               width: 44,
               onTap: () {
@@ -720,7 +804,8 @@ class CollectionDetailView extends ConsumerWidget {
         void updateSortIndex(int index) {
           final notifier = ref.read(settingsProvider.notifier);
           final defaultAsc = (index == CollectionSortOption.playCount.index ||
-                              index == CollectionSortOption.dateAdded.index)
+                              index == CollectionSortOption.dateAdded.index ||
+                              index == CollectionSortOption.year.index)
               ? false
               : true;
           updateSortAsc(defaultAsc);
@@ -734,6 +819,12 @@ class CollectionDetailView extends ConsumerWidget {
             notifier.updateCollectionSortOptionIndex(index);
           }
         }
+
+        final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+        final isPureBlack = settings.isBatterySaverActive || (settings.darkTheme && !useBlur);
+        final sectionBg = useBlur
+            ? Colors.white.withValues(alpha: 0.05)
+            : (isPureBlack ? const Color(0xFF161618) : const Color(0xFF28282C));
 
         return AppBottomSheetContainer(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -760,11 +851,17 @@ class CollectionDetailView extends ConsumerWidget {
                       updateSortAsc(!isAscending);
                     },
                     icon: Icon(
-                      isAscending ? LucideIcons.arrowUpAZ : LucideIcons.arrowDownAZ,
+                      isAscending
+                          ? ((sortIdx == CollectionSortOption.title.index || sortIdx == CollectionSortOption.artist.index || sortIdx == CollectionSortOption.album.index)
+                              ? LucideIcons.arrowUpAZ
+                              : LucideIcons.arrowUp)
+                          : ((sortIdx == CollectionSortOption.title.index || sortIdx == CollectionSortOption.artist.index || sortIdx == CollectionSortOption.album.index)
+                              ? LucideIcons.arrowDownAZ
+                              : LucideIcons.arrowDown),
                       size: 18,
                     ),
                     label: Text(
-                      isAscending ? l10n.ascending : l10n.descending,
+                      _collectionSortDirectionLabel(sortIdx, isAscending),
                     ),
                     style: TextButton.styleFrom(
                       foregroundColor: accentColor,
@@ -786,6 +883,7 @@ class CollectionDetailView extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(20),
                       padding: EdgeInsets.zero,
                       useExpanded: false,
+                      backgroundColor: sectionBg,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -910,7 +1008,7 @@ class CollectionDetailView extends ConsumerWidget {
   }
 }
 
-class _SortOption extends StatelessWidget {
+class _SortOption extends StatefulWidget {
   final String label;
   final IconData icon;
   final bool isSelected;
@@ -928,56 +1026,103 @@ class _SortOption extends StatelessWidget {
   });
 
   @override
+  State<_SortOption> createState() => _SortOptionState();
+}
+
+class _SortOptionState extends State<_SortOption> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected
-                      ? accentColor
-                      : Colors.white.withValues(alpha: 0.9),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: AppFonts.jostStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
-                    ),
+        MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: _isHovered
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                mouseCursor: SystemMouseCursors.click,
+                hoverColor: Colors.transparent,
+                onTap: widget.onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Row(
+                    children: [
+                      Icon(
+                        widget.icon,
+                        size: 22,
+                        color: widget.isSelected
+                            ? widget.accentColor
+                            : Colors.white.withValues(alpha: 0.9),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          widget.label,
+                          style: AppFonts.jostStyle(
+                            color: widget.isSelected
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.9),
+                            fontWeight: widget.isSelected || _isHovered ? FontWeight.w600 : FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      if (widget.isSelected)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: widget.accentColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            LucideIcons.check,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                if (isSelected)
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      LucideIcons.check,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),
-        if (!isLast)
+        if (!widget.isLast)
           const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
       ],
     );
   }
 }
+
+
+String _collectionSortDirectionLabel(int sortIdx, bool isAsc) {
+  if (sortIdx == CollectionSortOption.title.index ||
+      sortIdx == CollectionSortOption.artist.index ||
+      sortIdx == CollectionSortOption.album.index) {
+    return isAsc ? 'A → Z' : 'Z → A';
+  } else if (sortIdx == CollectionSortOption.dateAdded.index) {
+    return isAsc ? 'Oldest first' : 'Newest first';
+  } else if (sortIdx == CollectionSortOption.year.index) {
+    return isAsc ? 'Oldest year' : 'Newest year';
+  } else if (sortIdx == CollectionSortOption.playCount.index) {
+    return isAsc ? 'Least played' : 'Most played';
+  } else if (sortIdx == CollectionSortOption.duration.index) {
+    return isAsc ? 'Shortest first' : 'Longest first';
+  }
+  return isAsc ? 'A → Z' : 'Z → A';
+}
+

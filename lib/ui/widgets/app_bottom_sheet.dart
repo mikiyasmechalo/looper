@@ -20,15 +20,13 @@ class AppBottomSheetContainer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    final useBlur = (settings.enableDynamicTheming || settings.keepBackgroundGradient) &&
-        !settings.disableBlur &&
-        !settings.isBatterySaverActive;
+    final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
     final isPureBlack = settings.isBatterySaverActive ||
-        (!settings.enableDynamicTheming && !settings.keepBackgroundGradient && settings.darkTheme);
+        (settings.darkTheme && !useBlur);
 
     final sheetBg = isPureBlack
         ? Colors.black
-        : (useBlur ? const Color(0xCC141416) : const Color(0xFF1E1E1E));
+        : (useBlur ? const Color(0x66141418) : const Color(0xFF1E1E1E));
 
     Widget body = Container(
       height: height,
@@ -80,7 +78,7 @@ class AppBottomSheetContainer extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
             child: body,
           ),
         ),

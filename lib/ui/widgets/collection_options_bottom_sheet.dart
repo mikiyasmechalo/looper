@@ -11,6 +11,7 @@ import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
 import 'package:looper_player/features/library/data/artist_image_service.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
+import 'package:looper_player/features/library/presentation/library_notifier.dart';
 import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:looper_player/features/playlists/presentation/playlist_view.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
@@ -598,26 +599,44 @@ class _CollectionOptionsSheetContent extends ConsumerWidget {
                           _showPlaylistSelector(context, ref);
                         },
                       ),
-                      MenuOptionTile(
-                        label: 'Favorite All Songs',
-                        icon: LucideIcons.star,
-                        iconColor: accentColor,
-                        onTap: () async {
-                          HapticFeedback.lightImpact();
-                          Navigator.pop(context);
-                          for (final s in songs) {
-                            s.isFavorite = true;
-                          }
-                          await DbService.isar.writeTxn(() => DbService.isar.songs.putAll(songs));
-                          scaffoldMessengerKey.currentState?.clearSnackBars();
-                          scaffoldMessengerKey.currentState?.showSnackBar(
-                            SnackBar(
-                              content: Text('Favorited all ${songs.length} songs'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                      ),
+                      if (album != null)
+                        MenuOptionTile(
+                          label: album!.isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+                          icon: album!.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          iconColor: album!.isFavorite ? Colors.redAccent : accentColor,
+                          onTap: () async {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                            final willBeFav = !album!.isFavorite;
+                            await ref.read(libraryProvider.notifier).toggleAlbumFavorite(album!);
+                            scaffoldMessengerKey.currentState?.clearSnackBars();
+                            scaffoldMessengerKey.currentState?.showSnackBar(
+                              SnackBar(
+                                content: Text(willBeFav ? 'Added album to favorites' : 'Removed album from favorites'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        )
+                      else if (artist != null)
+                        MenuOptionTile(
+                          label: artist!.isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+                          icon: artist!.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          iconColor: artist!.isFavorite ? Colors.redAccent : accentColor,
+                          onTap: () async {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                            final willBeFav = !artist!.isFavorite;
+                            await ref.read(libraryProvider.notifier).toggleArtistFavorite(artist!);
+                            scaffoldMessengerKey.currentState?.clearSnackBars();
+                            scaffoldMessengerKey.currentState?.showSnackBar(
+                              SnackBar(
+                                content: Text(willBeFav ? 'Added artist to favorites' : 'Removed artist from favorites'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
                       if (artPath != null || imageUrl != null)
                         MenuOptionTile(
                           label: 'Save Artwork to Pictures',

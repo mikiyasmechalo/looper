@@ -120,10 +120,27 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
       state = state.copyWith(isAscending: newAsc);
       _ref.read(settingsProvider.notifier).updateSortAscending(newAsc);
     } else {
-      state = state.copyWith(sortStrategy: strategy);
+      final smartAsc = defaultAscendingForSongStrategy(strategy);
+      state = state.copyWith(sortStrategy: strategy, isAscending: smartAsc);
       _ref.read(settingsProvider.notifier).updateSortStrategy(strategy.index);
+      _ref.read(settingsProvider.notifier).updateSortAscending(smartAsc);
     }
     _watchSongs();
+  }
+
+  static bool defaultAscendingForSongStrategy(SongSortStrategy strategy) {
+    switch (strategy) {
+      case SongSortStrategy.title:
+      case SongSortStrategy.artist:
+      case SongSortStrategy.album:
+      case SongSortStrategy.duration:
+        return true;
+      case SongSortStrategy.dateAdded:
+      case SongSortStrategy.lastPlayed:
+      case SongSortStrategy.playCount:
+      case SongSortStrategy.year:
+        return false;
+    }
   }
 
   void toggleSortOrder() {
@@ -172,8 +189,8 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
         break;
       case SongSortStrategy.lastPlayed:
         query = isAsc
-            ? DbService.isar.songs.where().sortByLastPlayed()
-            : DbService.isar.songs.where().sortByLastPlayedDesc();
+            ? DbService.isar.songs.where().sortByLastPlayed().thenByTitle()
+            : DbService.isar.songs.where().sortByLastPlayedDesc().thenByTitle();
         break;
       case SongSortStrategy.dateAdded:
       default:
@@ -521,6 +538,32 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     _fetchMissingArtistImages();
 
     return totalSongsFound;
+  }
+
+  Future<void> toggleAlbumFavorite(Album album) async {
+    await DbService.isar.writeTxn(() async {
+      final dbAlbum = await DbService.isar.albums.get(album.id);
+      if (dbAlbum != null) {
+        dbAlbum.isFavorite = !dbAlbum.isFavorite;
+        await DbService.isar.albums.put(dbAlbum);
+      } else {
+        album.isFavorite = !album.isFavorite;
+        await DbService.isar.albums.put(album);
+      }
+    });
+  }
+
+  Future<void> toggleArtistFavorite(Artist artist) async {
+    await DbService.isar.writeTxn(() async {
+      final dbArtist = await DbService.isar.artists.get(artist.id);
+      if (dbArtist != null) {
+        dbArtist.isFavorite = !dbArtist.isFavorite;
+        await DbService.isar.artists.put(dbArtist);
+      } else {
+        artist.isFavorite = !artist.isFavorite;
+        await DbService.isar.artists.put(artist);
+      }
+    });
   }
 
   Future<void> toggleFavorite(Song song) async {

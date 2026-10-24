@@ -643,6 +643,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       ..enableSmartPlaylists = s.enableSmartPlaylists
       ..albumCardStyleIndex = s.albumCardStyleIndex
       ..artistCardStyleIndex = s.artistCardStyleIndex
+      ..albumGridColumns = s.albumGridColumns
+      ..artistGridColumns = s.artistGridColumns
       ..songViewStyleIndex = s.songViewStyleIndex
       ..showTrayOnlyWhenMinimized = s.showTrayOnlyWhenMinimized
       ..showSidebarNowPlaying = s.showSidebarNowPlaying
@@ -787,6 +789,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> updateArtistCardStyle(int style) async {
     final newState = _clone(state)..artistCardStyleIndex = style;
+    await _save(newState);
+  }
+
+  Future<void> updateAlbumGridColumns(int cols) async {
+    final newState = _clone(state)..albumGridColumns = cols;
+    await _save(newState);
+  }
+
+  Future<void> updateArtistGridColumns(int cols) async {
+    final newState = _clone(state)..artistGridColumns = cols;
     await _save(newState);
   }
 

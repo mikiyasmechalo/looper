@@ -71,6 +71,8 @@ class Album {
 
   @Index()
   late DateTime dateAdded;
+
+  bool isFavorite = false;
 }
 
 @collection
@@ -87,6 +89,8 @@ class Artist {
   /// (e.g. when the artist name includes collaborations like "A ft. B") which
   /// are rendered as a collage.
   List<String> artistImages = [];
+
+  bool isFavorite = false;
 }
 
 @collection
@@ -382,9 +386,13 @@ class AppSettings {
   // Playlists: Auto-updating Smart Playlists
   bool enableSmartPlaylists = true;
 
-  // Library Card Styles (0: normal, 1: circle, 2: card, 3: image, 4: imageGapless)
+  // Library Card Styles (0: normal, 1: circle, 2: card, 3: image, 4: imageGapless, 5: framed)
   int albumCardStyleIndex = 2;
   int artistCardStyleIndex = 1;
+
+  // Grid Density / Columns (0 = auto default, 4 to 10 columns)
+  int albumGridColumns = 0;
+  int artistGridColumns = 0;
 
   // Song View Style (0: normal, 1: compact, 2: textOnly, 3: grid)
   int songViewStyleIndex = 0;
@@ -394,7 +402,7 @@ class AppSettings {
   String skippedUpdateVersion = '';
 }
 
-enum CardStyle { normal, circle, card, image, imageGapless }
+enum CardStyle { normal, circle, card, image, imageGapless, framed }
 
 enum SongViewStyle { normal, compact, textOnly, grid }
 

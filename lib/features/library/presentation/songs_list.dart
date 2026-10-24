@@ -46,9 +46,22 @@ class SongsList extends ConsumerWidget {
     this.queueName,
   });
 
+  String _songSortLabel(SongSortStrategy s, AppLocalizations l10n) =>
+      switch (s) {
+        SongSortStrategy.title => l10n.title,
+        SongSortStrategy.artist => l10n.artist,
+        SongSortStrategy.album => l10n.album,
+        SongSortStrategy.dateAdded => l10n.dateAdded,
+        SongSortStrategy.duration => l10n.duration,
+        SongSortStrategy.year => l10n.year,
+        SongSortStrategy.playCount => l10n.mostPlayed,
+        SongSortStrategy.lastPlayed => l10n.recentlyPlayed,
+      };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final sortStrategy = ref.watch(libraryProvider.select((s) => s.sortStrategy));
     final songViewStyle = SongViewStyle.values[ref
         .watch(settingsProvider.select((s) => s.songViewStyleIndex))
         .clamp(0, SongViewStyle.values.length - 1)];
@@ -103,12 +116,7 @@ class SongsList extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.only(
-            left: 10,
-            right: 14,
-            top: 8,
-            bottom: 8,
-          ),
+          padding: EdgeInsets.fromLTRB(24.s, 16.s, 24.s, 8.s),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -116,10 +124,12 @@ class SongsList extends ConsumerWidget {
                 children: [
                   Text(
                     '${songs.length} ${l10n.songs}',
-                    style: AppFonts.jostStyle(color: Colors.grey, fontSize: 13),
+                    style: AppFonts.jostStyle(
+                      color: Colors.white54,
+                      fontSize: 13.ts,
+                    ),
                   ),
                   if (showShuffleButton) ...[
-                    const SizedBox(width: 4),
                     IconButton(
                       onPressed: songs.isEmpty
                           ? null
@@ -136,6 +146,7 @@ class SongsList extends ConsumerWidget {
                             },
                       icon: const Icon(LucideIcons.shuffle, size: 18),
                       tooltip: l10n.shuffleTitle,
+                      visualDensity: VisualDensity.compact,
                       style: IconButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.primary,
                       ),
@@ -145,6 +156,18 @@ class SongsList extends ConsumerWidget {
               ),
               Row(
                 children: [
+                  TextButton.icon(
+                    onPressed: () => _showSortBottomSheet(context, ref, l10n),
+                    icon: const Icon(LucideIcons.arrowUpDown, size: 14),
+                    label: Text(
+                      _songSortLabel(sortStrategy, l10n),
+                      style: AppFonts.jostStyle(fontSize: 13.ts),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
                   IconButton(
                     onPressed: () => _showSongViewStyleMenu(context, ref),
                     icon: Icon(
@@ -154,17 +177,10 @@ class SongsList extends ConsumerWidget {
                         SongViewStyle.textOnly => LucideIcons.fileText,
                         SongViewStyle.grid => LucideIcons.layoutGrid,
                       },
-                      size: 18,
+                      size: 16,
                     ),
                     tooltip: 'Song View Style',
-                    style: IconButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => _showSortBottomSheet(context, ref, l10n),
-                    icon: const Icon(LucideIcons.listFilter, size: 18),
-                    tooltip: l10n.sortBy,
+                    visualDensity: VisualDensity.compact,
                     style: IconButton.styleFrom(
                       foregroundColor: Theme.of(context).colorScheme.primary,
                     ),
@@ -197,12 +213,13 @@ class SongsList extends ConsumerWidget {
                                 .resetAndRescan();
                         }
                       },
-                      icon: const Icon(LucideIcons.refreshCw, size: 16),
+                      icon: const Icon(LucideIcons.refreshCw, size: 14),
                       label: Text(
                         l10n.resetLibrary,
-                        style: AppFonts.jostStyle(fontSize: 13),
+                        style: AppFonts.jostStyle(fontSize: 13.ts),
                       ),
                       style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         foregroundColor: Colors.red[300],
                       ),
@@ -218,7 +235,7 @@ class SongsList extends ConsumerWidget {
                   controller: controller,
                   shrinkWrap: true,
                   physics: physics ?? const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(10, 8, 14, 180),
+                  padding: EdgeInsets.fromLTRB(24.s, 8.s, 24.s, 180.s),
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 180,
                     crossAxisSpacing: 12,
@@ -250,7 +267,7 @@ class SongsList extends ConsumerWidget {
                           const AlwaysScrollableScrollPhysics(
                             parent: BouncingScrollPhysics(),
                           ),
-                      padding: const EdgeInsets.fromLTRB(10, 8, 14, 180),
+                      padding: EdgeInsets.fromLTRB(24.s, 8.s, 24.s, 180.s),
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: 180,
@@ -591,6 +608,29 @@ class SongTile extends ConsumerWidget {
   }
 }
 
+String _sortDirectionLabel(SongSortStrategy strategy, bool isAscending) {
+  switch (strategy) {
+    case SongSortStrategy.title:
+    case SongSortStrategy.artist:
+    case SongSortStrategy.album:
+      return isAscending ? 'A → Z' : 'Z → A';
+    case SongSortStrategy.dateAdded:
+    case SongSortStrategy.lastPlayed:
+      return isAscending ? 'Oldest first' : 'Newest first';
+    case SongSortStrategy.playCount:
+      return isAscending ? 'Least played' : 'Most played';
+    case SongSortStrategy.year:
+      return isAscending ? 'Oldest year' : 'Newest year';
+    case SongSortStrategy.duration:
+      return isAscending ? 'Shortest first' : 'Longest first';
+  }
+}
+
+bool _isTextSortStrategy(SongSortStrategy strategy) =>
+    strategy == SongSortStrategy.title ||
+    strategy == SongSortStrategy.artist ||
+    strategy == SongSortStrategy.album;
+
 void _showSortBottomSheet(
   BuildContext context,
   WidgetRef ref,
@@ -608,6 +648,11 @@ void _showSortBottomSheet(
           final state = ref.watch(libraryProvider);
           final settings = ref.watch(settingsProvider);
           final accentColor = Color(settings.accentColor);
+          final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+          final isPureBlack = settings.isBatterySaverActive || (settings.darkTheme && !useBlur);
+          final sectionBg = useBlur
+              ? Colors.white.withValues(alpha: 0.05)
+              : (isPureBlack ? const Color(0xFF161618) : const Color(0xFF28282C));
 
           return AppBottomSheetContainer(
             padding: EdgeInsets.zero,
@@ -634,12 +679,16 @@ void _showSortBottomSheet(
                         },
                         icon: Icon(
                           state.isAscending
-                              ? LucideIcons.arrowUpAZ
-                              : LucideIcons.arrowDownAZ,
+                              ? (_isTextSortStrategy(state.sortStrategy)
+                                  ? LucideIcons.arrowUpAZ
+                                  : LucideIcons.arrowUp)
+                              : (_isTextSortStrategy(state.sortStrategy)
+                                  ? LucideIcons.arrowDownAZ
+                                  : LucideIcons.arrowDown),
                           size: 18,
                         ),
                         label: Text(
-                          state.isAscending ? l10n.ascending : l10n.descending,
+                          _sortDirectionLabel(state.sortStrategy, state.isAscending),
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: accentColor,
@@ -668,6 +717,7 @@ void _showSortBottomSheet(
                         borderRadius: BorderRadius.circular(20),
                         padding: EdgeInsets.zero,
                         useExpanded: false,
+                        backgroundColor: sectionBg,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -817,7 +867,7 @@ void _showSortBottomSheet(
   );
 }
 
-class _SortOption extends StatelessWidget {
+class _SortOption extends StatefulWidget {
   final String label;
   final IconData icon;
   final bool isSelected;
@@ -835,54 +885,82 @@ class _SortOption extends StatelessWidget {
   });
 
   @override
+  State<_SortOption> createState() => _SortOptionState();
+}
+
+class _SortOptionState extends State<_SortOption> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected
-                      ? accentColor
-                      : Colors.white.withValues(alpha: 0.9),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: AppFonts.jostStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
-                    ),
+        MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: _isHovered
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                mouseCursor: SystemMouseCursors.click,
+                hoverColor: Colors.transparent,
+                onTap: widget.onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Row(
+                    children: [
+                      Icon(
+                        widget.icon,
+                        size: 22,
+                        color: widget.isSelected
+                            ? widget.accentColor
+                            : Colors.white.withValues(alpha: 0.9),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          widget.label,
+                          style: AppFonts.jostStyle(
+                            color: widget.isSelected
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.9),
+                            fontWeight: widget.isSelected || _isHovered ? FontWeight.w600 : FontWeight.w500,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      if (widget.isSelected)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: widget.accentColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            LucideIcons.check,
+                            color: Colors.white,
+                            size: 10,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                if (isSelected)
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      LucideIcons.check,
-                      color: Colors.white,
-                      size: 10,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),
-        if (!isLast)
+        if (!widget.isLast)
           Divider(
             height: 1,
             thickness: 0.8,
@@ -1130,7 +1208,14 @@ void _showSongViewStyleMenu(BuildContext context, WidgetRef ref) {
     barrierColor: Colors.black54,
     builder: (ctx) => Consumer(
       builder: (context, ref, _) {
+        final settings = ref.watch(settingsProvider);
         final accent = Theme.of(context).colorScheme.primary;
+        final useBlur = !settings.disableBlur && !settings.isBatterySaverActive;
+        final isPureBlack = settings.isBatterySaverActive || (settings.darkTheme && !useBlur);
+        final sectionBg = useBlur
+            ? Colors.white.withValues(alpha: 0.05)
+            : (isPureBlack ? const Color(0xFF161618) : const Color(0xFF28282C));
+
         return AppBottomSheetContainer(
           padding: EdgeInsets.zero,
           child: Column(
@@ -1158,6 +1243,7 @@ void _showSongViewStyleMenu(BuildContext context, WidgetRef ref) {
                   borderRadius: BorderRadius.circular(20),
                   padding: EdgeInsets.zero,
                   useExpanded: false,
+                  backgroundColor: sectionBg,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1598,6 +1684,7 @@ class _SongGridCardState extends ConsumerState<_SongGridCard> {
     final accent = Theme.of(context).colorScheme.primary;
 
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(

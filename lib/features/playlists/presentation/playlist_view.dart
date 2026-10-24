@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:looper_player/features/settings/presentation/settings_notifier.dart';
+import 'package:looper_player/features/playback/presentation/playback_notifier.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:looper_player/features/library/domain/models/models.dart';
 import 'package:looper_player/core/navigation_provider.dart';
@@ -383,12 +384,20 @@ class PlaylistView extends ConsumerWidget {
   }
 }
 
-class _SmartPlaylistCard extends ConsumerWidget {
+class _SmartPlaylistCard extends ConsumerStatefulWidget {
   final SmartPlaylist smartPlaylist;
   const _SmartPlaylistCard({required this.smartPlaylist});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SmartPlaylistCard> createState() => _SmartPlaylistCardState();
+}
+
+class _SmartPlaylistCardState extends ConsumerState<_SmartPlaylistCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final smartPlaylist = widget.smartPlaylist;
     final nav = ref.watch(appNavigationProvider);
     final isSelected =
         nav.activeItem == NavItem.collectionDetail &&
@@ -396,155 +405,249 @@ class _SmartPlaylistCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final accent = theme.colorScheme.primary;
 
-    return GestureDetector(
-      onSecondaryTap: () => showSmartPlaylistOptionsBottomSheet(
-        context: context,
-        ref: ref,
-        smartPlaylist: smartPlaylist,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.hardEdge,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onSecondaryTap: () => showSmartPlaylistOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          smartPlaylist: smartPlaylist,
         ),
-        child: InkWell(
-          onTap: () {
-            ref.read(appNavigationProvider.notifier).showCollection(
-              title: smartPlaylist.title,
-              subtitle: 'Smart Playlist',
-              songs: smartPlaylist.songs,
-              highlightItem: NavItem.playlists,
-            );
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: isSelected
-                  ? const Color.fromARGB(255, 53, 53, 53)
-                  : Colors.white.withValues(alpha: 0.03),
-              border: Border.all(
+        child: Material(
+          color: Colors.transparent,
+          clipBehavior: Clip.hardEdge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
+            hoverColor: Colors.transparent,
+            onTap: () {
+              ref.read(appNavigationProvider.notifier).showCollection(
+                title: smartPlaylist.title,
+                subtitle: 'Smart Playlist',
+                songs: smartPlaylist.songs,
+                highlightItem: NavItem.playlists,
+              );
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
                 color: isSelected
-                    ? accent.withValues(alpha: 0.4)
-                    : Colors.white.withValues(alpha: 0.07),
-                width: 1,
+                    ? const Color.fromARGB(255, 53, 53, 53)
+                    : (_isHovered
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.white.withValues(alpha: 0.03)),
+                border: Border.all(
+                  color: isSelected
+                      ? accent.withValues(alpha: 0.4)
+                      : (_isHovered
+                          ? Colors.white.withValues(alpha: 0.16)
+                          : Colors.white.withValues(alpha: 0.07)),
+                  width: 1,
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Artwork Container with Smart Badge
-                AspectRatio(
-                  aspectRatio: 1.0,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              colors: smartPlaylist.gradientColors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: smartPlaylist.gradientColors.first.withValues(alpha: 0.25),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Artwork Container with Smart Badge
+                  AspectRatio(
+                    aspectRatio: 1.0,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                colors: smartPlaylist.gradientColors,
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Stack(
-                              children: [
-                                // Subtle album art collage background
-                                if (smartPlaylist.songs.isNotEmpty)
-                                  Opacity(
-                                    opacity: 0.22,
-                                    child: PlaylistArtwork(
-                                      songs: smartPlaylist.songs,
-                                      fallbackBackground: Colors.transparent,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                // Centered glowing icon
-                                Center(
-                                  child: Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.35),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        smartPlaylist.icon,
-                                        size: 24,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: smartPlaylist.gradientColors.first
+                                      .withValues(alpha: 0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Stack(
+                                children: [
+                                  // Subtle album art collage background with hover zoom
+                                  if (smartPlaylist.songs.isNotEmpty)
+                                    Positioned.fill(
+                                      child: AnimatedScale(
+                                        scale: _isHovered ? 1.05 : 1.0,
+                                        duration:
+                                            const Duration(milliseconds: 220),
+                                        curve: Curves.easeOutCubic,
+                                        child: Opacity(
+                                          opacity: 0.22,
+                                          child: PlaylistArtwork(
+                                            songs: smartPlaylist.songs,
+                                            fallbackBackground:
+                                                Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
 
-                      // Smart top-right badge (icon only)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.65),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              width: 0.8,
+                                  // Dark hover overlay on artwork
+                                  Positioned.fill(
+                                    child: AnimatedOpacity(
+                                      opacity: _isHovered ? 1.0 : 0.0,
+                                      duration:
+                                          const Duration(milliseconds: 160),
+                                      curve: Curves.easeOutCubic,
+                                      child: Container(
+                                        color: Colors.black
+                                            .withValues(alpha: 0.2),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Centered glowing icon
+                                  Center(
+                                    child: AnimatedScale(
+                                      scale: _isHovered ? 1.06 : 1.0,
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      curve: Curves.easeOutCubic,
+                                      child: Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.35),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.2),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            smartPlaylist.icon,
+                                            size: 24,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: const Icon(
-                            LucideIcons.sparkles,
-                            size: 11,
-                            color: Colors.amberAccent,
+                        ),
+
+                        // Smart top-right badge (icon only)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.18),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: const Icon(
+                              LucideIcons.sparkles,
+                              size: 11,
+                              color: Colors.amberAccent,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
 
-                const SizedBox(height: 10),
-                Text(
-                  smartPlaylist.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.jostStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                        // Direct shuffle play button (bottom right) with hover scale
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: AnimatedScale(
+                            scale: _isHovered ? 1.08 : 1.0,
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutBack,
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () {
+                                  ref
+                                      .read(playbackProvider.notifier)
+                                      .playShuffled(
+                                        smartPlaylist.songs,
+                                        queueName: smartPlaylist.title,
+                                      );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.65),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.22),
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black
+                                            .withValues(alpha: 0.35),
+                                        blurRadius: 6,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    LucideIcons.shuffle,
+                                    size: 13,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${smartPlaylist.songCount} songs',
-                  style: AppFonts.jostStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
+
+                  const SizedBox(height: 10),
+                  Text(
+                    smartPlaylist.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.jostStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    '${smartPlaylist.songCount} songs',
+                    style: AppFonts.jostStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -553,12 +656,20 @@ class _SmartPlaylistCard extends ConsumerWidget {
   }
 }
 
-class _PlaylistCard extends ConsumerWidget {
+class _PlaylistCard extends ConsumerStatefulWidget {
   final Playlist playlist;
   const _PlaylistCard({required this.playlist});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PlaylistCard> createState() => _PlaylistCardState();
+}
+
+class _PlaylistCardState extends ConsumerState<_PlaylistCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final playlist = widget.playlist;
     final songs =
         ref.watch(playlistSongsProvider(playlist.id)).value ?? const <Song>[];
     final nav = ref.watch(appNavigationProvider);
@@ -566,84 +677,106 @@ class _PlaylistCard extends ConsumerWidget {
         nav.activeItem == NavItem.collectionDetail &&
         nav.collectionTitle == playlist.name;
 
-    return GestureDetector(
-      onSecondaryTap: () => showPlaylistOptionsBottomSheet(
-        context: context,
-        ref: ref,
-        playlist: playlist,
-        songs: songs,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        clipBehavior: Clip.hardEdge,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onSecondaryTap: () => showPlaylistOptionsBottomSheet(
+          context: context,
+          ref: ref,
+          playlist: playlist,
+          songs: songs,
         ),
-        child: InkWell(
-          onTap: () async {
-            final loaded = await DbService.isar.songs
-                .filter()
-                .anyOf(playlist.songPaths, (q, path) => q.pathEqualTo(path))
-                .findAll();
+        child: Material(
+          color: Colors.transparent,
+          clipBehavior: Clip.hardEdge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
+            hoverColor: Colors.transparent,
+            onTap: () async {
+              final loaded = await DbService.isar.songs
+                  .filter()
+                  .anyOf(playlist.songPaths, (q, path) => q.pathEqualTo(path))
+                  .findAll();
 
-            final songMap = {for (var s in loaded) s.path: s};
-            final orderedSongs = playlist.songPaths
-                .map((path) => songMap[path])
-                .whereType<Song>()
-                .toList();
+              final songMap = {for (var s in loaded) s.path: s};
+              final orderedSongs = playlist.songPaths
+                  .map((path) => songMap[path])
+                  .whereType<Song>()
+                  .toList();
 
-            ref
-                .read(appNavigationProvider.notifier)
-                .showCollection(
-                  title: playlist.name,
-                  subtitle: 'Playlist',
-                  songs: orderedSongs,
-                  playlist: playlist,
-                  highlightItem: NavItem.playlists,
-                );
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: isSelected
-                  ? const Color.fromARGB(255, 53, 53, 53)
-                  : Colors.transparent,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AspectRatio(
-                  aspectRatio: 1.0,
-                  child: PlaylistArtwork(
-                    songs: songs,
-                    fallbackBackground: Colors.white10,
-                    borderRadius: BorderRadius.circular(16),
+              ref
+                  .read(appNavigationProvider.notifier)
+                  .showCollection(
+                    title: playlist.name,
+                    subtitle: 'Playlist',
+                    songs: orderedSongs,
+                    playlist: playlist,
+                    highlightItem: NavItem.playlists,
+                  );
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: isSelected
+                    ? const Color.fromARGB(255, 53, 53, 53)
+                    : (_isHovered ? Colors.white.withValues(alpha: 0.05) : Colors.transparent),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1.0,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: PlaylistArtwork(
+                            songs: songs,
+                            fallbackBackground: Colors.white10,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        if (_isHovered)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  playlist.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.jostStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                  const SizedBox(height: 10),
+                  Text(
+                    playlist.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.jostStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${songs.length} songs',
-                  style: AppFonts.jostStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${songs.length} songs',
+                    style: AppFonts.jostStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
