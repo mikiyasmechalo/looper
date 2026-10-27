@@ -84,12 +84,32 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
     return '${minutes}m';
   }
 
+  static bool _isWithinAnyFolder(String filePath, List<String> folders) {
+    if (folders.isEmpty) return false;
+    final normFile = p.normalize(p.absolute(filePath)).toLowerCase();
+    for (final folder in folders) {
+      final normFolder = p.normalize(p.absolute(folder)).toLowerCase();
+      if (normFile == normFolder ||
+          normFile.startsWith(normFolder.endsWith(Platform.pathSeparator)
+              ? normFolder
+              : '$normFolder${Platform.pathSeparator}')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// Groups songs into flat directory buckets (only folders containing songs)
-  List<FolderItem> _buildFlatFolders(List<Song> songs) {
+  List<FolderItem> _buildFlatFolders(List<Song> songs, [List<String>? libraryFolders]) {
     final Map<String, List<Song>> folderMap = {};
 
     for (final song in songs) {
       if (song.path.isEmpty) continue;
+      if (libraryFolders != null && libraryFolders.isNotEmpty) {
+        if (!_isWithinAnyFolder(song.path, libraryFolders)) {
+          continue;
+        }
+      }
       try {
         final dir = File(song.path).parent.path;
         folderMap.putIfAbsent(dir, () => []).add(song);
@@ -116,9 +136,9 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
   }
 
   /// Groups songs into a nested tree structure (safely cloning nodes with mutable subFolders)
-  List<FolderItem> _buildTree(List<Song> songs, String searchQuery) {
+  List<FolderItem> _buildTree(List<Song> songs, String searchQuery, [List<String>? libraryFolders]) {
     try {
-      final flatFolders = _buildFlatFolders(songs);
+      final flatFolders = _buildFlatFolders(songs, libraryFolders);
       if (flatFolders.isEmpty) return [];
 
       // Create isolated mutable nodes with growable subFolders list
@@ -160,7 +180,7 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
       return rootNodes;
     } catch (e, st) {
       LoggerHelper.write('FolderBrowserView._buildTree error: $e\n$st');
-      return _buildFlatFolders(songs);
+      return _buildFlatFolders(songs, libraryFolders);
     }
   }
 
@@ -222,14 +242,14 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
     final isTreeMode = settings.folderViewTreeMode;
     final searchQuery = ref.watch(searchQueryProvider).trim().toLowerCase();
 
-    final flatFolders = _buildFlatFolders(library.songs);
+    final flatFolders = _buildFlatFolders(library.songs, settings.libraryFolders);
     final filteredFlatFolders = flatFolders.where((f) {
       if (searchQuery.isEmpty) return true;
       final q = searchQuery;
       return f.name.toLowerCase().contains(q) || f.path.toLowerCase().contains(q);
     }).toList();
 
-    final tree = _buildTree(library.songs, '');
+    final tree = _buildTree(library.songs, '', settings.libraryFolders);
 
     FolderItem? findNodeByPath(List<FolderItem> nodes, String targetPath) {
       final normTarget = p.normalize(targetPath).toLowerCase();
@@ -445,7 +465,7 @@ class _FolderBrowserViewState extends ConsumerState<FolderBrowserView> {
           child: activeDrilledFolder != null
               ? _buildDrilledFolderView(activeDrilledFolder, searchQuery)
               : isTreeMode
-                  ? _buildTreeView(_buildTree(library.songs, searchQuery), searchQuery)
+                  ? _buildTreeView(_buildTree(library.songs, searchQuery, settings.libraryFolders), searchQuery)
                   : _buildFlatListView(filteredFlatFolders),
         ),
       ],

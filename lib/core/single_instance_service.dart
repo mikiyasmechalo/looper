@@ -22,13 +22,24 @@ class SingleInstanceService {
     final List<String> files = [];
 
     for (final arg in args) {
-      final clean = arg.trim().replaceAll('"', '');
+      final clean = arg.trim();
       if (clean == '--enqueue' || clean == '-e' || clean == '/enqueue') {
         isEnqueue = true;
       } else if (clean.startsWith('-') || clean.startsWith('/')) {
         // Other flags
       } else if (clean.isNotEmpty) {
-        files.add(clean);
+        if (clean.contains('"')) {
+          final regex = RegExp(r'"([^"]+)"');
+          final matches = regex.allMatches(clean);
+          if (matches.isNotEmpty) {
+            for (final m in matches) {
+              final p = m.group(1)?.trim();
+              if (p != null && p.isNotEmpty) files.add(p);
+            }
+            continue;
+          }
+        }
+        files.add(clean.replaceAll('"', ''));
       }
     }
 
@@ -106,7 +117,25 @@ class SingleInstanceService {
             });
       });
     } catch (_) {
-      // In case port binding fails, continue as normal
+      // In case another instance just bound the port during concurrent launch, try connecting
+      try {
+        final socket = await Socket.connect(
+          InternetAddress.loopbackIPv4,
+          _ipcPort,
+          timeout: const Duration(milliseconds: 1000),
+        );
+        final message = jsonEncode(payload);
+        socket.write('$message\n');
+        await socket.flush();
+        await socket
+            .cast<List<int>>()
+            .transform(utf8.decoder)
+            .first
+            .timeout(const Duration(seconds: 2))
+            .catchError((_) => '');
+        await socket.close();
+        return false;
+      } catch (_) {}
     }
 
     return true;
@@ -127,6 +156,10 @@ class SingleInstanceService {
     }
   }
 
+  static Timer? _burstTimer;
+  static String? _burstAction;
+  static final List<String> _burstFiles = [];
+
   static void _handleIncomingAction(String action, List<String> files) {
     // Bring window to foreground
     try {
@@ -135,15 +168,39 @@ class SingleInstanceService {
       windowManager.restore();
     } catch (_) {}
 
-    if (_actionCallback != null) {
-      _actionCallback!(action, files);
-    } else {
-      _pendingActions.add({'action': action, 'files': files});
+    if (files.isEmpty) {
+      if (_actionCallback != null) {
+        _actionCallback!(action, files);
+      } else {
+        _pendingActions.add({'action': action, 'files': files});
+      }
+      return;
     }
+
+    // When multiple files are selected in Windows Explorer, Explorer may launch
+    // multiple secondary processes in rapid succession (one per file).
+    // Aggregate files within a short burst window so they are dispatched together.
+    _burstAction ??= action;
+    _burstFiles.addAll(files);
+
+    _burstTimer?.cancel();
+    _burstTimer = Timer(const Duration(milliseconds: 200), () {
+      final act = _burstAction ?? 'play';
+      final aggregated = List<String>.from(_burstFiles);
+      _burstAction = null;
+      _burstFiles.clear();
+
+      if (_actionCallback != null) {
+        _actionCallback!(act, aggregated);
+      } else {
+        _pendingActions.add({'action': act, 'files': aggregated});
+      }
+    });
   }
 
   /// Stops IPC server on shutdown.
   static Future<void> dispose() async {
+    _burstTimer?.cancel();
     await _serverSocket?.close();
     _serverSocket = null;
   }

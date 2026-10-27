@@ -12,8 +12,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 class UpdateService {
   static const repoUrl = 'https://api.github.com/repos/mikiyasmechalo/looper/releases/latest';
   static const releasesListUrl = 'https://api.github.com/repos/mikiyasmechalo/looper/releases';
-  static const fallbackRepoUrl = 'https://api.github.com/repos/SthrNilshaaa/looper/releases/latest';
-  static const fallbackHtmlUrl = 'https://github.com/mikiyasmechalo/looper/releases';
+  static const releasesHtmlUrl = 'https://github.com/mikiyasmechalo/looper/releases';
 
   static Future<void> checkForUpdates({
     WidgetRef? ref,
@@ -31,26 +30,27 @@ class UpdateService {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      http.Response response = await http.get(Uri.parse(repoUrl)).timeout(
-        const Duration(seconds: 8),
-        onTimeout: () => http.Response('', 408),
-      );
+      final headers = {
+        'User-Agent': 'Looper-Player',
+        'Accept': 'application/vnd.github.v3+json',
+      };
+
+      http.Response response = await http
+          .get(Uri.parse(repoUrl), headers: headers)
+          .timeout(
+            const Duration(seconds: 8),
+            onTimeout: () => http.Response('', 408),
+          );
 
       // If /releases/latest returns 404 (common when releases are tagged as pre-release / beta),
       // query the releases list directly.
       if (response.statusCode != 200) {
-        response = await http.get(Uri.parse(releasesListUrl)).timeout(
-          const Duration(seconds: 8),
-          onTimeout: () => http.Response('', 408),
-        );
-      }
-
-      // If user repo doesn't have releases yet, check original upstream releases as fallback
-      if (response.statusCode != 200) {
-        response = await http.get(Uri.parse(fallbackRepoUrl)).timeout(
-          const Duration(seconds: 8),
-          onTimeout: () => http.Response('', 408),
-        );
+        response = await http
+            .get(Uri.parse(releasesListUrl), headers: headers)
+            .timeout(
+              const Duration(seconds: 8),
+              onTimeout: () => http.Response('', 408),
+            );
       }
 
       if (response.statusCode == 200) {
@@ -59,7 +59,7 @@ class UpdateService {
             ? rawData[0] as Map<String, dynamic>
             : (rawData is Map<String, dynamic> ? rawData : <String, dynamic>{});
         final String tagName = data['tag_name'] ?? '';
-        final String htmlUrl = data['html_url'] ?? fallbackHtmlUrl;
+        final String htmlUrl = data['html_url'] ?? releasesHtmlUrl;
 
         if (ref != null && !manual) {
           final settings = ref.read(settingsProvider);
@@ -69,7 +69,7 @@ class UpdateService {
           }
         }
 
-        if (tagName.isNotEmpty && _isUpdateAvailable(currentVersion, tagName)) {
+        if (tagName.isNotEmpty && isUpdateAvailable(currentVersion, tagName)) {
           if (context != null && context.mounted) {
             _showUpdateDialog(context, ref, tagName, htmlUrl);
           } else {
@@ -130,7 +130,7 @@ class UpdateService {
     }
   }
 
-  static bool _isUpdateAvailable(String current, String latest) {
+  static bool isUpdateAvailable(String current, String latest) {
     final startVersionRegex = RegExp(r'^\D*(\d+\..*)');
     final currentMatch = startVersionRegex.firstMatch(current);
     final latestMatch = startVersionRegex.firstMatch(latest);

@@ -67,6 +67,17 @@ class WindowsFileAssociationService {
         'add',
         r'HKCU\Software\Classes\Looper.AudioFile\shell\open',
         '/v',
+        'MultiSelectModel',
+        '/t',
+        'REG_SZ',
+        '/d',
+        'Player',
+        '/f',
+      ]);
+      await _runReg([
+        'add',
+        r'HKCU\Software\Classes\Looper.AudioFile\shell\open',
+        '/v',
         'Icon',
         '/t',
         'REG_SZ',
@@ -84,35 +95,12 @@ class WindowsFileAssociationService {
         '"$exePath" "%1"',
         '/f',
       ]);
+
+      // Remove legacy or duplicate HKCU ProgID enqueue verb if present,
+      // as Enqueue is uniformly handled via SystemFileAssociations.
       await _runReg([
-        'add',
+        'delete',
         r'HKCU\Software\Classes\Looper.AudioFile\shell\enqueue',
-        '/ve',
-        '/t',
-        'REG_SZ',
-        '/d',
-        'Add to Looper Queue',
-        '/f',
-      ]);
-      await _runReg([
-        'add',
-        r'HKCU\Software\Classes\Looper.AudioFile\shell\enqueue',
-        '/v',
-        'Icon',
-        '/t',
-        'REG_SZ',
-        '/d',
-        '"$exePath"',
-        '/f',
-      ]);
-      await _runReg([
-        'add',
-        r'HKCU\Software\Classes\Looper.AudioFile\shell\enqueue\command',
-        '/ve',
-        '/t',
-        'REG_SZ',
-        '/d',
-        '"$exePath" "--enqueue" "%1"',
         '/f',
       ]);
 
@@ -125,6 +113,17 @@ class WindowsFileAssociationService {
         'REG_SZ',
         '/d',
         'Play in Looper',
+        '/f',
+      ]);
+      await _runReg([
+        'add',
+        r'HKCU\Software\Classes\SystemFileAssociations\audio\shell\Looper.Play',
+        '/v',
+        'MultiSelectModel',
+        '/t',
+        'REG_SZ',
+        '/d',
+        'Player',
         '/f',
       ]);
       await _runReg([
@@ -157,6 +156,17 @@ class WindowsFileAssociationService {
         'REG_SZ',
         '/d',
         'Add to Looper Queue',
+        '/f',
+      ]);
+      await _runReg([
+        'add',
+        r'HKCU\Software\Classes\SystemFileAssociations\audio\shell\Looper.Enqueue',
+        '/v',
+        'MultiSelectModel',
+        '/t',
+        'REG_SZ',
+        '/d',
+        'Player',
         '/f',
       ]);
       await _runReg([
@@ -208,6 +218,17 @@ class WindowsFileAssociationService {
           'add',
           'HKCU\\Software\\Classes\\SystemFileAssociations\\$ext\\shell\\Looper.Play',
           '/v',
+          'MultiSelectModel',
+          '/t',
+          'REG_SZ',
+          '/d',
+          'Player',
+          '/f',
+        ]);
+        await _runReg([
+          'add',
+          'HKCU\\Software\\Classes\\SystemFileAssociations\\$ext\\shell\\Looper.Play',
+          '/v',
           'Icon',
           '/t',
           'REG_SZ',
@@ -233,6 +254,17 @@ class WindowsFileAssociationService {
           'REG_SZ',
           '/d',
           'Add to Looper Queue',
+          '/f',
+        ]);
+        await _runReg([
+          'add',
+          'HKCU\\Software\\Classes\\SystemFileAssociations\\$ext\\shell\\Looper.Enqueue',
+          '/v',
+          'MultiSelectModel',
+          '/t',
+          'REG_SZ',
+          '/d',
+          'Player',
           '/f',
         ]);
         await _runReg([
