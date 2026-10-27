@@ -312,13 +312,25 @@ class MyApp extends ConsumerWidget {
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) {
           final showPerformanceOptimizer = settings?.showPerformanceOptimizer ?? false;
-          if (!showPerformanceOptimizer) return child!;
-          return PerformanceOptimizer(
-            enabled: showPerformanceOptimizer,
-            showDashboard: showPerformanceOptimizer,
-            enableInReleaseMode: true,
-            child: child!,
-          );
+          Widget content = child!;
+          if (showPerformanceOptimizer) {
+            content = PerformanceOptimizer(
+              enabled: showPerformanceOptimizer,
+              showDashboard: showPerformanceOptimizer,
+              enableInReleaseMode: true,
+              child: content,
+            );
+          }
+          // On Windows desktop, rapid high-frequency canvas/animation updates (e.g. 48-band visualizers,
+          // dynamic seekbars, rotating album art) coupled with layout transitions can trigger Chromium AXTree
+          // serialization desync warnings in Flutter's C++ accessibility bridge:
+          // "[ERROR:flutter/shell/platform/common/accessibility_bridge.cc(114)] Failed to update ui::AXTree"
+          // Wrapping desktop presentation with ExcludeSemantics protects the native embedder from
+          // out-of-order incremental node churn while keeping full desktop interaction intact.
+          if (Platform.isWindows) {
+            content = ExcludeSemantics(child: content);
+          }
+          return content;
         },
         home: buildHome(),
       );
