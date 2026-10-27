@@ -53,9 +53,21 @@ class WindowsFileAssociationService {
         '"$exePath",0',
         '/f',
       ]);
+      // Set default verb of ProgID to Looper.Play so Windows Explorer matches the verb key
+      // used in SystemFileAssociations, preventing duplicate "Play in Looper" context menu entries.
       await _runReg([
         'add',
-        r'HKCU\Software\Classes\Looper.AudioFile\shell\open',
+        r'HKCU\Software\Classes\Looper.AudioFile\shell',
+        '/ve',
+        '/t',
+        'REG_SZ',
+        '/d',
+        'Looper.Play',
+        '/f',
+      ]);
+      await _runReg([
+        'add',
+        r'HKCU\Software\Classes\Looper.AudioFile\shell\Looper.Play',
         '/ve',
         '/t',
         'REG_SZ',
@@ -65,7 +77,7 @@ class WindowsFileAssociationService {
       ]);
       await _runReg([
         'add',
-        r'HKCU\Software\Classes\Looper.AudioFile\shell\open',
+        r'HKCU\Software\Classes\Looper.AudioFile\shell\Looper.Play',
         '/v',
         'MultiSelectModel',
         '/t',
@@ -76,7 +88,7 @@ class WindowsFileAssociationService {
       ]);
       await _runReg([
         'add',
-        r'HKCU\Software\Classes\Looper.AudioFile\shell\open',
+        r'HKCU\Software\Classes\Looper.AudioFile\shell\Looper.Play',
         '/v',
         'Icon',
         '/t',
@@ -87,7 +99,7 @@ class WindowsFileAssociationService {
       ]);
       await _runReg([
         'add',
-        r'HKCU\Software\Classes\Looper.AudioFile\shell\open\command',
+        r'HKCU\Software\Classes\Looper.AudioFile\shell\Looper.Play\command',
         '/ve',
         '/t',
         'REG_SZ',
@@ -96,8 +108,13 @@ class WindowsFileAssociationService {
         '/f',
       ]);
 
-      // Remove legacy or duplicate HKCU ProgID enqueue verb if present,
-      // as Enqueue is uniformly handled via SystemFileAssociations.
+      // Remove legacy or duplicate HKCU ProgID open and enqueue verbs if present,
+      // as they have been unified to Looper.Play and Looper.Enqueue.
+      await _runReg([
+        'delete',
+        r'HKCU\Software\Classes\Looper.AudioFile\shell\open',
+        '/f',
+      ]);
       await _runReg([
         'delete',
         r'HKCU\Software\Classes\Looper.AudioFile\shell\enqueue',
