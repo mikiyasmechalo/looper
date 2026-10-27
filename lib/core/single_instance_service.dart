@@ -12,6 +12,31 @@ class SingleInstanceService {
   static FileActionCallback? _actionCallback;
   static final List<Map<String, dynamic>> _pendingActions = [];
 
+  static const Set<String> supportedAudioExtensions = {
+    '.mp3',
+    '.flac',
+    '.wav',
+    '.m4a',
+    '.m4b',
+    '.ogg',
+    '.opus',
+    '.aac',
+    '.alac',
+    '.wma',
+    '.aiff',
+    '.ape',
+  };
+
+  /// Returns whether [path] has a supported audio extension.
+  /// Used to filter out non-audio files (e.g. JPEGs, PNGs, TXTs) when multiple mixed
+  /// files are passed via CLI, Explorer selection, or drag-and-drop.
+  static bool isAudioFile(String path) {
+    final dotIndex = path.lastIndexOf('.');
+    if (dotIndex == -1) return false;
+    final ext = path.substring(dotIndex).toLowerCase();
+    return supportedAudioExtensions.contains(ext);
+  }
+
   /// Parses CLI arguments into an action ('play' or 'enqueue') and a list of files.
   static Map<String, dynamic> parseArgs(List<String> args) {
     if (args.isEmpty) {
@@ -43,8 +68,10 @@ class SingleInstanceService {
       }
     }
 
-    final action = isEnqueue ? 'enqueue' : (files.isNotEmpty ? 'play' : 'focus');
-    return {'action': action, 'files': files};
+    // Filter to audio files only so mixed selections (e.g. mp3 + jpeg) do not crash or pollute playback
+    final audioFiles = files.where(isAudioFile).toList();
+    final action = isEnqueue ? 'enqueue' : (audioFiles.isNotEmpty ? 'play' : 'focus');
+    return {'action': action, 'files': audioFiles};
   }
 
   /// Ensures only a single instance of the application runs on desktop platforms.
@@ -168,11 +195,12 @@ class SingleInstanceService {
       windowManager.restore();
     } catch (_) {}
 
-    if (files.isEmpty) {
+    final validAudioFiles = files.where(isAudioFile).toList();
+    if (validAudioFiles.isEmpty) {
       if (_actionCallback != null) {
-        _actionCallback!(action, files);
+        _actionCallback!(action, const <String>[]);
       } else {
-        _pendingActions.add({'action': action, 'files': files});
+        _pendingActions.add({'action': action, 'files': const <String>[]});
       }
       return;
     }
@@ -181,7 +209,7 @@ class SingleInstanceService {
     // multiple secondary processes in rapid succession (one per file).
     // Aggregate files within a short burst window so they are dispatched together.
     _burstAction ??= action;
-    _burstFiles.addAll(files);
+    _burstFiles.addAll(validAudioFiles);
 
     _burstTimer?.cancel();
     _burstTimer = Timer(const Duration(milliseconds: 200), () {

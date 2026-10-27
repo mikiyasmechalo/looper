@@ -59,6 +59,48 @@ void main() {
         equals([r'D:\Music\track 1.mp3', r'D:\Music\track 2.mp3']),
       );
     });
+
+    test('Filters out non-audio files (e.g. jpeg, png, txt, pdf) in mixed selection', () {
+      final res = SingleInstanceService.parseArgs([
+        r'D:\Music\song1.mp3',
+        r'D:\Music\cover.jpeg',
+        r'D:\Music\notes.txt',
+        r'D:\Music\song2.flac',
+        r'D:\Music\artwork.PNG',
+      ]);
+      expect(res['action'], equals('play'));
+      expect(
+        res['files'],
+        equals([r'D:\Music\song1.mp3', r'D:\Music\song2.flac']),
+      );
+    });
+
+    test('Non-audio only files result in focus action and empty files list', () {
+      final res = SingleInstanceService.parseArgs([
+        r'D:\Music\cover.jpg',
+        r'D:\Music\booklet.pdf',
+      ]);
+      expect(res['action'], equals('focus'));
+      expect(res['files'], isEmpty);
+    });
+
+    test('isAudioFile accurately identifies supported and unsupported formats', () {
+      expect(SingleInstanceService.isAudioFile('song.mp3'), isTrue);
+      expect(SingleInstanceService.isAudioFile('SONG.MP3'), isTrue);
+      expect(SingleInstanceService.isAudioFile('audio.flac'), isTrue);
+      expect(SingleInstanceService.isAudioFile('track.wav'), isTrue);
+      expect(SingleInstanceService.isAudioFile('m4a_track.m4a'), isTrue);
+      expect(SingleInstanceService.isAudioFile('opus_track.opus'), isTrue);
+      expect(SingleInstanceService.isAudioFile('ogg_track.ogg'), isTrue);
+
+      expect(SingleInstanceService.isAudioFile('image.jpg'), isFalse);
+      expect(SingleInstanceService.isAudioFile('image.jpeg'), isFalse);
+      expect(SingleInstanceService.isAudioFile('photo.png'), isFalse);
+      expect(SingleInstanceService.isAudioFile('document.pdf'), isFalse);
+      expect(SingleInstanceService.isAudioFile('readme.txt'), isFalse);
+      expect(SingleInstanceService.isAudioFile('program.exe'), isFalse);
+      expect(SingleInstanceService.isAudioFile('no_extension'), isFalse);
+    });
   });
 
   group('Library Isolation & External Folder Filtering Tests', () {
