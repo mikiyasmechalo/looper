@@ -19,16 +19,21 @@ categories:
 requires:
   - gtk3
   - mpv-libs
-spec_macros:
-  - "%define _buildsubdir ."
 install: |
   mkdir -p %{buildroot}%{_bindir}
   mkdir -p %{buildroot}%{_datadir}/%{name}
   mkdir -p %{buildroot}%{_datadir}/applications
   mkdir -p %{buildroot}%{_datadir}/metainfo
   mkdir -p %{buildroot}%{_datadir}/pixmaps
-  cp -r %{_builddir}/looper_player/* %{buildroot}%{_datadir}/%{name}
+  if [ -d "%{_topdir}/BUILD/looper_player" ]; then
+    cp -r %{_topdir}/BUILD/looper_player/* %{buildroot}%{_datadir}/%{name}
+    cp -r %{_topdir}/BUILD/looper_player.desktop %{buildroot}%{_datadir}/applications/%{name}.desktop
+    cp -r %{_topdir}/BUILD/looper_player.png %{buildroot}%{_datadir}/pixmaps/%{name}.png
+    cp -r %{_topdir}/BUILD/looper_player*.xml %{buildroot}%{_datadir}/metainfo/%{name}.appdata.xml || :
+  else
+    cp -r looper_player/* %{buildroot}%{_datadir}/%{name}
+    cp -r looper_player.desktop %{buildroot}%{_datadir}/applications/%{name}.desktop
+    cp -r looper_player.png %{buildroot}%{_datadir}/pixmaps/%{name}.png
+    cp -r looper_player*.xml %{buildroot}%{_datadir}/metainfo/%{name}.appdata.xml || :
+  fi
   ln -s %{_datadir}/%{name}/looper_player %{buildroot}%{_bindir}/%{name}
-  cp -r %{_builddir}/looper_player.desktop %{buildroot}%{_datadir}/applications/%{name}.desktop
-  cp -r %{_builddir}/looper_player.png %{buildroot}%{_datadir}/pixmaps/%{name}.png
-  cp -r %{_builddir}/looper_player*.xml %{buildroot}%{_datadir}/metainfo/%{name}.appdata.xml || :

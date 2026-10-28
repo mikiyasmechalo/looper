@@ -11,31 +11,46 @@ for arg in args:
             with open(arg, 'r', encoding='utf-8') as f:
                 content = f.read()
 
-            # 1. RPM spec Version tag cannot contain hyphens.
+            # 1. RPM spec Version tag cannot contain hyphens or pluses.
             # Convert e.g. "Version: 1.0.0-beta.2+2" -> "Version: 1.0.0"
             content = re.sub(r'Version:\s*([0-9]+\.[0-9]+\.[0-9]+)[^\n]*', r'Version: \1', content)
 
-            # 2. Add %define _buildsubdir . to prevent rpmbuild from jumping to a non-existent -build folder
-            if '%define _buildsubdir' not in content:
-                content = "%define _buildsubdir .\n" + content
+            # 2. Defensively ensure all copy commands in %install reference %{_topdir}/BUILD directly
+            # so they never fail if rpmbuild creates an isolated build subfolder.
+            content = re.sub(
+                r'cp -r (?:%\{_builddir\}/)?looper_player/\*',
+                r'cp -r %{_topdir}/BUILD/looper_player/*',
+                content
+            )
+            content = re.sub(
+                r'cp -r (?:%\{_builddir\}/)?(looper_player\.(?:desktop|png))',
+                r'cp -r %{_topdir}/BUILD/\1',
+                content
+            )
+            content = re.sub(
+                r'cp -r (?:%\{_builddir\}/)?(looper_player\*\.xml)',
+                r'cp -r %{_topdir}/BUILD/\1',
+                content
+            )
 
-            # 3. Ensure all cp commands in %install reference %{_builddir} directly
-            content = re.sub(
-                r'cp -r (?!%\{_builddir\}/)([\w-]+)/\*',
-                r'cp -r %{_builddir}/\1/*',
-                content
+            # 3. Inject a fallback at the start of %install that copies items into the current directory
+            # if they are not already there.
+            prep_block = (
+                "\n# [rpmbuild-wrapper] Fallback copy from %{_topdir}/BUILD if executed in isolated builddir\n"
+                "if [ ! -d looper_player ] && [ -d %{_topdir}/BUILD/looper_player ]; then\n"
+                "  cp -r %{_topdir}/BUILD/looper_player .\n"
+                "fi\n"
+                "if [ ! -f looper_player.desktop ] && [ -f %{_topdir}/BUILD/looper_player.desktop ]; then\n"
+                "  cp -f %{_topdir}/BUILD/looper_player.* . 2>/dev/null || :\n"
+                "fi\n"
             )
-            content = re.sub(
-                r'cp -r (?!%\{_builddir\}/)([\w-]+\.(?:desktop|png|\*\.xml))',
-                r'cp -r %{_builddir}/\1',
-                content
-            )
+            content = re.sub(r'(%install\b[^\n]*)', r'\1' + prep_block, content, count=1)
 
             with open(arg, 'w', encoding='utf-8') as f:
                 f.write(content)
             print(f"[rpmbuild-wrapper] Sanitized and patched spec file: {arg}")
 
-            # 4. Also defensively symlink items in BUILD into any -build subfolder if rpmbuild creates one
+            # 4. If any subfolders already exist in BUILD, symlink looper_player into them
             spec_dir = os.path.dirname(os.path.abspath(arg))
             rpmbuild_dir = os.path.dirname(spec_dir)
             build_dir = os.path.join(rpmbuild_dir, 'BUILD')

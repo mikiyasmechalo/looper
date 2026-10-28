@@ -154,7 +154,7 @@ jobs:
 
   build-linux:
     name: Build & Package Linux (x86_64)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       APPIMAGE_EXTRACT_AND_RUN: 1
     steps:
