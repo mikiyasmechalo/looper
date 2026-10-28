@@ -1,7 +1,7 @@
 display_name: Looper Player
 name: looper_player
 version: 1.0.0
-release: beta.1
+release: beta.2
 summary: A modern, high-fidelity music player for Linux.
 description: A modern, high-fidelity music player for Linux.
 license: GPL-3.0
@@ -19,3 +19,16 @@ categories:
 requires:
   - gtk3
   - mpv-libs
+spec_macros:
+  - "%define _buildsubdir ."
+install: |
+  mkdir -p %{buildroot}%{_bindir}
+  mkdir -p %{buildroot}%{_datadir}/%{name}
+  mkdir -p %{buildroot}%{_datadir}/applications
+  mkdir -p %{buildroot}%{_datadir}/metainfo
+  mkdir -p %{buildroot}%{_datadir}/pixmaps
+  cp -r %{_builddir}/looper_player/* %{buildroot}%{_datadir}/%{name}
+  ln -s %{_datadir}/%{name}/looper_player %{buildroot}%{_bindir}/%{name}
+  cp -r %{_builddir}/looper_player.desktop %{buildroot}%{_datadir}/applications/%{name}.desktop
+  cp -r %{_builddir}/looper_player.png %{buildroot}%{_datadir}/pixmaps/%{name}.png
+  cp -r %{_builddir}/looper_player*.xml %{buildroot}%{_datadir}/metainfo/%{name}.appdata.xml || :
