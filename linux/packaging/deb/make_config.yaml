@@ -3,7 +3,7 @@ package_name: looper-player
 executable_name: looper_player
 display_name: Looper Player
 generic_name: Music Player
-version: 1.0.0-beta.1
+version: 1.0.0-beta.2
 architecture: amd64
 maintainer:
   name: Mikiyas Mechalo

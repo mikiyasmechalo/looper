@@ -1,40 +1,32 @@
-# 🎵 Looper Player v1.0.0-beta.1 (Desktop Release)
+# 🎵 Looper Player v1.0.0-beta.2 (Desktop Release)
 
-We are thrilled to announce the first official beta release of **Looper Player**—completely re-architected from the ground up as a high-fidelity, native desktop music player for **Windows** and **Linux**.
-
-Looper pairs an ultra-performant, zero-telemetry local audio engine with an adaptive glassmorphic cyber-interface that dynamically morphs with whatever album you're listening to.
+We are pleased to announce the second beta release of **Looper Player** (`v1.0.0-beta.2`), featuring an intelligent Quick Picks recommendation overhaul, queue switching auto-focus, universal control polish, mini-player refinements, and major stability and lifecycle improvements.
 
 ---
 
-## ✨ Key Highlights
+## ✨ What's New in v1.0.0-beta.2
 
-### 🔮 Glassmorphic Cyber-UI & Adaptive Theming (Default ON)
-* **Album-Art Adaptive Color Extraction**: The entire interface—navigation rails, seekbars, text glows, and backdrop blurs—adapts dynamically in real time to the dominant palette of active artwork.
-* **Deep Neo-Blur Aesthetics**: Subtle frosted acrylic glassmorphism and real-time backdrop blur enabled out of the box, with an **OLED Pure Black** mode for deep contrast and AMOLED displays.
+### 🎲 Quick Picks Recommendation Overhaul
+* **Randomized Top Songs Pool**: Top played tracks are no longer chosen in strict, predictable 1–6 rank order. Looper now draws and shuffles from an expanded pool of up to 50 top played tracks, allowing less-played favorites (ranks 6–40) to be discovered alongside top tracks.
+* **Dedicated Random Discovery Pool**: 50% of the quick picks slots on the homescreen are now drawn from a dedicated pool of random songs strictly outside your top songs, giving you an even richer mix of fresh discoveries every session.
+* **Balanced 6-Slot Cycle**: Round-robin interleaved with top songs, random discovery, recently added, and favorites.
 
-### 🎤 Syllable & Karaoke-Glow Lyrics
-* **Word-by-Word Illumination**: Rich, word-level glowing karaoke lyrics engine with butter-smooth scrolling.
-* **Interactive Seeking & Calibration**: Tap any lyric line to skip straight to that timestamp, paired with a per-song calibration tool to shift timing offsets.
-* **Multi-Provider Fallback**: Automatically resolves embedded tags, local `.lrc` files, and fallback providers.
+### 📋 Queue Page Auto-Scroll on Switch
+* **Instant Song Centering**: When switching between saved queues using the dropdown queue switcher on the Queue page, the view automatically and smoothly scrolls to and centers the currently active song in the newly selected queue.
 
-### 🪟 Dual Floating Mini-Players & Real-Time Visualizer
-* **Standard Floating Mini-Player**: Resizable card with cover art, playback controls, seekbar, and frequency spectrum.
-* **Pinned Corner Desktop Widget**: Ultra-compact, non-intrusive floating corner player featuring a real-time reactive audio frequency visualizer.
-* **48-Band DSP Spectrum Visualizer**: Hardware-accelerated audio frequency bars reacting directly to live audio output in both the full player deck and mini-players (auto-pauses to preserve CPU when idle).
+### 🎛️ Control Deck & Player Bar Polish
+* **Universal Hover Glow & Hand Cursors**: Added subtle circular backdrop hover glow, hand pointer cursor, and hover brightening across all player bar control buttons (Shuffle, Repeat, Previous, Play/Pause, Next, Favorite, Lyrics, Queue, and Fullscreen).
+* **Volume Button Tooltip**: Added hand cursor and explicit `"Mute"` / `"Unmute"` tooltip for the volume button across inline, anchor, and popup modes.
 
-### 📊 Looper Analyze (Listening Trends & Stats)
-* Track your listening habits locally without giving away your personal data: total hours listened, 30-day play trends, top tracks, favorite artists, listening streaks, and genre breakdowns.
+### 🪟 Mini-Player Polish & Bug Fixes
+* **True Position Persistence**: Opening the queue drawer while the corner mini-player is at the bottom edge no longer causes the shifted-up coordinates to overwrite your saved resting corner position when closing or restoring to the normal player.
+* **Vertical Alignment Centering**: Standardized corner mini-player collapsed height and centered the header row layout to eliminate top/bottom margin disparities and RenderFlex overflows.
+* **Instrumental Gap Animation in Lyrics**: Empty lines and musical gaps in both standard and corner mini-player lyrics now render a beat-pulsing, bouncing music note icon ("♫"), matching fullscreen lyrics.
 
-### 🔋 Intelligent Auto Battery Saver
-* Senses when your laptop is unplugged and actively discharging: automatically engages battery-preserving overrides (freezes continuous animations, suspends GPU blur filters, and switches to OLED pure black) when power drops below your chosen threshold.
-
-### 🎵 18-Band Graphical EQ & Audio Controls
-* **Interactive Drag-to-Shape Curve**: Flexible 18-band equalizer (65 Hz to 20 kHz) with ±20 dB range, zero-snapping logic, and built-in genre presets.
-* **Expressive & Flat Seekbars**: Choose between an organic, fluid animating wave seekbar or a clean, CPU-efficient flat progress bar.
-
-### 🎧 Scrobbling & System Integrations
-* **Last.fm & ListenBrainz**: Real-time scrobbling and "Now Playing" status updates with automatic offline queueing.
-* **Windows & Desktop Native**: Borderless true fullscreen, Windows taskbar DWM iconic thumbnail preview with playback controls, Discord Rich Presence integration, customizable global hotkeys, and minimize-to-system-tray.
+### 🛡️ Stability & Lifecycle Hardening
+* **Defunct Lifecycle Error Guard**: Replaced Riverpod subscriptions inside rapid-cycling animated lyric glyphs with pure stateful widgets, eliminating `_lifecycleState != _ElementLifecycle.defunct` assertions during track skipping (`skipNext()`) and window focus blur transitions.
+* **GlobalKey Lifecycle Cleanliness**: Dynamic lyric line GlobalKey caches are now systematically cleared between songs to eliminate key collisions across track transitions.
+* **Context Menu Deduplication**: Consolidated default shell ProgID verb handlers to eliminate duplicate context menu entries on Windows desktop.
 
 ---
 
@@ -45,22 +37,13 @@ Looper pairs an ultra-performant, zero-telemetry local audio engine with an adap
 * **Portable (`looper-windows-x64-portable.zip`)**: Extract and launch `looper_player.exe` directly from any folder or USB drive with zero installation.
 
 ### 🐧 Linux (x86_64)
-* **Debian / Ubuntu / Linux Mint**: Download and install `looper_1.0.0-beta.1_amd64.deb` (`sudo dpkg -i looper_*.deb`).
-* **Fedora / RHEL / openSUSE**: Download and install `looper-1.0.0-beta.1.x86_64.rpm` (`sudo rpm -i looper-*.rpm`).
-* **Universal AppImage**: Download `looper-1.0.0-beta.1-x86_64.AppImage`, run `chmod +x`, and execute anywhere.
-* **Portable Tarball**: Download `looper-linux-x64.tar.gz` and extract anywhere.
+* **Debian / Ubuntu / Linux Mint**: Download and install `looper_1.0.0-beta.2_amd64.deb` (`sudo dpkg -i looper_*.deb`).
+* **Fedora / RHEL / openSUSE**: Download and install `looper-1.0.0-beta.2.x86_64.rpm` (`sudo rpm -i looper-*.rpm`).
+* **Universal AppImage**: Download `looper-1.0.0-beta.2-x86_64.AppImage`, run `chmod +x`, and execute anywhere.
+* **Portable Tarball**: Download `looper-player-1.0.0-beta.2-linux-x64.tar.gz` and extract anywhere.
 
 > [!NOTE]  
 > **Linux Prerequisite**: Ensure `libmpv` is installed on your distribution:
 > - Ubuntu/Debian: `sudo apt install libmpv-dev libmpv2`
 > - Arch Linux: `sudo pacman -S mpv`
 > - Fedora: `sudo dnf install mpv-libs`
-
----
-
-## 👥 Credits & Maintainers
-* **Lead Maintainer (This Fork)**: [Mikiyas Mechalo](https://github.com/mikiyasmechalo)
-* **Original Creators**: [Nilesh Suthar](https://github.com/SthrNilshaaa) & [Karan Suthar](https://github.com/sthrkaran)
-
----
-*Report bugs or submit feedback on our [GitHub Issues](https://github.com/mikiyasmechalo/looper/issues).*

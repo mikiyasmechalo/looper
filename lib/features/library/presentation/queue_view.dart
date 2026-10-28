@@ -89,8 +89,29 @@ class _QueueViewState extends ConsumerState<QueueView> {
     });
   }
 
+  void _scrollToCurrentSong({bool force = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final playback = ref.read(playbackProvider);
+      final currentSongPath = playback.currentSong?.path;
+      if (currentSongPath == null) return;
+      final showPlayed = ref.read(settingsProvider).showPlayedSongsInQueue;
+      final currentIdx =
+          playback.queue.indexWhere((s) => s.path == currentSongPath);
+      if (currentIdx == -1) return;
+      final targetIdx = showPlayed ? currentIdx : 0;
+      _scrollToCurrent(targetIdx, currentSongPath, force: force);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(settingsProvider.select((s) => s.activeQueueName), (prev, next) {
+      if (prev != null && prev != next) {
+        _scrollToCurrentSong(force: true);
+      }
+    });
+
     final queue = ref.watch(playbackProvider.select((s) => s.queue));
     final currentSongPath =
         ref.watch(playbackProvider.select((s) => s.currentSong?.path));
@@ -141,7 +162,11 @@ class _QueueViewState extends ConsumerState<QueueView> {
                 ),
               ),
               const SizedBox(width: 16),
-              const QueueSelectorDropdown(),
+              QueueSelectorDropdown(
+                onQueueSwitched: () {
+                  _scrollToCurrentSong(force: true);
+                },
+              ),
               const Spacer(),
               if (currentIdx != -1 && currentSongPath != null)
                 IconButton(

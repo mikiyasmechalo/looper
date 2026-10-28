@@ -314,5 +314,26 @@ void main() {
       expect(savedCornerX, equals(1578.0));
       expect(savedCornerY, equals(922.0));
     });
+    test('Queue View scroll calculation targets active song correctly when switching queues', () {
+      const double kItemHeight = 72.0;
+      const double kTopPadding = 16.0;
+      const double viewport = 600.0;
+      const double maxExtent = 2000.0;
+
+      double computeQueueTarget(int currentIdx, bool showPlayed) {
+        final targetIdx = showPlayed ? currentIdx : 0;
+        return (kTopPadding + targetIdx * kItemHeight - viewport / 2 + kItemHeight / 2)
+            .clamp(0.0, maxExtent);
+      }
+
+      // Switching to a queue where the active song is at index 10 (showPlayed = true)
+      // target = (16.0 + 10 * 72.0 - 300.0 + 36.0) = (16 + 720 - 300 + 36) = 472.0
+      expect(computeQueueTarget(10, true), equals(472.0));
+
+      // Switching to a queue with showPlayed = false: active song is always at top (targetIdx = 0)
+      // target = (16.0 + 0 - 300.0 + 36.0) = -248.0 -> clamped to 0.0
+      expect(computeQueueTarget(10, false), equals(0.0));
+    });
   });
 }
+

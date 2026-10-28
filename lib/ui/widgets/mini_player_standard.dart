@@ -1242,9 +1242,16 @@ class _LyricsOverlayState extends ConsumerState<_LyricsOverlay> {
     });
   }
 
+  List<dynamic>? _lastParsedLines;
+
   @override
   Widget build(BuildContext context) {
     final lyricsState = ref.watch(lyricsProvider);
+    if (!identical(lyricsState.parsedLines, _lastParsedLines)) {
+      _lastParsedLines = lyricsState.parsedLines;
+      _lineKeys.clear();
+    }
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
     final posMs = ref.watch(
       playbackProvider.select((s) => s.position.inMilliseconds),
     );
@@ -1341,6 +1348,7 @@ class _LyricsOverlayState extends ConsumerState<_LyricsOverlay> {
               lineContent = PulsingInstrumentalIcon(
                 color: primaryColor,
                 style: currentStyle,
+                isPlaying: isPlaying,
               );
             } else {
               lineContent = Text(
@@ -1433,7 +1441,7 @@ class _QueuePanelContentState extends ConsumerState<_QueuePanelContent> {
 
   void _scrollToCurrent() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
+      if (!mounted || !_scrollController.hasClients) return;
       final currentPath = ref.read(playbackProvider).currentSong?.path;
       final queue = ref.read(playbackProvider).queue;
       final showPlayed = ref.read(settingsProvider).showPlayedSongsInQueue;

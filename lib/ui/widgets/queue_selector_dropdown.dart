@@ -9,7 +9,9 @@ import 'package:looper_player/features/settings/presentation/settings_notifier.d
 import 'package:looper_player/core/app_fonts.dart';
 
 class QueueSelectorDropdown extends ConsumerStatefulWidget {
-  const QueueSelectorDropdown({super.key});
+  final VoidCallback? onQueueSwitched;
+
+  const QueueSelectorDropdown({super.key, this.onQueueSwitched});
 
   @override
   ConsumerState<QueueSelectorDropdown> createState() => _QueueSelectorDropdownState();
@@ -44,13 +46,14 @@ class _QueueSelectorDropdownState extends ConsumerState<QueueSelectorDropdown> {
             ),
             child: _QueueDropdownMenuContent(
               displayName: displayName,
-              onSelect: (queue) {
+              onSelect: (queue) async {
                 if (queue.name == displayName) {
                   _overlayController.hide();
                   return;
                 }
                 _overlayController.hide();
-                ref.read(playbackProvider.notifier).switchToSavedQueue(queue);
+                await ref.read(playbackProvider.notifier).switchToSavedQueue(queue);
+                widget.onQueueSwitched?.call();
               },
             ),
           );

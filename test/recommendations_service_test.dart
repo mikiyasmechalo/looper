@@ -105,5 +105,37 @@ void main() {
       expect(paths.length, equals(result.length));
       expect(result.length, equals(12));
     });
+    test('buildQuickPicksQueue includes songs beyond 5th rank and outside top songs', () {
+      // 100 songs total:
+      // Songs 0-29 have playCounts from 100 down to 71 (top songs pool)
+      // Songs 30-99 have 0 playCount (outside top songs)
+      final songs = List.generate(
+        100,
+        (i) => createTestSong(
+          id: i,
+          path: '/music/song_$i.mp3',
+          title: 'Song $i',
+          playCount: i < 30 ? (100 - i) : 0,
+          dateAdded: DateTime(2023, 1, 1).add(Duration(days: i)),
+        ),
+      );
+
+      final picks = RecommendationsService.buildQuickPicksQueue(
+        songs,
+        count: 12,
+        random: Random(123),
+      );
+
+      expect(picks.length, equals(12));
+
+      // Verify that songs beyond the top 5 (rank > 5, i.e. id >= 5) are included
+      final hasRankBeyond5 = picks.any((s) => s.id >= 5 && s.id < 30);
+      expect(hasRankBeyond5, isTrue, reason: 'Expected top songs beyond 5th rank to be included');
+
+      // Verify that songs outside the top songs (id >= 30, playCount == 0) are included
+      final outsideTopCount = picks.where((s) => s.id >= 30).length;
+      expect(outsideTopCount, greaterThanOrEqualTo(3), reason: 'Expected multiple random songs outside top songs');
+    });
   });
 }
+

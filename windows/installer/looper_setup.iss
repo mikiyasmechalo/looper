@@ -3,7 +3,7 @@
 ; ==============================================================================
 
 #define MyAppName "Looper Player"
-#define MyAppVersion "1.0.0-beta.1"
+#define MyAppVersion "1.0.0-beta.2"
 #define MyAppPublisher "Mikiyas Mechalo"
 #define MyAppURL "https://github.com/mikiyasmechalo/looper"
 #define MyAppExeName "looper_player.exe"

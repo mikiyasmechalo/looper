@@ -58,7 +58,9 @@ class _CornerWidgetPlayerState extends ConsumerState<CornerWidgetPlayer>
 
   @override
   void dispose() {
-    ref.read(cornerExpandedProvider.notifier).state = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(cornerExpandedProvider.notifier).state = false;
+    });
     if (_moveDebounce?.isActive ?? false) {
       _moveDebounce?.cancel();
       if (_expandedView == _ExpandedView.none) {
@@ -1195,7 +1197,7 @@ class _QueueDrawerState extends ConsumerState<_QueueDrawer> {
 
   void _scrollToCurrent() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
+      if (!mounted || !_scrollController.hasClients) return;
       final currentPath = ref.read(playbackProvider).currentSong?.path;
       final queue = ref.read(playbackProvider).queue;
       final showPlayed = ref.read(settingsProvider).showPlayedSongsInQueue;
@@ -1721,9 +1723,16 @@ class _LyricsDrawerState extends ConsumerState<_LyricsDrawer> {
     });
   }
 
+  List<dynamic>? _lastParsedLines;
+
   @override
   Widget build(BuildContext context) {
     final lyricsState = ref.watch(lyricsProvider);
+    if (!identical(lyricsState.parsedLines, _lastParsedLines)) {
+      _lastParsedLines = lyricsState.parsedLines;
+      _lineKeys.clear();
+    }
+    final isPlaying = ref.watch(playbackProvider.select((s) => s.isPlaying));
     final posMs = ref.watch(
       playbackProvider.select((s) => s.position.inMilliseconds),
     );
@@ -1820,6 +1829,7 @@ class _LyricsDrawerState extends ConsumerState<_LyricsDrawer> {
               lineContent = PulsingInstrumentalIcon(
                 color: primaryColor,
                 style: currentStyle,
+                isPlaying: isPlaying,
               );
             } else {
               lineContent = Text(

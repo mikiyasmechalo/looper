@@ -31,9 +31,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 final appVersionProvider = FutureProvider<String>((ref) async {
   try {
     final info = await PackageInfo.fromPlatform();
-    return info.version.isNotEmpty ? 'v${info.version}' : 'v1.0.0-beta.1';
+    return info.version.isNotEmpty ? 'v${info.version}' : 'v1.0.0-beta.2';
   } catch (_) {
-    return 'v1.0.0-beta.1';
+    return 'v1.0.0-beta.2';
   }
 });
 
@@ -2463,7 +2463,7 @@ class SettingsView extends ConsumerWidget {
     AppLocalizations l10n,
   ) {
     final versionStr =
-        ref.watch(appVersionProvider).valueOrNull ?? 'v1.0.0-beta.1';
+        ref.watch(appVersionProvider).valueOrNull ?? 'v1.0.0-beta.2';
     final displayVersion = versionStr.startsWith('v')
         ? versionStr.substring(1)
         : versionStr;

@@ -6,21 +6,27 @@ part of 'advanced_lyric_line.dart';
 /// stays active, so the animation itself (not a different symbol) is what
 /// marks it as the current one. While playback is paused the pulse eases
 /// back to rest (no glow, no bounce) and picks up again on resume.
-class PulsingInstrumentalIcon extends ConsumerStatefulWidget {
-  const PulsingInstrumentalIcon({super.key, required this.color, required this.style});
+class PulsingInstrumentalIcon extends StatefulWidget {
+  const PulsingInstrumentalIcon({
+    super.key,
+    required this.color,
+    required this.style,
+    this.isPlaying = true,
+  });
 
   /// Color of the glow halo behind the symbol - the symbol's own color
   /// already comes from [style].
   final Color color;
   final TextStyle style;
+  final bool isPlaying;
 
   @override
-  ConsumerState<PulsingInstrumentalIcon> createState() =>
+  State<PulsingInstrumentalIcon> createState() =>
       _PulsingInstrumentalIconState();
 }
 
 class _PulsingInstrumentalIconState
-    extends ConsumerState<PulsingInstrumentalIcon>
+    extends State<PulsingInstrumentalIcon>
     with SingleTickerProviderStateMixin {
   static const _beat = Duration(milliseconds: 900);
 
@@ -32,8 +38,16 @@ class _PulsingInstrumentalIconState
   @override
   void initState() {
     super.initState();
-    if (ref.read(playbackProvider).isPlaying && !Motion.reduced) {
+    if (widget.isPlaying && !Motion.reduced) {
       _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(PulsingInstrumentalIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      _syncWithPlayback(widget.isPlaying);
     }
   }
 
@@ -55,10 +69,6 @@ class _PulsingInstrumentalIconState
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(
-      playbackProvider.select((s) => s.isPlaying),
-      (_, playing) => _syncWithPlayback(playing),
-    );
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {

@@ -386,6 +386,7 @@ class AdvancedLyricLine extends ConsumerWidget {
             child: PulsingInstrumentalIcon(
               color: activeColor,
               style: baseStyle,
+              isPlaying: isPlaying,
             ),
           )
         // No style of its own: it wears the animated one above, so the
