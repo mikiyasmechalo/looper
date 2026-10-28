@@ -291,11 +291,7 @@ class AdvancedLyricLine extends ConsumerWidget {
     bool isPlaying,
   ) {
     final String text = line.text;
-    final bool isInstrumental =
-        text.isEmpty ||
-        text.toLowerCase().contains('instrumental') ||
-        text.toLowerCase().contains('[music]') ||
-        text.trim() == '♪';
+    final bool isInstrumental = line.isInstrumental;
 
     // If there is a search match, always highlight it
     final bool isSearchMatch =
@@ -387,7 +383,7 @@ class AdvancedLyricLine extends ConsumerWidget {
             // Same "♫" glyph as the not-active/past instrumental symbol
             // above - only the animation (see _PulsingInstrumentalIcon)
             // marks this one out as the active line, not a symbol swap.
-            child: _PulsingInstrumentalIcon(
+            child: PulsingInstrumentalIcon(
               color: activeColor,
               style: baseStyle,
             ),

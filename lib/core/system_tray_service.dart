@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
 import 'package:system_tray/system_tray.dart';
@@ -18,6 +20,9 @@ class SystemTrayService {
   bool _initialized = false;
   bool _trayActive = false;
   bool _quitInProgress = false;
+  bool _isMinimizedToTray = false;
+
+  bool get isMinimizedToTray => _isMinimizedToTray;
 
   bool get isSupported =>
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
@@ -104,6 +109,7 @@ class SystemTrayService {
   Future<void> minimizeToTray() async {
     if (!isSupported) return;
     try {
+      _isMinimizedToTray = true;
       WindowStateService.instance.setMinimized(true);
       await _createTray();
       await windowManager.hide();
@@ -115,6 +121,7 @@ class SystemTrayService {
   Future<void> restoreFromTray() async {
     if (!isSupported) return;
     try {
+      _isMinimizedToTray = false;
       WindowStateService.instance.setMinimized(false);
       await windowManager.show();
       await windowManager.focus();
@@ -132,6 +139,11 @@ class SystemTrayService {
     if (!isSupported) return;
     try {
       final settings = await DbService.isar.appSettings.get(0);
+      if (_isMinimizedToTray) {
+        await _createTray();
+        return;
+      }
+
       final showOnlyWhenMinimized = settings?.showTrayOnlyWhenMinimized ?? true;
 
       if (!showOnlyWhenMinimized) {
@@ -163,6 +175,29 @@ class SystemTrayService {
   Future<void> _quit() async {
     if (_quitInProgress) return;
     _quitInProgress = true;
+    _isMinimizedToTray = false;
+
+    // Save active mini player position before quitting
+    final pType = WindowStateService.instance.currentState.playerType;
+    if (pType == 'miniPlayer' || pType == 'cornerWidget') {
+      try {
+        final pos = await windowManager.getPosition();
+        if (pos.dx > -20000 && pos.dy > -20000 && pos.dx < 40000 && pos.dy < 40000) {
+          final miniMap = await WindowStateService.loadMiniSettings();
+          final updated = Map<String, dynamic>.from(miniMap);
+          if (pType == 'miniPlayer') {
+            updated['miniPlayerX'] = pos.dx;
+            updated['miniPlayerY'] = pos.dy;
+          } else {
+            updated['cornerX'] = pos.dx;
+            updated['cornerY'] = pos.dy;
+          }
+          final dir = await getApplicationSupportDirectory();
+          final file = File('\${dir.path}/mini_player_settings.json');
+          await file.writeAsString(jsonEncode(updated));
+        }
+      } catch (_) {}
+    }
     try {
       await _destroyTray();
     } catch (e, s) {
@@ -228,11 +263,15 @@ class _TrayWindowListener extends WindowListener {
 
   @override
   void onWindowRestore() {
+    _service._isMinimizedToTray = false;
     _service.syncTrayVisibility(isMinimizedOrHidden: false);
   }
 
   @override
-  void onWindowFocus() {
+  Future<void> onWindowFocus() async {
+    if (_service._isMinimizedToTray) return;
+    final isVis = await windowManager.isVisible();
+    if (!isVis) return;
     _service.syncTrayVisibility(isMinimizedOrHidden: false);
   }
 

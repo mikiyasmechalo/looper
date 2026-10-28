@@ -1,8 +1,10 @@
+import 'package:looper_player/features/playback/presentation/mini_player_overlay_service.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mpv_audio_kit/mpv_audio_kit.dart';
+import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:looper_player/l10n/app_localizations.dart';
@@ -90,6 +92,7 @@ void main(List<String> args) async {
 
   // Initialize desktop/window setups in parallel
   WindowState windowState = const WindowState();
+  MiniPlayerSettingsState loadedMiniSettings = const MiniPlayerSettingsState();
   final Future<void> desktopInit = () async {
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       try {
@@ -103,16 +106,24 @@ void main(List<String> args) async {
       try {
         windowState = await WindowStateService.load();
         await windowManager.ensureInitialized();
+        if (Platform.isWindows || Platform.isMacOS) {
+          try {
+            await Window.initialize();
+          } catch (_) {}
+        }
+
+        final miniMap = await WindowStateService.loadMiniSettings();
+        loadedMiniSettings = MiniPlayerSettingsState.fromJson(miniMap);
 
         if (windowState.playerType == 'miniPlayer') {
-          final miniMap = await WindowStateService.loadMiniSettings();
-          final rawX = (miniMap['miniPlayerX'] as num?)?.toDouble() ?? (miniMap['x'] as num?)?.toDouble();
-          final rawY = (miniMap['miniPlayerY'] as num?)?.toDouble() ?? (miniMap['y'] as num?)?.toDouble();
-          final alwaysOnTop = miniMap['alwaysOnTop'] as bool? ?? true;
+          final rawX = loadedMiniSettings.miniPlayerX;
+          final rawY = loadedMiniSettings.miniPlayerY;
+          final hasSaved = isValidScreenCoord(rawX, rawY);
+          final alwaysOnTop = loadedMiniSettings.alwaysOnTop;
 
           WindowOptions windowOptions = WindowOptions(
             size: const Size(300, 420),
-            center: rawX == null || rawX < 10 || rawY == null || rawY < 10,
+            center: !hasSaved,
             skipTaskbar: false,
             titleBarStyle: TitleBarStyle.hidden,
             title: 'Looper',
@@ -123,23 +134,28 @@ void main(List<String> args) async {
             await windowManager.setAsFrameless();
             await windowManager.setMaximizable(false);
             await windowManager.setHasShadow(false);
+            if (Platform.isWindows) {
+              try {
+                await Window.setEffect(effect: WindowEffect.transparent);
+              } catch (_) {}
+            }
             await windowManager.setSize(const Size(300, 420));
-            if (rawX != null && rawX > 10 && rawY != null && rawY > 10) {
-              await windowManager.setPosition(Offset(rawX, rawY));
+            if (hasSaved) {
+              await windowManager.setPosition(Offset(rawX!, rawY!));
             }
             await windowManager.setAlwaysOnTop(alwaysOnTop);
             await windowManager.show();
             await windowManager.focus();
           });
         } else if (windowState.playerType == 'cornerWidget') {
-          final miniMap = await WindowStateService.loadMiniSettings();
-          final rawX = (miniMap['cornerX'] as num?)?.toDouble() ?? (miniMap['x'] as num?)?.toDouble();
-          final rawY = (miniMap['cornerY'] as num?)?.toDouble() ?? (miniMap['y'] as num?)?.toDouble();
-          final alwaysOnTop = miniMap['alwaysOnTop'] as bool? ?? true;
+          final rawX = loadedMiniSettings.cornerX;
+          final rawY = loadedMiniSettings.cornerY;
+          final hasSaved = isValidScreenCoord(rawX, rawY);
+          final alwaysOnTop = loadedMiniSettings.alwaysOnTop;
 
           WindowOptions windowOptions = WindowOptions(
             size: const Size(330, 110),
-            center: rawX == null || rawX < 10 || rawY == null || rawY < 10,
+            center: !hasSaved,
             skipTaskbar: false,
             titleBarStyle: TitleBarStyle.hidden,
             title: 'Looper',
@@ -150,9 +166,14 @@ void main(List<String> args) async {
             await windowManager.setAsFrameless();
             await windowManager.setMaximizable(false);
             await windowManager.setHasShadow(false);
+            if (Platform.isWindows) {
+              try {
+                await Window.setEffect(effect: WindowEffect.transparent);
+              } catch (_) {}
+            }
             await windowManager.setSize(const Size(330, 110));
-            if (rawX != null && rawX > 10 && rawY != null && rawY > 10) {
-              await windowManager.setPosition(Offset(rawX, rawY));
+            if (hasSaved) {
+              await windowManager.setPosition(Offset(rawX!, rawY!));
             }
             await windowManager.setAlwaysOnTop(alwaysOnTop);
             await windowManager.show();
@@ -174,6 +195,11 @@ void main(List<String> args) async {
           await windowManager.waitUntilReadyToShow(windowOptions, () async {
             await windowManager.setAlwaysOnTop(false);
             await windowManager.setMinimumSize(const Size(800, 600));
+            if (Platform.isWindows) {
+              try {
+                await Window.setEffect(effect: WindowEffect.disabled);
+              } catch (_) {}
+            }
             if (windowState.x != null && windowState.y != null && windowState.x! >= 0 && windowState.y! >= 0) {
               await windowManager.setPosition(Offset(windowState.x!, windowState.y!));
             }
@@ -228,6 +254,9 @@ void main(List<String> args) async {
         startupFileProvider.overrideWithValue(initialFile),
         startupArgsProvider.overrideWithValue(args),
         initialWindowStateProvider.overrideWithValue(windowState),
+        miniPlayerSettingsProvider.overrideWith(
+          (ref) => MiniPlayerSettingsNotifier(loadedMiniSettings),
+        ),
         if (windowState.playerType == 'full')
           appNavigationProvider.overrideWith(
             (ref) => NavigationNotifier(

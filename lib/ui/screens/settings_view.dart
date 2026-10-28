@@ -37,6 +37,8 @@ final appVersionProvider = FutureProvider<String>((ref) async {
   }
 });
 
+final isCheckingForUpdatesProvider = StateProvider<bool>((ref) => false);
+
 enum SettingsCategory {
   appearance,
   homepageAndSidebar,
@@ -2511,20 +2513,42 @@ class SettingsView extends ConsumerWidget {
           ),
           isLast: false,
         ),
-        _PremiumActionRow(
-          icon: LucideIcons.refreshCw,
-          title: 'Check for Updates',
-          subtitle: 'Check GitHub for the latest release',
-          onTap: () {
-            HapticFeedback.lightImpact();
-            UpdateService.checkForUpdates(
-              ref: ref,
-              context: context,
-              manual: true,
-            );
-          },
-          isLast: false,
-        ),
+        () {
+          final isCheckingUpdates = ref.watch(isCheckingForUpdatesProvider);
+          return _PremiumActionRow(
+            icon: LucideIcons.refreshCw,
+            title: 'Check for Updates',
+            subtitle: isCheckingUpdates
+                ? 'Checking GitHub for updates...'
+                : 'Check GitHub for the latest release',
+            trailing: isCheckingUpdates
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF41C25E)),
+                    ),
+                  )
+                : null,
+            onTap: () async {
+              if (ref.read(isCheckingForUpdatesProvider)) return;
+              HapticFeedback.lightImpact();
+              ref.read(isCheckingForUpdatesProvider.notifier).state = true;
+              try {
+                await UpdateService.checkForUpdates(
+                  ref: ref,
+                  context: context,
+                  manual: true,
+                );
+              } finally {
+                ref.read(isCheckingForUpdatesProvider.notifier).state = false;
+              }
+            },
+            isLast: false,
+          );
+        }(),
         _PremiumSwitchRow(
           icon: LucideIcons.bellRing,
           title: 'Update Notifications',

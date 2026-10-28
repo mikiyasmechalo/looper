@@ -75,7 +75,12 @@ class _PremiumPlayerBar extends ConsumerWidget {
 
         return Container(
           height: 80.s,
-          margin: EdgeInsets.only(left: 48.s, right: 48.s, bottom: 32.sp, top: 0),
+          margin: EdgeInsets.only(
+            left: 48.s,
+            right: 48.s,
+            bottom: 32.sp,
+            top: 0,
+          ),
           decoration: BoxDecoration(
             color: isDynamic
                 ? colorScheme.primary.withValues(alpha: 0.04)
@@ -93,126 +98,128 @@ class _PremiumPlayerBar extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Row(
-                    children: [
-                      Expanded(
-                        flex: isVeryNarrow ? 3 : 4,
-                        child: RepaintBoundary(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: openPlayer,
-                            onSecondaryTap: () => showSongOptionsBottomSheet(
-                              context: context,
-                              ref: ref,
-                              song: song,
-                            ),
-                            child: _buildSongInfo(
-                              context,
-                              title,
-                              artist,
-                              artPath,
-                              isVeryNarrow,
-                            ),
-                          ),
+                children: [
+                  Expanded(
+                    flex: isVeryNarrow ? 3 : 4,
+                    child: RepaintBoundary(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: openPlayer,
+                        onSecondaryTap: () => showSongOptionsBottomSheet(
+                          context: context,
+                          ref: ref,
+                          song: song,
                         ),
-                      ),
-
-                      if (!isVeryNarrow)
-                        Container(
-                          height: 40,
-                          width: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                          color: Colors.white10,
-                        ),
-
-                      RepaintBoundary(
-                        child: _buildControls(
+                        child: _buildSongInfo(
                           context,
-                          ref,
-                          colorScheme,
-                          isPlaying,
-                          isShuffle,
-                          repeatMode,
+                          title,
+                          artist,
+                          artPath,
                           isVeryNarrow,
-                          stackControls,
                         ),
                       ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        flex: stackControls ? 4 : 6,
-                        child: RepaintBoundary(
-                          child: Consumer(
-                            builder: (context, ref, child) {
-                              final position = ref.watch(
-                                playbackProvider.select((s) => s.position),
-                              );
-                              final duration = ref.watch(
-                                playbackProvider.select((s) => s.duration),
-                              );
-                              final isPlayingVal = ref.watch(
-                                playbackProvider.select((s) => s.isPlaying),
-                              );
-                              return ExpressiveSlider(
-                                position: position,
-                                duration: duration,
-                                isPlaying: isPlayingVal,
-                                onSeek: (pos) =>
-                                    ref.read(playbackProvider.notifier).seek(pos),
-                                onSeekStart: () => ref
-                                    .read(playbackProvider.notifier)
-                                    .startScrubbing(),
-                                onSeekEnd: () => ref
-                                    .read(playbackProvider.notifier)
-                                    .stopScrubbing(),
-                                color: colorScheme.primary,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-
-                      if (!isVeryNarrow) ...[
-                        const SizedBox(width: 24),
-                        Container(
-                          height: 40,
-                          width: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                          color: Colors.white10,
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      if (wideVolume) ...[
-                        const SizedBox(width: 16),
-                        const RepaintBoundary(child: _VolumeInlineControl()),
-                        const SizedBox(width: 16),
-                      ],
-                      if (hoverVolume) ...[const RepaintBoundary(child: _VolumeHoverControl())],
-
-                      if (stackControls)
-                        const SizedBox(width: 16)
-                      else if (hoverVolume)
-                        const SizedBox(width: 8)
-                      else
-                        const Spacer(),
-
-                      RepaintBoundary(
-                        child: _buildActions(
-                          context,
-                          ref,
-                          colorScheme,
-                          isFavorite,
-                          isLyricsActive,
-                          isQueueActive,
-                          isVeryNarrow,
-                          isTightActions,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+
+                  if (!isVeryNarrow)
+                    Container(
+                      height: 40,
+                      width: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      color: Colors.white10,
+                    ),
+
+                  RepaintBoundary(
+                    child: _buildControls(
+                      context,
+                      ref,
+                      colorScheme,
+                      isPlaying,
+                      isShuffle,
+                      repeatMode,
+                      isVeryNarrow,
+                      stackControls,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    flex: stackControls ? 4 : 6,
+                    child: RepaintBoundary(
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final position = ref.watch(
+                            playbackProvider.select((s) => s.position),
+                          );
+                          final duration = ref.watch(
+                            playbackProvider.select((s) => s.duration),
+                          );
+                          final isPlayingVal = ref.watch(
+                            playbackProvider.select((s) => s.isPlaying),
+                          );
+                          return ExpressiveSlider(
+                            position: position,
+                            duration: duration,
+                            isPlaying: isPlayingVal,
+                            onSeek: (pos) =>
+                                ref.read(playbackProvider.notifier).seek(pos),
+                            onSeekStart: () => ref
+                                .read(playbackProvider.notifier)
+                                .startScrubbing(),
+                            onSeekEnd: () => ref
+                                .read(playbackProvider.notifier)
+                                .stopScrubbing(),
+                            color: colorScheme.primary,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  if (!isVeryNarrow) ...[
+                    const SizedBox(width: 24),
+                    Container(
+                      height: 40,
+                      width: 1,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      color: Colors.white10,
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  if (wideVolume) ...[
+                    const SizedBox(width: 16),
+                    const RepaintBoundary(child: _VolumeInlineControl()),
+                    const SizedBox(width: 16),
+                  ],
+                  if (hoverVolume) ...[
+                    const RepaintBoundary(child: _VolumeHoverControl()),
+                  ],
+
+                  if (stackControls)
+                    const SizedBox(width: 16)
+                  else if (hoverVolume)
+                    const SizedBox(width: 8)
+                  else
+                    const Spacer(),
+
+                  RepaintBoundary(
+                    child: _buildActions(
+                      context,
+                      ref,
+                      colorScheme,
+                      isFavorite,
+                      isLyricsActive,
+                      isQueueActive,
+                      isVeryNarrow,
+                      isTightActions,
+                    ),
+                  ),
+                ],
               ),
-            );
+            ),
+          ),
+        );
       },
     );
   }
@@ -290,15 +297,21 @@ class _PremiumPlayerBar extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          onPressed: () => ref.read(playbackProvider.notifier).skipPrevious(),
-          icon: SvgPicture.asset(
-            'assets/music_bar_Icons/prev_track.svg',
-            width: 12,
-            height: 12,
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          ),
+        _PlayerBarIconButton(
+          size: (isVeryNarrow ? 28.0 : 32.0),
           tooltip: 'Previous',
+          onTap: () => ref.read(playbackProvider.notifier).skipPrevious(),
+          iconBuilder: (context, isHovered) {
+            return SvgPicture.asset(
+              'assets/music_bar_Icons/prev_track.svg',
+              width: 12,
+              height: 12,
+              colorFilter: ColorFilter.mode(
+                isHovered ? Colors.white : Colors.white70,
+                BlendMode.srcIn,
+              ),
+            );
+          },
         ),
         const SizedBox(width: 4),
         _BouncyTap(
@@ -324,15 +337,21 @@ class _PremiumPlayerBar extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 4),
-        IconButton(
-          onPressed: () => ref.read(playbackProvider.notifier).skipNext(),
-          icon: SvgPicture.asset(
-            'assets/music_bar_Icons/next_track.svg',
-            width: 12,
-            height: 12,
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          ),
+        _PlayerBarIconButton(
+          size: (isVeryNarrow ? 28.0 : 32.0),
           tooltip: 'Next',
+          onTap: () => ref.read(playbackProvider.notifier).skipNext(),
+          iconBuilder: (context, isHovered) {
+            return SvgPicture.asset(
+              'assets/music_bar_Icons/next_track.svg',
+              width: 12,
+              height: 12,
+              colorFilter: ColorFilter.mode(
+                isHovered ? Colors.white : Colors.white70,
+                BlendMode.srcIn,
+              ),
+            );
+          },
         ),
         if (!isVeryNarrow)
           Container(
@@ -366,20 +385,24 @@ class _PremiumPlayerBar extends ConsumerWidget {
   }
 
   Widget _buildShuffle(WidgetRef ref, ColorScheme colorScheme, bool isShuffle) {
-    return IconButton(
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () => ref.read(playbackProvider.notifier).toggleShuffle(),
-      icon: SvgPicture.asset(
-        'assets/music_bar_Icons/shuffle.svg',
-        width: 12,
-        height: 12,
-        colorFilter: ColorFilter.mode(
-          isShuffle ? colorScheme.primary : Colors.white38,
-          BlendMode.srcIn,
-        ),
-      ),
+    return _PlayerBarIconButton(
+      size: 28.0,
       tooltip: 'Shuffle',
+      isActive: isShuffle,
+      onTap: () => ref.read(playbackProvider.notifier).toggleShuffle(),
+      iconBuilder: (context, isHovered) {
+        return SvgPicture.asset(
+          'assets/music_bar_Icons/shuffle.svg',
+          width: 12,
+          height: 12,
+          colorFilter: ColorFilter.mode(
+            isShuffle
+                ? colorScheme.primary
+                : (isHovered ? Colors.white : Colors.white38),
+            BlendMode.srcIn,
+          ),
+        );
+      },
     );
   }
 
@@ -388,27 +411,33 @@ class _PremiumPlayerBar extends ConsumerWidget {
     ColorScheme colorScheme,
     RepeatMode repeatMode,
   ) {
-    return IconButton(
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      onPressed: () => ref.read(playbackProvider.notifier).nextRepeatMode(),
-      icon: SvgPicture.asset(
-        repeatMode == RepeatMode.one
-            ? 'assets/music_bar_Icons/repeat_1.svg'
-            : 'assets/music_bar_Icons/repeat.svg',
-        width: 12,
-        height: 12,
-        colorFilter: repeatMode == RepeatMode.one
-            ? null
-            : ColorFilter.mode(
-                repeatMode == RepeatMode.all ? Colors.white : Colors.white38,
-                BlendMode.srcIn,
-              ),
-        colorMapper: repeatMode == RepeatMode.one
-            ? AccentColorMapper(colorScheme.primary)
-            : null,
-      ),
-      tooltip: 'Repeat',
+    return _PlayerBarIconButton(
+      size: 28.0,
+      tooltip: repeatMode == RepeatMode.one
+          ? 'Repeat (One)'
+          : (repeatMode == RepeatMode.all ? 'Repeat (All)' : 'Repeat'),
+      isActive: repeatMode != RepeatMode.off,
+      onTap: () => ref.read(playbackProvider.notifier).nextRepeatMode(),
+      iconBuilder: (context, isHovered) {
+        return SvgPicture.asset(
+          repeatMode == RepeatMode.one
+              ? 'assets/music_bar_Icons/repeat_1.svg'
+              : 'assets/music_bar_Icons/repeat.svg',
+          width: 12,
+          height: 12,
+          colorFilter: repeatMode == RepeatMode.one
+              ? null
+              : ColorFilter.mode(
+                  repeatMode == RepeatMode.all
+                      ? (isHovered ? Colors.white : Colors.white)
+                      : (isHovered ? Colors.white : Colors.white38),
+                  BlendMode.srcIn,
+                ),
+          colorMapper: repeatMode == RepeatMode.one
+              ? AccentColorMapper(colorScheme.primary)
+              : null,
+        );
+      },
     );
   }
 
@@ -434,71 +463,69 @@ class _PremiumPlayerBar extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (!isVeryNarrow) ...[
-          Tooltip(
-            message: 'Favorite',
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints.tightFor(
-                width: buttonSize,
-                height: buttonSize,
-              ),
-              icon: SvgPicture.asset(
+          _PlayerBarIconButton(
+            size: buttonSize,
+            tooltip: 'Favorite',
+            isActive: isFavorite,
+            onTap: () => ref.read(playbackProvider.notifier).toggleFavorite(),
+            iconBuilder: (context, isHovered) {
+              return SvgPicture.asset(
                 isFavorite
                     ? 'assets/music_bar_Icons/liked.svg'
                     : 'assets/music_bar_Icons/like.svg',
                 width: favoriteIconSize,
                 height: favoriteIconSize,
                 colorFilter: ColorFilter.mode(
-                  isFavorite ? Colors.red : Colors.white54,
+                  isFavorite
+                      ? Colors.red
+                      : (isHovered ? Colors.white : Colors.white54),
                   BlendMode.srcIn,
                 ),
-              ),
-              onPressed: () =>
-                  ref.read(playbackProvider.notifier).toggleFavorite(),
-            ),
+              );
+            },
           ),
           SizedBox(width: spacing),
         ],
-        Tooltip(
-          message: 'Lyrics',
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints.tightFor(
-              width: buttonSize,
-              height: buttonSize,
-            ),
-            icon: SvgPicture.asset(
+        _PlayerBarIconButton(
+          size: buttonSize,
+          tooltip: 'Lyrics',
+          isActive: isLyricsActive,
+          activeColor: colorScheme.primary,
+          onTap: () => ref
+              .read(appNavigationProvider.notifier)
+              .toggleItem(NavItem.lyrics),
+          iconBuilder: (context, isHovered) {
+            return SvgPicture.asset(
               'assets/music_bar_Icons/lyrics.svg',
               width: iconSize,
               height: iconSize,
               colorFilter: ColorFilter.mode(
-                isLyricsActive ? colorScheme.primary : Colors.white54,
+                isLyricsActive
+                    ? colorScheme.primary
+                    : (isHovered ? Colors.white : Colors.white54),
                 BlendMode.srcIn,
               ),
-            ),
-            onPressed: () => ref
-                .read(appNavigationProvider.notifier)
-                .toggleItem(NavItem.lyrics),
-          ),
+            );
+          },
         ),
         SizedBox(width: spacing),
-        Tooltip(
-          message: 'Queue',
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints.tightFor(
-              width: buttonSize,
-              height: buttonSize,
-            ),
-            icon: Icon(
+        _PlayerBarIconButton(
+          size: buttonSize,
+          tooltip: 'Queue',
+          isActive: isQueueActive,
+          activeColor: colorScheme.primary,
+          onTap: () => ref
+              .read(appNavigationProvider.notifier)
+              .toggleItem(NavItem.queue),
+          iconBuilder: (context, isHovered) {
+            return Icon(
               LucideIcons.listMusic,
               size: iconSize,
-              color: isQueueActive ? colorScheme.primary : Colors.white54,
-            ),
-            onPressed: () => ref
-                .read(appNavigationProvider.notifier)
-                .toggleItem(NavItem.queue),
-          ),
+              color: isQueueActive
+                  ? colorScheme.primary
+                  : (isHovered ? Colors.white : Colors.white54),
+            );
+          },
         ),
         SizedBox(width: spacing),
         _FullscreenButton(size: buttonSize, iconSize: iconSize),
@@ -521,23 +548,26 @@ class _VolumeInlineControl extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => ref.read(playbackProvider.notifier).toggleMute(),
-            icon: SvgPicture.asset(
-              volume == 0
-                  ? 'assets/music_bar_Icons/mute.svg'
-                  : 'assets/music_bar_Icons/volume.svg',
-              width: 12,
-              height: 12,
-              colorFilter: ColorFilter.mode(
-                volume == 0 ? Colors.white38 : Colors.white,
-                BlendMode.srcIn,
-              ),
-            ),
+          _PlayerBarIconButton(
+            size: 28.0,
+            tooltip: volume == 0 ? 'Unmute' : 'Mute',
+            onTap: () => ref.read(playbackProvider.notifier).toggleMute(),
+            iconBuilder: (context, isHovered) {
+              return SvgPicture.asset(
+                volume == 0
+                    ? 'assets/music_bar_Icons/mute.svg'
+                    : 'assets/music_bar_Icons/volume.svg',
+                width: 12,
+                height: 12,
+                colorFilter: ColorFilter.mode(
+                  volume == 0
+                      ? (isHovered ? Colors.white70 : Colors.white38)
+                      : (isHovered ? Colors.white70 : Colors.white),
+                  BlendMode.srcIn,
+                ),
+              );
+            },
           ),
-          const SizedBox(width: 8),
           SizedBox(
             width: 100,
             child: Listener(
@@ -651,22 +681,25 @@ class _VolumeHoverControlState extends ConsumerState<_VolumeHoverControl> {
       key: _anchorKey,
       onEnter: (_) => _showOverlay(),
       onExit: (_) => _scheduleHide(),
-      child: IconButton(
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-        onPressed: () => ref.read(playbackProvider.notifier).toggleMute(),
-        icon: SvgPicture.asset(
-          volume == 0
-              ? 'assets/music_bar_Icons/mute.svg'
-              : 'assets/music_bar_Icons/volume.svg',
-          width: 12,
-          height: 12,
-          colorFilter: ColorFilter.mode(
-            volume == 0 ? Colors.white38 : Colors.white,
-            BlendMode.srcIn,
-          ),
-        ),
-        tooltip: 'Volume',
+      child: _PlayerBarIconButton(
+        size: 28.0,
+        tooltip: volume == 0 ? 'Unmute' : 'Mute',
+        onTap: () => ref.read(playbackProvider.notifier).toggleMute(),
+        iconBuilder: (context, isHovered) {
+          return SvgPicture.asset(
+            volume == 0
+                ? 'assets/music_bar_Icons/mute.svg'
+                : 'assets/music_bar_Icons/volume.svg',
+            width: 12,
+            height: 12,
+            colorFilter: ColorFilter.mode(
+              volume == 0
+                  ? (isHovered ? Colors.white70 : Colors.white38)
+                  : (isHovered ? Colors.white : Colors.white),
+              BlendMode.srcIn,
+            ),
+          );
+        },
       ),
     );
   }
@@ -709,22 +742,25 @@ class _VolumeHoverPopupState extends ConsumerState<_VolumeHoverPopup> {
           ),
           child: Row(
             children: [
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () =>
-                    ref.read(playbackProvider.notifier).toggleMute(),
-                icon: SvgPicture.asset(
-                  volume == 0
-                      ? 'assets/music_bar_Icons/mute.svg'
-                      : 'assets/music_bar_Icons/volume.svg',
-                  width: 12,
-                  height: 12,
-                  colorFilter: ColorFilter.mode(
-                    volume == 0 ? Colors.white38 : Colors.white,
-                    BlendMode.srcIn,
-                  ),
-                ),
+              _PlayerBarIconButton(
+                size: 28.0,
+                tooltip: volume == 0 ? 'Unmute' : 'Mute',
+                onTap: () => ref.read(playbackProvider.notifier).toggleMute(),
+                iconBuilder: (context, isHovered) {
+                  return SvgPicture.asset(
+                    volume == 0
+                        ? 'assets/music_bar_Icons/mute.svg'
+                        : 'assets/music_bar_Icons/volume.svg',
+                    width: 12,
+                    height: 12,
+                    colorFilter: ColorFilter.mode(
+                      volume == 0
+                          ? (isHovered ? Colors.white70 : Colors.white38)
+                          : (isHovered ? Colors.white : Colors.white),
+                      BlendMode.srcIn,
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -826,15 +862,18 @@ class _BouncyTapState extends State<_BouncyTap>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _controller.reverse(),
-      behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTapDown: (_) => _controller.forward(),
+        onTapUp: (_) {
+          _controller.reverse();
+          widget.onTap();
+        },
+        onTapCancel: () => _controller.reverse(),
+        behavior: HitTestBehavior.opaque,
+        child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+      ),
     );
   }
 }
@@ -907,28 +946,68 @@ class _MiniPlayerMenuButton extends ConsumerWidget {
         }
       },
       customTrigger: (ctx, isOpen) {
-        return Tooltip(
-          message: 'Mini player',
-          child: Container(
-            width: size ?? 34,
-            height: size ?? 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isOpen
-                  ? colorScheme.primary.withValues(alpha: 0.15)
-                  : Colors.transparent,
-            ),
-            child: Icon(
-              LucideIcons.minimize2,
-              size: iconSize ?? 16,
-              color: isActive
-                  ? colorScheme.primary
-                  : (isOpen ? Colors.white : Colors.white54),
-            ),
-          ),
+        return _MiniPlayerTrigger(
+          size: size ?? 34,
+          iconSize: iconSize ?? 16,
+          isOpen: isOpen,
+          isActive: isActive,
+          primaryColor: colorScheme.primary,
         );
       },
+    );
+  }
+}
+
+class _MiniPlayerTrigger extends StatefulWidget {
+  final double size;
+  final double iconSize;
+  final bool isOpen;
+  final bool isActive;
+  final Color primaryColor;
+
+  const _MiniPlayerTrigger({
+    required this.size,
+    required this.iconSize,
+    required this.isOpen,
+    required this.isActive,
+    required this.primaryColor,
+  });
+
+  @override
+  State<_MiniPlayerTrigger> createState() => _MiniPlayerTriggerState();
+}
+
+class _MiniPlayerTriggerState extends State<_MiniPlayerTrigger> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hoverColor = Theme.of(context).hoverColor;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Tooltip(
+        message: 'Mini player',
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: widget.isOpen
+                ? widget.primaryColor.withValues(alpha: 0.15)
+                : (_isHovered ? hoverColor : Colors.transparent),
+          ),
+          child: Icon(
+            LucideIcons.minimize2,
+            size: widget.iconSize,
+            color: widget.isActive
+                ? widget.primaryColor
+                : (widget.isOpen || _isHovered ? Colors.white : Colors.white54),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -941,25 +1020,79 @@ class _FullscreenButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Tooltip(
-      message: 'Fullscreen Player',
-      child: IconButton(
-        padding: size != null ? EdgeInsets.zero : null,
-        constraints: size != null
-            ? BoxConstraints.tightFor(width: size, height: size)
-            : null,
-        icon: Icon(
+    final double s = size ?? 34.0;
+    return _PlayerBarIconButton(
+      size: s,
+      tooltip: 'Fullscreen Player',
+      onTap: () async {
+        ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
+        final isMax = await windowManager.isMaximized();
+        if (!isMax) {
+          await windowManager.maximize();
+        }
+      },
+      iconBuilder: (context, isHovered) {
+        return Icon(
           LucideIcons.maximize,
           size: iconSize ?? 16,
-          color: Colors.white54,
+          color: isHovered ? Colors.white : Colors.white54,
+        );
+      },
+    );
+  }
+}
+
+/// Generic player bar button featuring a hand cursor, circular hover backdrop,
+/// and icon brightening to white on hover matching the mini-player trigger.
+class _PlayerBarIconButton extends StatefulWidget {
+  final double size;
+  final String tooltip;
+  final VoidCallback onTap;
+  final Widget Function(BuildContext context, bool isHovered) iconBuilder;
+  final bool isActive;
+  final Color? activeColor;
+
+  const _PlayerBarIconButton({
+    required this.size,
+    required this.tooltip,
+    required this.onTap,
+    required this.iconBuilder,
+    this.isActive = false,
+    this.activeColor,
+  });
+
+  @override
+  State<_PlayerBarIconButton> createState() => _PlayerBarIconButtonState();
+}
+
+class _PlayerBarIconButtonState extends State<_PlayerBarIconButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hoverColor = Theme.of(context).hoverColor;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Tooltip(
+        message: widget.tooltip,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: widget.size,
+            height: widget.size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.isActive && widget.activeColor != null
+                  ? widget.activeColor!.withValues(alpha: 0.15)
+                  : (_isHovered ? hoverColor : Colors.transparent),
+            ),
+            child: widget.iconBuilder(context, _isHovered),
+          ),
         ),
-        onPressed: () async {
-          ref.read(appNavigationProvider.notifier).setPlayerExpansion(true);
-          final isMax = await windowManager.isMaximized();
-          if (!isMax) {
-            await windowManager.maximize();
-          }
-        },
       ),
     );
   }

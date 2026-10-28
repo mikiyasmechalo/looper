@@ -44,6 +44,18 @@ class LyricLine {
 
   bool get hasWordTiming => words.isNotEmpty;
 
+  /// Whether this line represents an instrumental gap or music break.
+  bool get isInstrumental {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return true;
+    final lower = trimmed.toLowerCase();
+    return lower.contains('instrumental') ||
+        lower.contains('[music]') ||
+        trimmed == '♪' ||
+        trimmed == '♫' ||
+        trimmed == '🎵';
+  }
+
   /// A word: letters up to (and including) any trailing punctuation and
   /// whitespace - so a comma ends a word even with no space after it.
   static final RegExp _wordToken = RegExp(

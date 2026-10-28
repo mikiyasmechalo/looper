@@ -9,6 +9,15 @@ import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/core/logger_helper.dart';
 import 'package:looper_player/core/memory_service.dart';
 
+bool isValidScreenCoord(double? x, double? y) {
+  if (x == null || y == null) return false;
+  // Windows minimized windows report iconic coords like -32000
+  if (x <= -20000 || y <= -20000) return false;
+  // Guard against arbitrary runaway coordinates
+  if (x > 40000 || y > 40000) return false;
+  return true;
+}
+
 class WindowState {
   final bool isMaximized;
   final double width;

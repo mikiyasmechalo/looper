@@ -6,8 +6,8 @@ part of 'advanced_lyric_line.dart';
 /// stays active, so the animation itself (not a different symbol) is what
 /// marks it as the current one. While playback is paused the pulse eases
 /// back to rest (no glow, no bounce) and picks up again on resume.
-class _PulsingInstrumentalIcon extends ConsumerStatefulWidget {
-  const _PulsingInstrumentalIcon({required this.color, required this.style});
+class PulsingInstrumentalIcon extends ConsumerStatefulWidget {
+  const PulsingInstrumentalIcon({super.key, required this.color, required this.style});
 
   /// Color of the glow halo behind the symbol - the symbol's own color
   /// already comes from [style].
@@ -15,12 +15,12 @@ class _PulsingInstrumentalIcon extends ConsumerStatefulWidget {
   final TextStyle style;
 
   @override
-  ConsumerState<_PulsingInstrumentalIcon> createState() =>
+  ConsumerState<PulsingInstrumentalIcon> createState() =>
       _PulsingInstrumentalIconState();
 }
 
 class _PulsingInstrumentalIconState
-    extends ConsumerState<_PulsingInstrumentalIcon>
+    extends ConsumerState<PulsingInstrumentalIcon>
     with SingleTickerProviderStateMixin {
   static const _beat = Duration(milliseconds: 900);
 

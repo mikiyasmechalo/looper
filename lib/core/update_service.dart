@@ -67,6 +67,10 @@ class UpdateService {
               settings.skippedUpdateVersion == tagName) {
             return;
           }
+          final miniMode = ref.read(miniPlayerModeProvider);
+          if (miniMode != MiniPlayerMode.none) {
+            return;
+          }
         }
 
         if (tagName.isNotEmpty && isUpdateAvailable(currentVersion, tagName)) {
@@ -168,6 +172,9 @@ class UpdateService {
     String newVersion,
     String htmlUrl,
   ) {
+    if (ref != null && ref.read(miniPlayerModeProvider) != MiniPlayerMode.none) {
+      return;
+    }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -244,6 +251,9 @@ class UpdateService {
   }
 
   static void _showUpdateSnackbar(WidgetRef? ref, String newVersion, String htmlUrl) {
+    if (ref != null && ref.read(miniPlayerModeProvider) != MiniPlayerMode.none) {
+      return;
+    }
     final state = scaffoldMessengerKey.currentState;
     if (state == null) return;
 

@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   audiotags
   desktop_drop
   dynamic_color
+  flutter_acrylic
   hotkey_manager_linux
   isar_flutter_libs
   local_notifier

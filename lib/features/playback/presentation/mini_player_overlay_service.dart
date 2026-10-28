@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:screen_retriever/screen_retriever.dart';
+import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:looper_player/core/providers.dart';
 import 'package:looper_player/core/navigation_provider.dart';
 import 'package:looper_player/core/window_state_service.dart';
@@ -12,10 +14,10 @@ import 'package:looper_player/core/window_state_service.dart';
 
 class MiniPlayerSettingsState {
   final double padding;
-  final double cornerX;
-  final double cornerY;
-  final double miniPlayerX;
-  final double miniPlayerY;
+  final double? cornerX;
+  final double? cornerY;
+  final double? miniPlayerX;
+  final double? miniPlayerY;
   final bool lyricsEnabled;
   final bool expressiveSlider;
   final bool visualizerEnabled;
@@ -23,10 +25,10 @@ class MiniPlayerSettingsState {
 
   const MiniPlayerSettingsState({
     this.padding = 12.0,
-    this.cornerX = -1,
-    this.cornerY = -1,
-    this.miniPlayerX = -1,
-    this.miniPlayerY = -1,
+    this.cornerX,
+    this.cornerY,
+    this.miniPlayerX,
+    this.miniPlayerY,
     this.lyricsEnabled = false,
     this.expressiveSlider = false,
     this.visualizerEnabled = false,
@@ -59,10 +61,10 @@ class MiniPlayerSettingsState {
 
   Map<String, dynamic> toJson() => {
     'padding': padding,
-    'cornerX': cornerX,
-    'cornerY': cornerY,
-    'miniPlayerX': miniPlayerX,
-    'miniPlayerY': miniPlayerY,
+    if (cornerX != null) 'cornerX': cornerX,
+    if (cornerY != null) 'cornerY': cornerY,
+    if (miniPlayerX != null) 'miniPlayerX': miniPlayerX,
+    if (miniPlayerY != null) 'miniPlayerY': miniPlayerY,
     'lyricsEnabled': lyricsEnabled,
     'expressiveSlider': expressiveSlider,
     'visualizerEnabled': visualizerEnabled,
@@ -72,10 +74,14 @@ class MiniPlayerSettingsState {
   factory MiniPlayerSettingsState.fromJson(Map<String, dynamic> json) {
     return MiniPlayerSettingsState(
       padding: (json['padding'] as num?)?.toDouble() ?? 12.0,
-      cornerX: (json['cornerX'] as num?)?.toDouble() ?? (json['x'] as num?)?.toDouble() ?? -1,
-      cornerY: (json['cornerY'] as num?)?.toDouble() ?? (json['y'] as num?)?.toDouble() ?? -1,
-      miniPlayerX: (json['miniPlayerX'] as num?)?.toDouble() ?? (json['x'] as num?)?.toDouble() ?? -1,
-      miniPlayerY: (json['miniPlayerY'] as num?)?.toDouble() ?? (json['y'] as num?)?.toDouble() ?? -1,
+      cornerX: (json['cornerX'] as num?)?.toDouble() ??
+          (json['x'] as num?)?.toDouble(),
+      cornerY: (json['cornerY'] as num?)?.toDouble() ??
+          (json['y'] as num?)?.toDouble(),
+      miniPlayerX: (json['miniPlayerX'] as num?)?.toDouble() ??
+          (json['x'] as num?)?.toDouble(),
+      miniPlayerY: (json['miniPlayerY'] as num?)?.toDouble() ??
+          (json['y'] as num?)?.toDouble(),
       lyricsEnabled: json['lyricsEnabled'] as bool? ?? false,
       expressiveSlider: json['expressiveSlider'] as bool? ?? false,
       visualizerEnabled: json['visualizerEnabled'] as bool? ?? false,
@@ -84,9 +90,17 @@ class MiniPlayerSettingsState {
   }
 }
 
-class MiniPlayerSettingsNotifier extends StateNotifier<MiniPlayerSettingsState> {
-  MiniPlayerSettingsNotifier() : super(const MiniPlayerSettingsState()) {
-    _load();
+class MiniPlayerSettingsNotifier
+    extends StateNotifier<MiniPlayerSettingsState> {
+  late final Future<void> initialization;
+
+  MiniPlayerSettingsNotifier([MiniPlayerSettingsState? initial])
+      : super(initial ?? const MiniPlayerSettingsState()) {
+    if (initial != null) {
+      initialization = Future.value();
+    } else {
+      initialization = _load();
+    }
   }
 
   Future<File> get _file async {
@@ -112,18 +126,27 @@ class MiniPlayerSettingsNotifier extends StateNotifier<MiniPlayerSettingsState> 
     } catch (_) {}
   }
 
-  void setPadding(double val) => _save(state.copyWith(padding: val));
-  void setCornerPosition(double x, double y) => _save(state.copyWith(cornerX: x, cornerY: y));
-  void setMiniPlayerPosition(double x, double y) => _save(state.copyWith(miniPlayerX: x, miniPlayerY: y));
-  void setLyrics(bool val) => _save(state.copyWith(lyricsEnabled: val));
-  void setExpressiveSlider(bool val) => _save(state.copyWith(expressiveSlider: val));
-  void setVisualizer(bool val) => _save(state.copyWith(visualizerEnabled: val));
-  void setAlwaysOnTop(bool val) => _save(state.copyWith(alwaysOnTop: val));
+  Future<void> setPadding(double val) => _save(state.copyWith(padding: val));
+  Future<void> setCornerPosition(double x, double y) =>
+      _save(state.copyWith(cornerX: x, cornerY: y));
+  Future<void> setMiniPlayerPosition(double x, double y) =>
+      _save(state.copyWith(miniPlayerX: x, miniPlayerY: y));
+  Future<void> setLyrics(bool val) => _save(state.copyWith(lyricsEnabled: val));
+  Future<void> setExpressiveSlider(bool val) =>
+      _save(state.copyWith(expressiveSlider: val));
+  Future<void> setVisualizer(bool val) => _save(state.copyWith(visualizerEnabled: val));
+  Future<void> setAlwaysOnTop(bool val) => _save(state.copyWith(alwaysOnTop: val));
 }
 
-final miniPlayerSettingsProvider = StateNotifierProvider<MiniPlayerSettingsNotifier, MiniPlayerSettingsState>((ref) {
-  return MiniPlayerSettingsNotifier();
-});
+final miniPlayerSettingsProvider =
+    StateNotifierProvider<MiniPlayerSettingsNotifier, MiniPlayerSettingsState>((
+      ref,
+    ) {
+      return MiniPlayerSettingsNotifier();
+    });
+
+/// Tracks whether the corner player is currently expanded (showing queue or lyrics).
+final cornerExpandedProvider = StateProvider<bool>((ref) => false);
 
 // ─── Overlay Service ───────────────────────────────────────────────────────
 
@@ -162,17 +185,30 @@ class MiniPlayerOverlayService {
       final isFs = await windowManager.isFullScreen();
       if (!isMax && !isFs) {
         final pos = await windowManager.getPosition();
-        if (pos.dx > 10 && pos.dy > 10) {
+        if (isValidScreenCoord(pos.dx, pos.dy)) {
           final currentMode = ref.read(miniPlayerModeProvider);
           if (currentMode == MiniPlayerMode.miniPlayer) {
-            ref.read(miniPlayerSettingsProvider.notifier).setMiniPlayerPosition(pos.dx, pos.dy);
+            await ref
+                .read(miniPlayerSettingsProvider.notifier)
+                .setMiniPlayerPosition(pos.dx, pos.dy);
           } else if (currentMode == MiniPlayerMode.cornerWidget) {
-            ref.read(miniPlayerSettingsProvider.notifier).setCornerPosition(pos.dx, pos.dy);
+            final isExpanded = ref.read(cornerExpandedProvider);
+            if (!isExpanded) {
+              await ref
+                  .read(miniPlayerSettingsProvider.notifier)
+                  .setCornerPosition(pos.dx, pos.dy);
+            }
           }
         }
       }
 
-      // 2. Restore window styling
+      // 2. Restore window styling and background
+      if (Platform.isWindows) {
+        try {
+          await Window.setEffect(effect: WindowEffect.disabled);
+        } catch (_) {}
+      }
+      await windowManager.setBackgroundColor(const Color(0xFF111111));
       await windowManager.setAlwaysOnTop(false);
       await windowManager.setMaximizable(true);
       await windowManager.setHasShadow(true);
@@ -198,7 +234,9 @@ class MiniPlayerOverlayService {
       ref.read(miniPlayerModeProvider.notifier).state = MiniPlayerMode.none;
       final isExp = ref.read(appNavigationProvider).isPlayerExpanded;
       WindowStateService.instance.saveSync(
-        WindowStateService.instance.currentState.copyWith(playerType: isExp ? 'full' : 'normal'),
+        WindowStateService.instance.currentState.copyWith(
+          playerType: isExp ? 'full' : 'normal',
+        ),
       );
 
       // 6. Restore minimum size once the window is back to full size
@@ -211,6 +249,58 @@ class MiniPlayerOverlayService {
       await Future.delayed(const Duration(milliseconds: 200));
       isTransitioning = false;
     }
+  }
+
+  Future<Offset> calculateSnapPosition({
+    required Alignment alignment,
+    required Size windowSize,
+    required double padding,
+  }) async {
+    final pos = await windowManager.getPosition();
+    final rect = Rect.fromLTWH(
+      pos.dx,
+      pos.dy,
+      windowSize.width,
+      windowSize.height,
+    );
+    Display display;
+    try {
+      final displays = await screenRetriever.getAllDisplays();
+      display = displays.firstWhere((d) {
+        final dOrigin = d.visiblePosition ?? Offset.zero;
+        final dSize = d.visibleSize ?? d.size;
+        final dRect = Rect.fromLTWH(
+          dOrigin.dx,
+          dOrigin.dy,
+          dSize.width,
+          dSize.height,
+        );
+        return dRect.overlaps(rect);
+      }, orElse: () => displays.first);
+    } catch (_) {
+      display = await screenRetriever.getPrimaryDisplay();
+    }
+    final origin = display.visiblePosition ?? Offset.zero;
+    final workArea = display.visibleSize ?? display.size;
+
+    double dx;
+    double dy;
+
+    if (alignment == Alignment.topLeft) {
+      dx = origin.dx + padding;
+      dy = origin.dy + padding;
+    } else if (alignment == Alignment.topRight) {
+      dx = origin.dx + workArea.width - windowSize.width - padding;
+      dy = origin.dy + padding;
+    } else if (alignment == Alignment.bottomLeft) {
+      dx = origin.dx + padding;
+      dy = origin.dy + workArea.height - windowSize.height - padding;
+    } else {
+      // Alignment.bottomRight default
+      dx = origin.dx + workArea.width - windowSize.width - padding;
+      dy = origin.dy + workArea.height - windowSize.height - padding;
+    }
+    return Offset(dx, dy);
   }
 
   Future<void> resizeMiniPlayer(double height) async {
@@ -226,6 +316,9 @@ class MiniPlayerOverlayService {
     isTransitioning = true;
 
     try {
+      // Ensure settings are loaded from disk before reading saved coordinates
+      await ref.read(miniPlayerSettingsProvider.notifier).initialization;
+
       _wasFullScreen = await windowManager.isFullScreen();
       _wasMaximized = await windowManager.isMaximized();
       if (!_wasMaximized && !_wasFullScreen) {
@@ -241,39 +334,55 @@ class MiniPlayerOverlayService {
 
       // 1. Switch UI immediately so full layout never tries to render inside 300x420
       ref.read(miniPlayerModeProvider.notifier).state = mode;
-      final pType = mode == MiniPlayerMode.miniPlayer ? 'miniPlayer' : 'cornerWidget';
+      final pType = mode == MiniPlayerMode.miniPlayer
+          ? 'miniPlayer'
+          : 'cornerWidget';
       WindowStateService.instance.saveSync(
         WindowStateService.instance.currentState.copyWith(playerType: pType),
       );
 
-      // 2. Prepare frameless window styling
+      // 2. Prepare frameless window styling and transparent canvas
       await windowManager.setAlwaysOnTop(false);
       await windowManager.setMinimumSize(const Size(0, 0));
       await windowManager.setAsFrameless();
       await windowManager.setMaximizable(false);
       await windowManager.setHasShadow(false);
+      await windowManager.setBackgroundColor(Colors.transparent);
+      if (Platform.isWindows) {
+        try {
+          await Window.setEffect(effect: WindowEffect.transparent);
+        } catch (_) {}
+      }
 
       // 3. Set mini player size and restore saved location
       await windowManager.setSize(size);
 
+      await ref.read(miniPlayerSettingsProvider.notifier).initialization;
       final settings = ref.read(miniPlayerSettingsProvider);
-      final savedX = mode == MiniPlayerMode.miniPlayer ? settings.miniPlayerX : settings.cornerX;
-      final savedY = mode == MiniPlayerMode.miniPlayer ? settings.miniPlayerY : settings.cornerY;
+      final savedX = mode == MiniPlayerMode.miniPlayer
+          ? settings.miniPlayerX
+          : settings.cornerX;
+      final savedY = mode == MiniPlayerMode.miniPlayer
+          ? settings.miniPlayerY
+          : settings.cornerY;
 
-      if (savedX > 10 && savedY > 10) {
-        await windowManager.setPosition(Offset(savedX, savedY));
+      if (isValidScreenCoord(savedX, savedY)) {
+        await windowManager.setPosition(Offset(savedX!, savedY!));
       } else {
-        await windowManager.setAlignment(Alignment.bottomRight);
-        await Future.delayed(const Duration(milliseconds: 50));
-        final pos = await windowManager.getPosition();
-        final padding = settings.padding;
-        final finalX = pos.dx - padding;
-        final finalY = pos.dy - padding;
-        await windowManager.setPosition(Offset(finalX, finalY));
+        final targetPos = await calculateSnapPosition(
+          alignment: Alignment.bottomRight,
+          windowSize: size,
+          padding: settings.padding,
+        );
+        await windowManager.setPosition(targetPos);
         if (mode == MiniPlayerMode.miniPlayer) {
-          ref.read(miniPlayerSettingsProvider.notifier).setMiniPlayerPosition(finalX, finalY);
+          await ref
+              .read(miniPlayerSettingsProvider.notifier)
+              .setMiniPlayerPosition(targetPos.dx, targetPos.dy);
         } else {
-          ref.read(miniPlayerSettingsProvider.notifier).setCornerPosition(finalX, finalY);
+          await ref
+              .read(miniPlayerSettingsProvider.notifier)
+              .setCornerPosition(targetPos.dx, targetPos.dy);
         }
       }
 
