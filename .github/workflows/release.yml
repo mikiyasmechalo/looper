@@ -154,7 +154,7 @@ jobs:
 
   build-linux:
     name: Build & Package Linux (x86_64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     env:
       APPIMAGE_EXTRACT_AND_RUN: 1
     steps:
@@ -169,7 +169,9 @@ jobs:
             libgtk-3-dev libblkid-dev liblzma-dev \
             libgcrypt20-dev libmpv-dev libnotify-dev \
             libkeybinder-3.0-dev libayatana-appindicator3-dev \
-            libfuse2 rpm
+            libpipewire-0.3-dev libspa-0.2-dev \
+            rpm patchelf
+          sudo apt-get install -y libfuse2t64 || sudo apt-get install -y libfuse2
 
       - name: Install rpmbuild wrapper for spec version sanitization
         run: |
@@ -203,7 +205,9 @@ jobs:
 
       - name: Package Linux Distributors (DEB, RPM, AppImage)
         run: |
+          touch not
           flutter_distributor release --name dev --skip-clean
+          rm -f not
 
       - name: Organize Linux Distribution Artifacts
         run: |
